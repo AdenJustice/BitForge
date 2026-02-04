@@ -1,0 +1,32 @@
+## Interface: 120000
+## Title: BitForge
+## Notes: Core engine for the BitForge suite.
+## Author: selfaddicted
+## Version: @project-version@
+## SavedVariables: BitForgeDB
+
+## Category: BitForge
+## IconTexture: Interface/AddOns/BitForge/Assets/Icon
+
+BitForge.lua
+
+# Libraries
+Libs/embeds.xml
+
+# Locales
+Locales/enUS.lua
+Locales/koKR.lua
+
+# Shared
+Shared/Params.lua
+Shared/Utils.lua
+Shared/Assets.lua
+Shared/Mixins.lua
+Shared/DBMS.lua
+Shared/GUI.lua
+Shared/APIs.lua
+
+Core/Init.lua
+Core/Model.lua
+Core/View.lua
+Core/Control.lua
