@@ -1,0 +1,11 @@
+# --- WoW Specific ---
+**/Libs/
+*.lua.bak
+
+# --- VS Code ---
+.vscode/settings.json
+*.code-workspace
+
+# --- OS ---
+.DS_Store
+Thumbs.db

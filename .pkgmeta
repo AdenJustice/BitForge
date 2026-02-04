@@ -1,0 +1,14 @@
+package-as: BitForge
+
+move-folders:
+  BitForge/BitForge: BitForge
+
+ignore:
+  - .github
+  - .vscode
+  - .gitattributes
+  - .gitignore
+  - .pkgmeta
+  - "**/Annotation.lua"
+  - "**/AGENTS.md"
+  - config.ld
