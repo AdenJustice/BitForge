@@ -1,6 +1,5 @@
 --- @type string, ns_core
 local ADDON_NAME, ns = ...
-local params = ns.params
 local utils = ns.utils
 local L = ns.locale
 local gui = ns.gui

@@ -41,7 +41,7 @@ local defaults = {
 --- =========================================================
 
 function model:OnInit()
-    dbms:Init(params.addon.dbName, defaults)
+    dbms:Init(params.core.dbName, defaults)
     self.db = dbms
 end
 

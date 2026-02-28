@@ -36,7 +36,7 @@ params.wow = {
     buildInfo = wowBuildInfo[6],
 }
 
-params.addon = {
+params.core = {
     name = ADDON_NAME,
     version = _GetAddOnMetadata(ADDON_NAME, "Version"),
     dbName = ADDON_NAME .. "DB",

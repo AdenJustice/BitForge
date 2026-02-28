@@ -15,3 +15,7 @@ L["migration:button_migrate"] = "Migrate"
 L["migration:button_skip"] = "Skip"
 L["migration:button_purge"] = "Purge"
 L["migration:button_keep_all"] = "Keep All"
+
+-- Settings
+L["settings:plugins_header"] = "List of Installed Plugins"
+L["settings:plugins_tooltip"] = "Check to activate the plugin for this character."
