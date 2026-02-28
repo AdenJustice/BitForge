@@ -16,7 +16,7 @@ local _lower = string.lower
 --- =========================================================
 
 local getAssetPath = function(assetType)
-    return _format("%s/Assets/%s", params.addon.path, assetType)
+    return _format("%s/Assets/%s", params.core.path, assetType)
 end
 
 --- =========================================================

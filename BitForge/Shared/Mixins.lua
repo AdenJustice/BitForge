@@ -160,12 +160,6 @@ local baseControlMixin = _CreateFromMixins(baseMixin)
 --- Initializes the control with an optional name. The name is used for logging purposes.
 --- @param name string? Optional name for the plugin.
 function baseControlMixin:Init(name)
-    if name then
-        assert(_type(name) == "string", "Control name must be a string.")
-        name = _format("%s-%s", ADDON_NAME, name)
-        self.ADDON_NAME = name
-    end
-
     self.printPrefix = _format("[%s]", name or ADDON_NAME)
 
     if self.OnInit then

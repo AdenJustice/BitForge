@@ -20,8 +20,12 @@ local _time = time
 local _GetAddOnInfo = C_AddOns.GetAddOnInfo
 local _GetNumAddOns = C_AddOns.GetNumAddOns
 local _LoadAddOn = C_AddOns.LoadAddOn
-local _IsAddOnLoaded = C_AddOns.IsAddOnLoaded
 local _IsAddOnLOD = C_AddOns.IsAddOnLoadOnDemand
+local _GetCategory = Settings.GetCategory
+local _RegisterCategory = Settings.RegisterVerticalLayoutCategory
+local _CreateCheckbox = Settings.CreateCheckbox
+local _RegisterProxy = Settings.RegisterProxySetting
+local _RegisterAddon = Settings.RegisterAddOnCategory
 local _GetRealmName = GetRealmName
 local _UnitGUID = UnitGUID
 local _UnitName = UnitName
@@ -81,9 +85,6 @@ local function onCharacterLogin()
             control:ShowPurgeDialog(invalidEntries)
         end
     end
-
-    params:UpdateCharLevel()
-    params:UpdateCharFaction()
 end
 
 function control:ShowMigrationDialog(invalidList, guid, name, realm)
@@ -174,15 +175,13 @@ local function getAvailablePlugins()
     return plugins
 end
 
-local function loadActivePlugins()
-    local availablePlugins = getAvailablePlugins()
+local function loadActivePlugins(availablePlugins)
     local activePlugins = {}
     --- Check which plugins are activated for this character and load them
     for _, pluginInfo in _ipairs(availablePlugins) do
         if pluginInfo.activated and pluginInfo.loadable then
             -- Load and activate the plugin in one step since WoW doesn't support unloading addons
             local success, reason = _LoadAddOn(pluginInfo.name)
-
             if success then
                 activePlugins[#activePlugins + 1] = {
                     name = pluginInfo.name,
@@ -199,18 +198,13 @@ local function loadActivePlugins()
     return #activePlugins > 0 and activePlugins
 end
 
-local category
-
-local function registerSettings()
-    local activePlugins = loadActivePlugins()
-    if not activePlugins then return end
-
-    local cat = Settings.RegisterVerticalLayoutCategory(params.addon.name)
+local function registerSettings(activePlugins)
+    local category, layout = _RegisterCategory(params.core.name)
+    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["settings:plugins_header"]))
 
     for _, pluginInfo in _ipairs(activePlugins) do
         local name = pluginInfo.title
         local variable = pluginInfo.name
-        local defaultValue = true
 
         local function GetValue()
             return model:IsPluginActivated(variable)
@@ -220,18 +214,18 @@ local function registerSettings()
             model:SetPluginActivated(variable, value)
         end
 
-        local setting = Settings.RegisterProxySetting(cat, variable, type(defaultValue), name, defaultValue, GetValue, SetValue)
-        local tooltip = _format("Activate or deactivate %s for this character.", name)
-
-        Settings.CreateCheckbox(cat, setting, tooltip)
+        local setting = _RegisterProxy(variable, category, Settings.VarType.Boolean, name, Settings.Default.True, GetValue, SetValue)
+        _CreateCheckbox(category, setting, L["settings:plugins_tooltip"])
     end
 
-    Settings.RegisterAddOnCategory(cat)
+    _RegisterAddon(category)
 
-    return cat
+    return category
 end
 
 local function openSettings()
+    local category = _GetCategory(params.core.name)
+
     if category then
         Settings.OpenToCategory(category:GetID())
     else
@@ -255,6 +249,7 @@ end
 
 local function onAddOnLoaded(_, addonName)
     if addonName ~= ADDON_NAME then return end
+
     model:Init()
     view:Init()
     control:Init()
@@ -265,12 +260,19 @@ local function onPlayerLogin()
     model:Enable()
     view:Enable()
     control:Enable()
+    params:UpdateCharLevel()
+    params:UpdateCharFaction()
 end
 
 local function onSettingsLoaded()
-    if category then return end
+    if _GetCategory(params.core.name) then return end
 
-    category = registerSettings()
+    local availablePlugins = getAvailablePlugins()
+    if not availablePlugins then return end
+
+    local activePlugins = loadActivePlugins(availablePlugins)
+
+    local category = registerSettings(activePlugins)
     if category then
         control:Trigger("BitForge.Plugins.RegisterSettings", category)
         control:Subscribe("BitForge.Core.OpenSettings", openSettings)
