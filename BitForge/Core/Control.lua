@@ -190,7 +190,7 @@ local function loadActivePlugins(availablePlugins)
                 control:Trigger("BitForge.Plugins.Enable", pluginInfo.name)
             elseif reason then
                 local msg = _G["ADDON_" .. reason] or reason
-                control:Print(_format("Failed to load plugin '%s': %s", pluginInfo.name, msg))
+                view:Print(_format("Failed to load plugin '%s': %s", pluginInfo.name, msg))
             end
         end
     end
@@ -214,7 +214,7 @@ local function registerSettings(activePlugins)
             model:SetPluginActivated(variable, value)
         end
 
-        local setting = _RegisterProxy(variable, category, Settings.VarType.Boolean, name, Settings.Default.True, GetValue, SetValue)
+        local setting = _RegisterProxy(category, variable, Settings.VarType.Boolean, name, Settings.Default.True, GetValue, SetValue)
         _CreateCheckbox(category, setting, L["settings:plugins_tooltip"])
     end
 
@@ -229,7 +229,7 @@ local function openSettings()
     if category then
         Settings.OpenToCategory(category:GetID())
     else
-        control:Print("Settings category not found.")
+        view:Print("Settings category not found.")
     end
 end
 

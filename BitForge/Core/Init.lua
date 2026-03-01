@@ -25,6 +25,6 @@ ns.control = control
 --- @param namespace table The plugin's namespace table.
 --- @return BF_PluginNS A new plugin namespace with the appropriate mixins.
 function ns.RegisterPlugin(name, namespace)
-    --- @class BF_PluginNS: BF_PluginMixin, BF_EventMixin
-    return _Mixin(namespace, mixins.plugin, mixins.event)
+    --- @class BF_PluginNS: BF_PluginMixin
+    return _Mixin(namespace, mixins.plugin)
 end
