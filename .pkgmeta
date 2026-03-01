@@ -1,7 +1,11 @@
 package-as: BitForge
 
+externals:
+  BitForge/Libs/LibBitForgeUI: https://github.com/AdenJustice/LibBitForgeUI/LibBitForgeUI
+
 move-folders:
   BitForge/BitForge: BitForge
+  BitForge/BitForge_BankBalance: BitForge_BankBalance
 
 ignore:
   - .github
@@ -9,6 +13,4 @@ ignore:
   - .gitattributes
   - .gitignore
   - .pkgmeta
-  - "**/Annotation.lua"
-  - "**/AGENTS.md"
-  - config.ld
+  - meta.lua

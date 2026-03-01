@@ -17,9 +17,6 @@ ns.assets = assets
 local mixins = {}
 ns.mixins = mixins
 
---- @class BF_DBMS
-local dbms = {}
-ns.dbms = dbms
 
 --- @class BF_GUI
 local gui = {}

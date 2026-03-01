@@ -4,16 +4,19 @@ local L = ns.locale
 --- @class BB_View: BF_BaseView
 local view = ns.view
 
--- =========================================================
--- Display Messages
--- =========================================================
+local _format = string.format
+local _GetMoneyString = GetMoneyString
+
+--- =========================================================
+--- Display Messages
+--- =========================================================
 
 function view:ShowWithdraw(amount)
-    self:Print(L["message:withdraw"], amount)
+    self:Print(_format(L["message:withdraw"], _GetMoneyString(amount, true)))
 end
 
 function view:ShowDeposit(amount)
-    self:Print(L["message:deposit"], amount)
+    self:Print(_format(L["message:deposit"], _GetMoneyString(amount, true)))
 end
 
 function view:ShowError(msg)

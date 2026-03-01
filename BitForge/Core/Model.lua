@@ -1,8 +1,6 @@
 --- @type ns_core
 local ns = select(2, ...)
 local params = ns.params
-local utils = ns.utils
-local dbms = ns.dbms
 --- @class BF_CoreModel
 local model = ns.model
 
@@ -11,6 +9,7 @@ local model = ns.model
 --- =========================================================
 
 local _error = error
+local _type = type
 local _pairs = pairs
 local _GetPlayerInfoByGUID = GetPlayerInfoByGUID
 
@@ -41,14 +40,13 @@ local defaults = {
 --- =========================================================
 
 function model:OnInit()
-    dbms:Init(params.core.dbName, defaults)
-    self.db = dbms
+    self.db = ns.DBMS.new(params.core.dbName, defaults)
 end
 
 function model:OnDisable()
     assertInitialized(self)
 
-    dbms:CleanUp()
+    self.db:CleanUp()
 end
 
 --- =========================================================
@@ -154,4 +152,49 @@ function model:IsValidCharacter(guid)
 
     -- If name is nil, the GUID is invalid (character deleted/doesn't exist)
     return name ~= nil
+end
+
+--- =========================================================
+--- Character Migration
+--- =========================================================
+
+local function migrateGUIDEntry(dbTable, oldGUID, newGUID)
+    if _type(dbTable) ~= "table" then return end
+    if oldGUID == newGUID then return end
+
+    local oldData = dbTable[oldGUID]
+    if oldData == nil then return end
+
+    local newData = dbTable[newGUID]
+    if newData == nil then
+        dbTable[newGUID] = oldData
+    elseif _type(oldData) == "table" and _type(newData) == "table" then
+        for key, value in pairs(oldData) do
+            if newData[key] == nil then
+                newData[key] = value
+            end
+        end
+    end
+
+    dbTable[oldGUID] = nil
+end
+
+--- Migrate character data from an old GUID to a new GUID (e.g., after a character rename).
+--- Migrates `global.characters`, root `char`, and each namespace's `char` table.
+--- If both GUID entries exist, performs a shallow merge and keeps existing `newGUID` keys.
+--- @param oldGUID string The old character GUID
+--- @param newGUID string The new character GUID
+function model:MigrateCharacter(oldGUID, newGUID)
+    assertInitialized(self)
+
+    local db = self.db
+
+    migrateGUIDEntry(db.global and db.global.characters, oldGUID, newGUID)
+    migrateGUIDEntry(db.charMap, oldGUID, newGUID)
+
+    for _, nsSV in _pairs(db.namespaces) do
+        if _type(nsSV) == "table" and _type(nsSV.char) == "table" then
+            migrateGUIDEntry(nsSV.char, oldGUID, newGUID)
+        end
+    end
 end

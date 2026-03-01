@@ -1,17 +1,21 @@
-## Interface: 120000
-## Title: BitForge
+## Interface: 120001
+## Title: |cFFFFD700Bit|cFFB87333Forge|r
 ## Notes: Core engine for the BitForge suite.
-## Author: selfaddicted
+## Notes-koKR: |cFFFFD700Bit|cFFB87333Forge|r 핵심 엔진입니다.
+## Author: AdenJustice (KR)
 ## Version: @project-version@
 ## SavedVariables: BitForgeDB
+## X-Curse-Project-ID: 1475089
+## X-Wago-ID: bGoyJB60
 
 ## Category: BitForge
+## Group: BitForge
 ## IconTexture: Interface/AddOns/BitForge/Assets/Icon
 
 BitForge.lua
 
 # Libraries
-Libs/embeds.xml
+Libs/LibBitForgeUI/embeds.xml
 
 # Locales
 Locales/enUS.lua

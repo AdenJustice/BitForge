@@ -1,10 +1,14 @@
 # --- WoW Specific ---
 **/Libs/
+Libs
 *.lua.bak
 
 # --- VS Code ---
 .vscode/settings.json
 *.code-workspace
+
+# --- Zed Editor ---
+.luarc.json
 
 # --- OS ---
 .DS_Store

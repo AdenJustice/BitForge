@@ -1,8 +1,9 @@
 --- @type string, ns_core
 local ADDON_NAME, ns = ...
 local utils = ns.utils
-local L = ns.locale
+local params = ns.params
 local gui = ns.gui
+local L = ns.locale
 --- @class BF_CoreView
 local view = ns.view
 
@@ -53,14 +54,10 @@ function view:CreateMinimapButton(settings)
 
     -- Circular icon
     local iconTex = btn:CreateTexture(nil, "BACKGROUND")
-    iconTex:SetTexture("Interface/ICONS/INV_Misc_QuestionMark")
+    iconTex:SetTexture(_format("%s/Assets/Icon.png", params.core.path))
     iconTex:SetTexCoord(0.05, 0.95, 0.05, 0.95)
     iconTex:SetAllPoints()
-
-    local mask = btn:CreateMaskTexture()
-    mask:SetTexture("Interface/CharacterFrame/TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
-    mask:SetAllPoints(iconTex)
-    iconTex:AddMaskTexture(mask)
+    iconTex:SetMask("Interface/CharacterFrame/TempPortraitAlphaMask")
 
     -- Border
     local border = btn:CreateTexture(nil, "OVERLAY")
