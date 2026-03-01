@@ -15,6 +15,7 @@ local _print = print
 local _tostring = tostring
 local _setmetatable = setmetatable
 local _error = error
+local _concat = table.concat
 
 --- =========================================================
 --- Utilities
@@ -23,7 +24,12 @@ local _error = error
 --- Prints a message to the chat with the addon name as a prefix.
 --- @param ... any - The message parts to print.
 function utils:Print(...)
-    _print(_format("%s[%s]|r", params.colors.primaryColor:GenerateHexColorMarkup(), ADDON_NAME), ...)
+    local args = {...}
+    for i = 1, #args do
+        args[i] = _tostring(args[i])
+    end
+    local message = _concat(args, " ")
+    _print(_format("%s[%s]|r", params.colors.primaryColor:GenerateHexColorMarkup(), ADDON_NAME), message)
 end
 
 --- Wraps a callback function in a protected call and prints any errors to the chat.

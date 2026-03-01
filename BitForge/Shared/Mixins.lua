@@ -3,6 +3,7 @@ local ADDON_NAME, ns = ...
 local params = ns.params
 local utils = ns.utils
 local assets = ns.assets
+local gui = ns.gui
 --- @class BF_Mixins
 local mixins = ns.mixins
 
@@ -80,23 +81,23 @@ baseMixin.OnDisable = nil
 
 function baseMixin:Init()
     if self.initialized then return end
-    self.initialized = true
-
     if self.OnInit then self:OnInit() end
+
+    self.initialized = true
 end
 
 function baseMixin:Enable()
     if self.enabled then return end
-    self.enabled = true
-
     if self.OnEnable then self:OnEnable() end
+
+    self.enabled = true
 end
 
 function baseMixin:Disable()
     if not self.enabled then return end
-    self.enabled = false
-
     if self.OnDisable then self:OnDisable() end
+
+    self.enabled = false
 end
 
 function baseMixin:IsEnabled()
@@ -148,6 +149,43 @@ mixins.model = baseModelMixin
 --- @class BF_BaseView: BF_BaseMixin
 local baseViewMixin = _CreateFromMixins(baseMixin)
 
+function baseViewMixin:Init(name)
+    if self.initialized then return end
+
+    self.printPrefix = _format("[%s]", name or ADDON_NAME)
+    if self.OnInit then self:OnInit() end
+    self.initialized = true
+end
+
+function baseViewMixin:Print(...)
+    utils:Print(self.printPrefix, ...)
+end
+
+--- Creates a new category in the plugin's configuration UI.
+--- @param name string The name of the category to create.
+--- @param parent table Optional parent category name for nested categories.
+function baseViewMixin:CreateCategory(name, parent)
+    self.categories = self.categories or {}
+    local category, layout
+    if parent then
+        category, layout = Settings.RegisterVerticalLayoutSubcategory(parent, name)
+    else
+        category, layout = Settings.RegisterVerticalLayoutCategory(name)
+    end
+
+    self.categories[name] = {
+        category = category,
+        layout = layout,
+    }
+
+    return category, layout
+end
+
+function baseViewMixin:CreateSectionHeader(layout, name)
+    local initializer = CreateSettingsListSectionHeaderInitializer(name)
+    layout:AddInitializer(initializer)
+end
+
 mixins.view = baseViewMixin
 
 --- =========================================================
@@ -157,20 +195,6 @@ mixins.view = baseViewMixin
 --- @class BF_BaseControl: BF_BaseMixin
 local baseControlMixin = _CreateFromMixins(baseMixin)
 
---- Initializes the control with an optional name. The name is used for logging purposes.
---- @param name string? Optional name for the plugin.
-function baseControlMixin:Init(name)
-    self.printPrefix = _format("[%s]", name or ADDON_NAME)
-
-    if self.OnInit then
-        self:OnInit()
-    end
-end
-
-function baseControlMixin:Print(...)
-    utils:Print(self.printPrefix, ...)
-end
-
 mixins.control = baseControlMixin
 
 --- =========================================================
@@ -178,10 +202,18 @@ mixins.control = baseControlMixin
 --- =========================================================
 
 --- @class BF_PluginMixin
+--- @field params BF_Params Read-only access to plugin parameters.
+--- @field utils BF_Utils Read-only access to utility functions.
+--- @field assets BF_Assets Read-only access to plugin assets.
+--- @field gui BF_GUI Read-only access to plugin GUI functions.
+--- @field model BF_BaseModel Base model mixin for plugin models.
+--- @field view BF_BaseView Base view mixin for plugin views.
+--- @field control BF_BaseControl Base control mixin for plugin controls.
 local pluginMixin = {
     params = utils:ReadOnly(params),
     utils = utils:ReadOnly(utils),
     assets = utils:ReadOnly(assets),
+    gui = utils:ReadOnly(gui),
     model = _CreateFromMixins(baseModelMixin),
     view = _CreateFromMixins(baseViewMixin),
     control = _CreateFromMixins(baseControlMixin),

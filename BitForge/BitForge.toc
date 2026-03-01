@@ -21,9 +21,9 @@ Locales/koKR.lua
 Shared/Params.lua
 Shared/Utils.lua
 Shared/Assets.lua
-Shared/Mixins.lua
 Shared/DBMS.lua
 Shared/GUI.lua
+Shared/Mixins.lua
 Shared/APIs.lua
 
 Core/Init.lua
