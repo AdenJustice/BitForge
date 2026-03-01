@@ -1,9 +1,7 @@
 name: Generate Wiki Docs
 
 on:
-  push:
-    branches:
-      - main  # Change to "master" if that's your primary branch
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:

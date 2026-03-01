@@ -5,26 +5,37 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   release:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Package
-        uses: BigWigsMods/packager@v2
+      - name: Package and Release
+        uses: BigWigsMods/packager@master
         env:
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          WAGO_API_KEY: ${{ secrets.WAGO_API_KEY }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: .release/*.zip
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload packaged addon (debug)
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: packaged-addon
           path: .release/*.zip
-          include-hidden-files: true
+          retention-days: 7

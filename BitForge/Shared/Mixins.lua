@@ -24,6 +24,8 @@ local _IsEventValid = C_EventUtils.IsEventValid
 
 local eventRegistry = _CreateFromMixins(CallbackRegistryMixin)
 eventRegistry:OnLoad()
+eventRegistry:SetUndefinedEventsAllowed(true)
+eventRegistry:GenerateCallbackEvents({})
 
 local dispatcher = CreateFrame("Frame")
 dispatcher:SetScript("OnEvent", function(_, event, ...)
@@ -123,23 +125,6 @@ function baseModelMixin:GetDB()
     return utils:ReadOnly(self.db)
 end
 
---- Migrate character data from an old GUID to a new GUID (e.g., after a character rename)
---- @param oldGUID string The old character GUID
---- @param newGUID string The new character GUID
-function baseModelMixin:MigrateCharacter(oldGUID, newGUID)
-    if not self.initialized then
-        _error("Database not initialized.", 2)
-    end
-
-    -- Copy tracking data from old GUID to new GUID
-    local db = self.db.global.characters
-    local oldData = db[oldGUID]
-    if oldData then
-        db[newGUID] = oldData
-        db[oldGUID] = nil
-    end
-end
-
 mixins.model = baseModelMixin
 
 --- =========================================================
@@ -152,7 +137,7 @@ local baseViewMixin = _CreateFromMixins(baseMixin)
 function baseViewMixin:Init(name)
     if self.initialized then return end
 
-    self.printPrefix = _format("[%s]", name or ADDON_NAME)
+    self.printPrefix = name or ADDON_NAME
     if self.OnInit then self:OnInit() end
     self.initialized = true
 end

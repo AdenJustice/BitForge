@@ -24,12 +24,12 @@ local _concat = table.concat
 --- Prints a message to the chat with the addon name as a prefix.
 --- @param ... any - The message parts to print.
 function utils:Print(...)
-    local args = {...}
+    local args = { ... }
     for i = 1, #args do
         args[i] = _tostring(args[i])
     end
-    local message = _concat(args, " ")
-    _print(_format("%s[%s]|r", params.colors.primaryColor:GenerateHexColorMarkup(), ADDON_NAME), message)
+    local message = _concat((args), " ", 2)
+    _print(_format("%s[%s]|r", params.colors.primaryColor:GenerateHexColorMarkup(), args[1]), message)
 end
 
 --- Wraps a callback function in a protected call and prints any errors to the chat.

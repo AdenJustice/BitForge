@@ -16,12 +16,12 @@ local _error = error
 local defaults = {
     char = {
         useGlobal = true,
-        threshold = 10000000,
+        balance = 1000,
         useMargin = false,
         marginRatio = 0.05,
     },
     global = {
-        threshold = 10000000,
+        balance = 1000,
         useMargin = false,
         marginRatio = 0.05,
     },
@@ -47,15 +47,15 @@ local function getData()
     return model.db.char.useGlobal and model.db.global or model.db.char
 end
 
---- @return number target target gold threshold
---- @return number lowerBound lower bound of the target threshold considering margin
---- @return number upperBound upper bound of the target threshold considering margin
+--- @return number target desired balance
+--- @return number lowerBound lower bound of the desired balance considering margin
+--- @return number upperBound upper bound of the desired balance considering margin
 function model:GetTargetGold()
     assertInitialized(self)
 
     local enum = getData()
-    local margin = enum.useMargin and (enum.threshold * (enum.marginRatio or 0)) or 0
-    local t = enum.threshold
+    local margin = enum.useMargin and (enum.balance * (enum.marginRatio or 0)) or 0
+    local t = enum.balance
 
     return t - margin, t, t + margin
 end
@@ -63,7 +63,7 @@ end
 function model:SetUseGlobal(useGlobal)
     assertInitialized(self)
 
-    useGlobal = useGlobal ~= nil and useGlobal or true
+    useGlobal = (useGlobal == nil) and true or useGlobal
     self.db.char.useGlobal = useGlobal
 end
 
@@ -73,16 +73,16 @@ function model:GetUseGlobal()
     return self.db.char.useGlobal
 end
 
-function model:SetThreshold(threshold)
+function model:SetDesiredBalance(balance)
     assertInitialized(self)
 
-    getData().threshold = threshold
+    getData().balance = balance
 end
 
-function model:GetThreshold()
+function model:GetDesiredBalance()
     assertInitialized(self)
 
-    return getData().threshold
+    return getData().balance
 end
 
 function model:SetUseMargin(useMargin)

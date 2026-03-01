@@ -102,8 +102,6 @@ function control:ShowMigrationDialog(invalidList, guid, name, realm)
 
         -- Migrate tracking GUID
         model:MigrateCharacter(selectedGUID, guid)
-        -- TODO: Trigger event for other plugins to update their references to this character's GUID if needed
-
         -- Save current character with up-to-date info
         updateCharacterInfo(guid, name, realm)
 
@@ -161,12 +159,11 @@ local function getAvailablePlugins()
 
     for i = 1, numAddOns do
         --- Filter addons by prefix and load-on-demand status
-        local name, title, _, loadable = _GetAddOnInfo(i)
+        local name, title = _GetAddOnInfo(i)
         if name and name:match("^BitForge_") and _IsAddOnLOD(name) then
             plugins[#plugins + 1] = {
                 name      = name,
                 title     = title,
-                loadable  = loadable,
                 activated = model:IsPluginActivated(name),
             }
         end
@@ -179,7 +176,7 @@ local function loadActivePlugins(availablePlugins)
     local activePlugins = {}
     --- Check which plugins are activated for this character and load them
     for _, pluginInfo in _ipairs(availablePlugins) do
-        if pluginInfo.activated and pluginInfo.loadable then
+        if pluginInfo.activated then
             -- Load and activate the plugin in one step since WoW doesn't support unloading addons
             local success, reason = _LoadAddOn(pluginInfo.name)
             if success then
@@ -195,9 +192,10 @@ local function loadActivePlugins(availablePlugins)
         end
     end
 
-    return #activePlugins > 0 and activePlugins
+    return activePlugins
 end
 
+local registeredCategory
 local function registerSettings(activePlugins)
     local category, layout = _RegisterCategory(params.core.name)
     layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["settings:plugins_header"]))
@@ -224,8 +222,7 @@ local function registerSettings(activePlugins)
 end
 
 local function openSettings()
-    local category = _GetCategory(params.core.name)
-
+    local category = registeredCategory or _GetCategory(params.core.name)
     if category then
         Settings.OpenToCategory(category:GetID())
     else
@@ -272,9 +269,9 @@ local function onSettingsLoaded()
 
     local activePlugins = loadActivePlugins(availablePlugins)
 
-    local category = registerSettings(activePlugins)
-    if category then
-        control:Trigger("BitForge.Plugins.RegisterSettings", category)
+    registeredCategory = registerSettings(activePlugins)
+    if registeredCategory then
+        control:Trigger("BitForge.Plugins.RegisterSettings", registeredCategory)
         control:Subscribe("BitForge.Core.OpenSettings", openSettings)
     end
 end

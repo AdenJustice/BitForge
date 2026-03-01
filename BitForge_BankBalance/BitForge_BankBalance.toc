@@ -1,7 +1,7 @@
-## Interface: 120000
+## Interface: 120001
 ## Title: |cFFFFD700Bit|cFFB87333Forge|r - Bank Balance
 ## Notes: Automatically balances the gold between your bag and Warband Bank when visiting the bank.
-## Notes-koKR: |cFFFFD700Bit|cFFB87333Forge|r-BankBalancer: 은행 방문 시 개인 금액과 전투부대 은행 금액을 자동으로 조정하여 균형을 맞춥니다.
+## Notes-koKR: 전투부대 은행 방문 시 소지금과 목표 잔액을 기준으로 자동 정산합니다.
 ## Author: AdenJustice (KR)
 ## Version: @project-version@
 ## Dependencies: BitForge
@@ -10,7 +10,7 @@
 
 ## Category: BitForge
 ## Group: BitForge
-## IconTexture: Interface\AddOns\BitForge\Assets\Icon
+## IconTexture: Interface/AddOns/BitForge/Assets/Icon
 
 Init.lua
 

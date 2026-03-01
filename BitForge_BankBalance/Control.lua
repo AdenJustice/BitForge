@@ -10,6 +10,7 @@ local control = ns.control
 --- Caches
 --- =========================================================
 
+local _upper = string.upper
 local _min = math.min
 
 local _After = C_Timer.After
@@ -22,7 +23,6 @@ local _WithdrawMoney = C_Bank.WithdrawMoney
 local _RegisterProxy = Settings.RegisterProxySetting
 local _CreateCheckbox = Settings.CreateCheckbox
 local _CreateDropdown = Settings.CreateDropdown
-local _CreateSlider = Settings.CreateSlider
 
 local ACCOUNT_BANK = Enum.BankType.Account
 local ACCOUNT_BANKER = Enum.PlayerInteractionType.AccountBanker
@@ -74,12 +74,6 @@ local function setMoneyBalance()
 end
 
 
---- =========================================================
---- "Settings" Management
---- =========================================================
-
-
-
 -- =========================================================
 -- Event Handlers
 -- =========================================================
@@ -110,97 +104,123 @@ local function onRegisterSettings(coreControl, coreCategory)
     view:CreateSectionHeader(layout, L["setting:title"])
 
     --- setting for 'useGlobal'
-    do
-        local useGlobalSetting = _RegisterProxy(
-            category,
-            ADDON_NAME .. "_USE_GLOBAL",
-            Settings.VarType.Boolean,
-            L["setting:useGlobal"],
-            Settings.Default.True,
-            function() return model:GetUseGlobal() end,
-            function(value) model:SetUseGlobal(value) end
-        )
-        registeredSettings[#registeredSettings + 1] = _CreateCheckbox(category, useGlobalSetting, L["setting:useGlobal_tooltip"])
+    local function getUseGlobal()
+        return model:GetUseGlobal()
+    end
+    local function setUseGlobal(value)
+        model:SetUseGlobal(value)
     end
 
-    --- setting for 'threshold'
-    do
-        local golds = { 1000, 5000, 10000, 20000, 50000, 100000 }
-        local function getThreshHoldIndex()
-            local threshold = model:GetThreshold() / 1000
-            for i, gold in next, golds do
-                if gold == threshold then
-                    return i
-                end
+    local useGlobalSetting = _RegisterProxy(
+        category,
+        _upper(ADDON_NAME) .. "_USE_GLOBAL",
+        Settings.VarType.Boolean,
+        L["setting:useGlobal"],
+        Settings.Default.True,
+        getUseGlobal,
+        setUseGlobal
+    )
+    _CreateCheckbox(category, useGlobalSetting, L["setting:useGlobal_tooltip"])
+
+    --- setting for 'balance'
+    local golds = { 1000, 5000, 10000, 50000, 100000 }
+    local function createDesiredBalanceOptions()
+        local container = Settings.CreateControlTextContainer()
+        for i, gold in next, golds do
+            container:Add(i, GetMoneyString(gold * 10000, true))
+        end
+
+        return container:GetData()
+    end
+
+    local function getBalanceIndex()
+        local balance = model:GetDesiredBalance()
+        for i, gold in next, golds do
+            if gold == balance then
+                return i
             end
-
-            return 1 -- default to 1k if not found
         end
 
-        local function setThresholdIndex(index)
-            local gold = golds[index] or 1000
-            model:SetThreshold(gold * 1000)
-        end
-
-        local thresholdSetting = _RegisterProxy(
-            category,
-            ADDON_NAME .. "_THRESHOLD",
-            Settings.VarType.Number,
-            L["ui:threshold_label"],
-            1,
-            getThreshHoldIndex,
-            setThresholdIndex
-        )
-        registeredSettings[#registeredSettings + 1] = _CreateDropdown(category, thresholdSetting, golds, L["ui:threshold_label"] .. " (in thousands)")
+        return 1 -- default to 1k if not found
     end
+
+    local function setBalanceIndex(index)
+        local gold = golds[index] or 1000
+        model:SetDesiredBalance(gold)
+    end
+
+    local balanceSetting = _RegisterProxy(
+        category,
+        _upper(ADDON_NAME) .. "_BALANCE",
+        Settings.VarType.Number,
+        L["setting:balance"],
+        1,
+        getBalanceIndex,
+        setBalanceIndex
+    )
+    registeredSettings[#registeredSettings + 1] = balanceSetting
+    _CreateDropdown(category, balanceSetting, createDesiredBalanceOptions, L["setting:balance_tooltip"])
 
     --- setting for 'margin'
-    do
-        -- Enable checkbox proxy
-        local function getUseMargin()
-            return model:GetUseMargin()
-        end
-
-        local useMargin = _RegisterProxy(
-            category,
-            ADDON_NAME .. "_USE_MARGIN",
-            Settings.VarType.Boolean,
-            L["setting:enableMargin"],
-            Settings.Default.True,
-            getUseMargin,
-            function(v) model:SetUseMargin(v) end
-        )
-
-        local marginRatio = _RegisterProxy(
-            category,
-            ADDON_NAME .. "_MARGIN_RATIO",
-            Settings.VarType.Number,
-            L["setting:marginRatio"],
-            0,
-            function() return model:GetMarginRatio() end,
-            function(v) model:SetMarginRatio(v) end
-        )
-        local ratioOptions = Settings.CreateSliderOptions(0, 1, 0.05)
-        ratioOptions:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right)
-
-        local initializer = CreateSettingsCheckboxSliderInitializer(
-            useMargin,
-            L["setting:enableMargin"],
-            L["setting:enableMargin_tooltip"],
-            marginRatio,
-            ratioOptions,
-            L["setting:marginRatio"],
-            L["setting:marginRatio_tooltip"]
-        )
-        layout:AddInitializer(initializer)
-        registeredSettings[#registeredSettings + 1] = initializer
+    local function formatter(value)
+        return string.format("%d%%", math.floor(value * 100 + 0.5))
     end
+
+    local function getUseMargin()
+        return model:GetUseMargin()
+    end
+
+    local useMarginSetting = _RegisterProxy(
+        category,
+        _upper(ADDON_NAME) .. "_USE_MARGIN",
+        Settings.VarType.Boolean,
+        L["setting:enableMargin"],
+        Settings.Default.True,
+        getUseMargin,
+        function(v) model:SetUseMargin(v) end
+    )
+    registeredSettings[#registeredSettings + 1] = useMarginSetting
+
+    local marginRatioSetting = _RegisterProxy(
+        category,
+        _upper(ADDON_NAME) .. "_MARGIN_RATIO",
+        Settings.VarType.Number,
+        L["setting:marginRatio"],
+        0.05,
+        function() return model:GetMarginRatio() end,
+        function(v) model:SetMarginRatio(v) end
+    )
+    registeredSettings[#registeredSettings + 1] = marginRatioSetting
+
+    local ratioOptions = Settings.CreateSliderOptions(0, 1, 0.05)
+    ratioOptions:SetLabelFormatter(MinimalSliderWithSteppersMixin.Label.Right, formatter)
+
+    local initializer = CreateSettingsCheckboxSliderInitializer(
+        useMarginSetting,
+        L["setting:enableMargin"],
+        L["setting:enableMargin_tooltip"],
+        marginRatioSetting,
+        ratioOptions,
+        L["setting:marginRatio"],
+        L["setting:marginRatio_tooltip"]
+    )
+    layout:AddInitializer(initializer)
+
+    useGlobalSetting:SetValueChangedCallback(function(_, value)
+        model:SetUseGlobal(value)
+
+        for _, s in ipairs(registeredSettings) do
+            if s ~= useGlobalSetting then
+                s:SetValue(s:GetValue())
+            end
+        end
+    end)
 end
 
 EventUtil.ContinueOnAddOnLoaded(ADDON_NAME, onAddonLoaded)
 
 control:Subscribe("BitForge.Plugins.Enable", onPluginsEnabled)
-control:Subscribe("BitForge.Core.RegisterSettings", onRegisterSettings)
+control:Subscribe("BitForge.Plugins.RegisterSettings", onRegisterSettings)
 
 --- =========================================================
 --- Overridable Methods

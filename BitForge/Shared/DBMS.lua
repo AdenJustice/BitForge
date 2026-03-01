@@ -1,8 +1,6 @@
---- @type ns_core
+--- @class ns_core
 local ns            = select(2, ...)
 local params        = ns.params
---- @class BF_DBMS
-local dbms          = ns.dbms
 
 --- =========================================================
 --- Caches
@@ -17,10 +15,7 @@ local _next         = next
 --- Internals
 --- =========================================================
 
-local sv                 -- reference to _G[varName]
-local charGUID           -- current character's GUID
-local storedDefs         -- original defaults for ResetSection
-local nsStoredDefs  = {} -- defaults per registered namespace
+local instance -- the single DBMS instance, captured at construction
 
 --- Applies `defs` as fallback defaults on `tbl` via __index metatable.
 --- Missing keys fall back to defs[key], or defs['*'] if no exact match.
@@ -90,35 +85,59 @@ local function initSection(container, key, sectionDefaults)
 end
 
 --- =========================================================
---- DBMS
+--- DBMS Class
 --- =========================================================
 
---- Initializes the database. Must be called once before accessing dbms.global or dbms.char.
---- Sets dbms.global and dbms.char directly on this object.
+--- @class BF_DBMS
+--- @field _sv table The raw SavedVariables table
+--- @field _charGUID string The current character's GUID
+--- @field _defs table? The defaults table passed at construction
+--- @field _nsDefs table A map of namespace name to defaults table
+--- @field charMap table The `char` section of the SavedVariables, keyed by GUID
+--- @field namespaces table The `namespaces` section of the SavedVariables
+local DBMS = {}
+DBMS.__index = DBMS
+
+--- Creates and initializes a new DBMS instance.
 --- @param varName string The SavedVariables global name (e.g. "BitForgeDB")
 --- @param defs table Defaults table with optional `global` and `char` sub-tables
-function dbms:Init(varName, defs)
+--- @return BF_DBMS
+function DBMS.new(varName, defs)
     if not _G[varName] then _G[varName] = {} end
 
-    sv         = _G[varName]
-    charGUID   = params.character.guid
-    storedDefs = defs
+    local self     = setmetatable({}, DBMS)
+
+    local sv       = _G[varName]
+    local charGUID = params.character.guid
 
     if not sv.char then sv.char = {} end
     if not sv.namespaces then sv.namespaces = {} end
 
-    self.global = initSection(sv, "global", defs and defs.global)
-    self.char   = initSection(sv.char, charGUID, defs and defs.char)
+    self._sv        = sv
+    self._charGUID  = charGUID
+    self._defs      = defs
+    self._nsDefs    = {}
+
+    self.global     = initSection(sv, "global", defs and defs.global)
+    self.char       = initSection(sv.char, charGUID, defs and defs.char)
+    self.charMap    = sv.char
+    self.namespaces = sv.namespaces
+
+    instance        = self
+    return self
 end
 
 --- Returns a scoped namespace with its own `global` and `char` sections, backed by `nsDefs`.
 --- @param name string Namespace name (must be unique)
 --- @param nsDefs table Defaults table with optional `global` and `char` sub-tables
 --- @return table db A plain table with `.global` and `.char` fields
-function dbms:RegisterNamespace(name, nsDefs)
+function DBMS:RegisterNamespace(name, nsDefs)
+    local sv       = self._sv
+    local charGUID = self._charGUID
+
     if not sv.namespaces[name] then sv.namespaces[name] = {} end
 
-    nsStoredDefs[name] = nsDefs
+    self._nsDefs[name] = nsDefs
 
     local nsSV = sv.namespaces[name]
     if not nsSV.char then nsSV.char = {} end
@@ -130,13 +149,18 @@ function dbms:RegisterNamespace(name, nsDefs)
 end
 
 --- Removes all values identical to their defaults from the saved variables,
---- keeping BitForgeDB clean. Call this on PLAYER_LOGOUT.
-function dbms:CleanUp()
-    removeDefaults(sv.global, storedDefs and storedDefs.global)
-    removeDefaults(sv.char[charGUID], storedDefs and storedDefs.char)
+--- keeping the DB clean. Call this on PLAYER_LOGOUT.
+function DBMS:CleanUp()
+    local sv       = self._sv
+    local charGUID = self._charGUID
+    local defs     = self._defs
+    local nsDefs   = self._nsDefs
+
+    removeDefaults(sv.global, defs and defs.global)
+    removeDefaults(sv.char[charGUID], defs and defs.char)
 
     for name, nsSV in _pairs(sv.namespaces) do
-        local nd = nsStoredDefs[name]
+        local nd = nsDefs[name]
         removeDefaults(nsSV.global, nd and nd.global)
         if nsSV.char then
             removeDefaults(nsSV.char[charGUID], nd and nd.char)
@@ -146,15 +170,21 @@ end
 
 --- Resets a scope for the current character and re-applies defaults.
 --- @param scope string "global" or "char"
-function dbms:ResetSection(scope)
+function DBMS:ResetSection(scope)
+    local sv       = self._sv
+    local charGUID = self._charGUID
+    local defs     = self._defs
+
     if scope == "global" then
         sv.global = {}
-        self.global = initSection(sv, "global", storedDefs and storedDefs.global)
+        self.global = initSection(sv, "global", defs and defs.global)
     elseif scope == "char" then
         sv.char[charGUID] = {}
-        self.char = initSection(sv.char, charGUID, storedDefs and storedDefs.char)
+        self.char = initSection(sv.char, charGUID, defs and defs.char)
     end
 end
+
+ns.DBMS = DBMS
 
 --- =========================================================
 --- Plugin Factory
@@ -166,7 +196,7 @@ local api = BitForgeAPI
 --- Registers a new plugin namespace with its own database sections.
 --- @param name string Namespace name (must be unique)
 --- @param nsDefs table Defaults table with optional `global` and `char` sub-tables
---- @return table db A plain table with `.global` and `.char` fields for
+--- @return table db A plain table with `.global` and `.char` fields
 function api.RegisterDatabase(name, nsDefs)
-    return dbms:RegisterNamespace(name, nsDefs)
+    return instance:RegisterNamespace(name, nsDefs)
 end
