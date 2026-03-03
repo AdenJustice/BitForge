@@ -17,7 +17,6 @@ ns.assets = assets
 local mixins = {}
 ns.mixins = mixins
 
-
 --- @class BitForge.GUI
 local gui = {}
 ns.gui = gui
