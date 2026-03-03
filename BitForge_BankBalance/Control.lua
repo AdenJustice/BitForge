@@ -1,9 +1,9 @@
---- @type string, ns_BB
+--- @type string, ns.BankBalance
 local ADDON_NAME, ns = ...
 local L = ns.locale
-local model = ns.model --[[@as BB_Model]]
-local view = ns.view --[[@as BB_View]]
---- @class BB_Control: BF_BaseControl
+local model = ns.model --[[@as BitForge.Models.BankBalance]]
+local view = ns.view --[[@as BitForge.Views.BankBalance]]
+--- @class BitForge.Controls.BankBalance: BitForge.Controls.Base
 local control = ns.control
 
 --- =========================================================

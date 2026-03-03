@@ -1,6 +1,6 @@
---- @type string, ns_BB
+--- @type string, ns.BankBalance
 local ADDON_NAME, ns = ...
---- @class BB_Model: BF_BaseModel
+--- @class BitForge.Models.BankBalance: BitForge.Models.Base
 local model = ns.model
 
 --- =========================================================

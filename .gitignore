@@ -1,6 +1,4 @@
 # --- WoW Specific ---
-**/Libs/
-Libs
 *.lua.bak
 
 # --- VS Code ---

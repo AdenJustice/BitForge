@@ -1,4 +1,4 @@
---- @class ns_core
+--- @class ns.Core
 local ns            = select(2, ...)
 local params        = ns.params
 
@@ -88,7 +88,7 @@ end
 --- DBMS Class
 --- =========================================================
 
---- @class BF_DBMS
+--- @class BitForge.DBMS
 --- @field _sv table The raw SavedVariables table
 --- @field _charGUID string The current character's GUID
 --- @field _defs table? The defaults table passed at construction
@@ -101,7 +101,7 @@ DBMS.__index = DBMS
 --- Creates and initializes a new DBMS instance.
 --- @param varName string The SavedVariables global name (e.g. "BitForgeDB")
 --- @param defs table Defaults table with optional `global` and `char` sub-tables
---- @return BF_DBMS
+--- @return BitForge.DBMS
 function DBMS.new(varName, defs)
     if not _G[varName] then _G[varName] = {} end
 

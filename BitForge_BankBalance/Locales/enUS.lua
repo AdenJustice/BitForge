@@ -1,6 +1,6 @@
----@type ns_BB
+---@type ns.BankBalance
 local ns = select(2, ...)
----@class BB_Locale
+---@class BitForge.Locales.BankBalance
 local L = ns.locale
 
 L["message:deposit"] = "Deposited: %s"

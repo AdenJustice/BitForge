@@ -1,0 +1,22 @@
+## Interface: 120001
+## Title: |cFFFFD700Bit|cFFB87333Forge|r – Batch Sell
+## Notes: Automatically sell items based on the given criteria
+## Notes-koKR: 사전에 정의된 기준에 따라 아이템을 자동으로 판매합니다.
+## Author: AdenJustice (KR)
+## Version: @project-version@
+## Dependencies: BitForge
+## LoadOnDemand: 1
+## DefaultState: enabled
+
+## Category: BitForge
+## Group: BitForge
+## IconTexture: Interface/AddOns/BitForge/Assets/Icon
+
+Locales/enUS.lua
+
+Init.lua
+Model.lua
+ItemData.lua
+Constructor.lua
+View.lua
+Controller.lua

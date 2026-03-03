@@ -1,28 +1,28 @@
---- @class ns_core
+--- @class ns.Core
 local ns = select(2, ...)
 
---- @class BF_Params
+--- @class BitForge.Params
 local params = {}
 ns.params = params
 
---- @class BF_Utils
+--- @class BitForge.Utils
 local utils = {}
 ns.utils = utils
 
---- @class BF_Assets
+--- @class BitForge.Assets
 local assets = {}
 ns.assets = assets
 
---- @class BF_Mixins
+--- @class BitForge.Mixins
 local mixins = {}
 ns.mixins = mixins
 
 
---- @class BF_GUI
+--- @class BitForge.GUI
 local gui = {}
 ns.gui = gui
 
---- @class BF_Locale
+--- @class BitForge.Locales.Core
 local locale = {}
 ns.locale = locale
 

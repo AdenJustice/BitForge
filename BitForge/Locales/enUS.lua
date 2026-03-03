@@ -1,6 +1,6 @@
----@class ns_core
+---@class ns.Core
 local ns = select(2, ...)
----@class BF_Locale
+---@class BitForge.Locales.Core
 local L = ns.locale
 
 -- Minimap Button
