@@ -1,7 +1,7 @@
----@type string, ns_core
+---@type string, ns.Core
 local ADDON_NAME, ns = ...
 local params = ns.params
----@class BF_Utils
+---@class BitForge.Utils
 local utils = ns.utils
 
 --- =========================================================
@@ -59,4 +59,28 @@ function utils:ReadOnly(tbl)
         end,
         __metatable = false,
     })
+end
+
+--- Inverts a table by swapping its keys and values.
+--- @param tbl table<string|number, string> The table to invert. All values must be strings.
+--- @return table<string, number|string> inverted The inverted table with keys and values swapped.
+function utils:InvertTable(tbl)
+    local inverted = {}
+    for key, value in pairs(tbl) do
+        if _type(value) ~= "string" then
+            _error("Value must be a string to be used as a key in the inverted table", 2)
+        end
+        inverted[value] = key
+    end
+    return inverted
+end
+
+--- Converts a camelCase string to PascalCase.
+--- @param str string The camelCase string to convert.
+--- @return string pascalCase The converted PascalCase string.
+function utils:camelCaseToPascalCase(str)
+    local converted = str:gsub("(%a)(%a*)", function(first, rest)
+        return first:upper() .. rest:lower()
+    end)
+    return converted
 end

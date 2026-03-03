@@ -1,8 +1,5 @@
 package-as: BitForge
 
-externals:
-  BitForge/Libs/LibBitForgeUI: https://github.com/AdenJustice/LibBitForgeUI/LibBitForgeUI
-
 move-folders:
   BitForge/BitForge: BitForge
   BitForge/BitForge_BankBalance: BitForge_BankBalance
@@ -12,5 +9,10 @@ ignore:
   - .vscode
   - .gitattributes
   - .gitignore
+  - .gitsubmodules
   - .pkgmeta
+  - .luarc.json
   - meta.lua
+  - Scripts
+  - BitForge_BatchSell
+  - "*/.*"

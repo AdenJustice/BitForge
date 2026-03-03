@@ -1,7 +1,7 @@
---- @type string, ns_BB
-local ADDON_NAME, ns = ...
+--- @type ns.BankBalance
+local ns = select(2, ...)
 local L = ns.locale
---- @class BB_View: BF_BaseView
+--- @class BitForge.Views.BankBalance: BitForge.Views.Base
 local view = ns.view
 
 local _format = string.format

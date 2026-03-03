@@ -1,4 +1,4 @@
---- @type ns_core
+--- @type ns.Core
 local ns = select(2, ...)
 local params = ns.params
 --- @class BF_CoreModel

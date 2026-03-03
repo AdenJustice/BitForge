@@ -1,6 +1,6 @@
---- @type string, ns_core
+--- @type string, ns.Core
 local ADDON_NAME, ns = ...
---- @class BF_Params
+--- @class BitForge.Params
 local params = ns.params
 
 --- =========================================================

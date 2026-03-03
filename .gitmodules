@@ -1,0 +1,3 @@
+[submodule "BitForge/Libs/LibBitForgeUI"]
+	path = BitForge/Libs/LibBitForgeUI
+	url = https://github.com/AdenJustice/LibBitForgeUI.git

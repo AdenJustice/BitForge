@@ -1,4 +1,4 @@
----@type string, ns_core
+---@type string, ns.Core
 local ADDON_NAME, ns = ...
 local params = ns.params
 local utils = ns.utils

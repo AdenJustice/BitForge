@@ -1,6 +1,6 @@
---- @class ns_BB: BF_PluginNS
+--- @class ns.BankBalance: BitForge.Plugins.ns
 local ns = BitForgeAPI.RegisterPlugin(...)
 
---- @class BB_Locale
+--- @class BitForge.Locales.BankBalance
 local locale = {}
 ns.locale = locale

@@ -1,10 +1,10 @@
---- @type string, ns_core
+--- @type string, ns.Core
 local ADDON_NAME, ns = ...
 local params = ns.params
 local utils = ns.utils
 local assets = ns.assets
 local gui = ns.gui
---- @class BF_Mixins
+--- @class BitForge.Mixins
 local mixins = ns.mixins
 
 --- =========================================================
@@ -32,7 +32,7 @@ dispatcher:SetScript("OnEvent", function(_, event, ...)
     eventRegistry:TriggerEvent(event, ...)
 end)
 
---- @class BF_EventMixin
+--- @class BitForge.Mixins.Event
 local eventMixin = {}
 
 --- @param event string Event name
@@ -73,7 +73,7 @@ mixins.event = eventMixin
 --- Base Mixin
 --- =========================================================
 
---- @class BF_BaseMixin: BF_EventMixin
+--- @class BitForge.Mixins.Base: BitForge.Mixins.Event
 local baseMixin = _CreateFromMixins(eventMixin)
 baseMixin.initialized = false
 baseMixin.OnInit = nil
@@ -110,7 +110,7 @@ end
 --- Model Mixin
 --- =========================================================
 
---- @class BF_BaseModel: BF_BaseMixin
+--- @class BitForge.Models.Base: BitForge.Mixins.Base
 local baseModelMixin = _CreateFromMixins(baseMixin)
 
 function baseModelMixin:OnInit()
@@ -131,7 +131,7 @@ mixins.model = baseModelMixin
 --- View Mixin
 --- =========================================================
 
---- @class BF_BaseView: BF_BaseMixin
+--- @class BitForge.Views.Base: BitForge.Mixins.Base
 local baseViewMixin = _CreateFromMixins(baseMixin)
 
 function baseViewMixin:Init(name)
@@ -177,7 +177,7 @@ mixins.view = baseViewMixin
 --- Control Mixin
 --- =========================================================
 
---- @class BF_BaseControl: BF_BaseMixin
+--- @class BitForge.Controls.Base: BitForge.Mixins.Base
 local baseControlMixin = _CreateFromMixins(baseMixin)
 
 mixins.control = baseControlMixin
@@ -186,14 +186,14 @@ mixins.control = baseControlMixin
 --- Plugin Factory
 --- =========================================================
 
---- @class BF_PluginMixin
---- @field params BF_Params Read-only access to plugin parameters.
---- @field utils BF_Utils Read-only access to utility functions.
---- @field assets BF_Assets Read-only access to plugin assets.
---- @field gui BF_GUI Read-only access to plugin GUI functions.
---- @field model BF_BaseModel Base model mixin for plugin models.
---- @field view BF_BaseView Base view mixin for plugin views.
---- @field control BF_BaseControl Base control mixin for plugin controls.
+--- @class BitForge.Mixins.Plugins.Base
+--- @field params BitForge.Params Read-only access to plugin parameters.
+--- @field utils BitForge.Utils Read-only access to utility functions.
+--- @field assets BitForge.Assets Read-only access to plugin assets.
+--- @field gui BitForge.GUI Read-only access to plugin GUI functions.
+--- @field model BitForge.Models.Base Base model mixin for plugin models.
+--- @field view BitForge.Views.Base Base view mixin for plugin views.
+--- @field control BitForge.Controls.Base Base control mixin for plugin controls.
 local pluginMixin = {
     params = utils:ReadOnly(params),
     utils = utils:ReadOnly(utils),

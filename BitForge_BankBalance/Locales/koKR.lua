@@ -1,6 +1,6 @@
 if GetLocale() ~= "koKR" then return end
 
----@type ns_BB
+---@type ns.BankBalance
 local ns = select(2, ...)
 local L = ns.locale
 

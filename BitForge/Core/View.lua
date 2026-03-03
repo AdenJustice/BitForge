@@ -1,7 +1,8 @@
---- @type string, ns_core
+--- @type string, ns.Core
 local ADDON_NAME, ns = ...
 local utils = ns.utils
 local params = ns.params
+local assets = ns.assets
 local gui = ns.gui
 local L = ns.locale
 --- @class BF_CoreView
@@ -54,7 +55,7 @@ function view:CreateMinimapButton(settings)
 
     -- Circular icon
     local iconTex = btn:CreateTexture(nil, "BACKGROUND")
-    iconTex:SetTexture(_format("%s/Assets/Icon.png", params.core.path))
+    iconTex:SetTexture(assets:GetClassIcon(params.character.class))
     iconTex:SetTexCoord(0.05, 0.95, 0.05, 0.95)
     iconTex:SetAllPoints()
     iconTex:SetMask("Interface/CharacterFrame/TempPortraitAlphaMask")
