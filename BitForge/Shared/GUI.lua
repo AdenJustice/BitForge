@@ -37,6 +37,10 @@ end
 --- Frame  (BitForgeFrameTemplate)
 --- =========================================================
 
+--- @class BitForge.GUI.Frame: Frame, LibBitForgeUI.FrameMixin
+
+--- @class BitForge.GUI.TitledFrame: Frame, LibBitForgeUI.TitledFrameMixin
+
 --- @class BitForge.GUI.FrameMixin : LibBitForgeUI.FrameMixin
 local frameMixin = CreateFromMixins(LibBitForgeUI.FrameMixin)
 
@@ -114,7 +118,13 @@ function gui:CreateCheckbox(parent, opts)
     _Mixin(cb, checkboxMixin)
     cb:OnLoad()
     base(cb, opts)
-    if opts.text then cb:SetText(opts.text) end
+    if opts.text then
+        if cb.Label then
+            cb.Label:SetText(opts.text)
+        else
+            cb:SetText(opts.text)
+        end
+    end
     if opts.checked ~= nil then cb:SetChecked(opts.checked) end
     if opts.onClick then cb:SetScript("OnClick", opts.onClick) end
     return cb --[[@as CheckButton]]
@@ -239,6 +249,8 @@ end
 --- TabBar  (BitForgeTabBarTemplate)
 --- =========================================================
 
+--- @class BitForge.GUI.TabBar: Frame, LibBitForgeUI.TabBarMixin
+
 --- @class BitForge.GUI.TabBarMixin : LibBitForgeUI.TabBarMixin
 local tabBarMixin = CreateFromMixins(LibBitForgeUI.TabBarMixin)
 
@@ -247,9 +259,9 @@ function tabBarMixin:OnLoad()
 end
 
 --- Creates an MD tab bar.
----@param parent Frame
+---@param parent any
 ---@param opts { name: string?, width: number?, height: number?, point: table?, position: "bottom"|"top"|"left"|"right"?, tabSize: number[]?, tabs: { id: any, label: string }[]?, onChange: fun(id: any)? }
----@return Frame
+---@return BitForge.GUI.TabBar
 function gui:CreateTabBar(parent, opts)
     opts = opts or {}
     local bar = _CreateFrame("Frame", opts.name, parent, "BitForgeTabBarTemplate")
@@ -264,7 +276,7 @@ function gui:CreateTabBar(parent, opts)
             bar:AddTab(tab.id, tab.label)
         end
     end
-    return bar --[[@as Frame]]
+    return bar --[[@as BitForge.GUI.TabBar]]
 end
 
 --- =========================================================

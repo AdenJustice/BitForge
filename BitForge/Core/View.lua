@@ -1,39 +1,43 @@
 --- @type string, ns.Core
 local ADDON_NAME, ns = ...
-local utils = ns.utils
-local params = ns.params
-local assets = ns.assets
-local gui = ns.gui
-local L = ns.locale
+local utils          = ns.utils
+local params         = ns.params
+local assets         = ns.assets
+local gui            = ns.gui
+local L              = ns.locale
 --- @class BF_CoreView
-local view = ns.view
+local view           = ns.view
 
 --- =========================================================
 --- Caches
 --- =========================================================
 
-local _pairs = pairs
-local _ipairs = ipairs
-local _format = string.format
-local _cos = math.cos
-local _sin = math.sin
-local _rad = math.rad
-local _deg = math.deg
-local _atan2 = math.atan2
-local _wipe = table.wipe
+local _ipairs        = ipairs
+local _format        = string.format
+local _cos           = math.cos
+local _sin           = math.sin
+local _rad           = math.rad
+local _deg           = math.deg
+local _atan2         = math.atan2
+local _wipe          = table.wipe
 
-local _CreateFrame = CreateFrame
-local _GetCursorPosition = GetCursorPosition
 
-local _STANDARD_TEXT_FONT = STANDARD_TEXT_FONT
-local _UIParent = UIParent
-local _Minimap = Minimap
+
+local _CreateFrame                    = CreateFrame
+local _CreateScrollBoxListLinearView  = CreateScrollBoxListLinearView
+local _CreateDataProvider             = CreateDataProvider
+local _InitScrollBoxListWithScrollBar = ScrollUtil.InitScrollBoxListWithScrollBar
+local _GetCursorPosition              = GetCursorPosition
+
+local _STANDARD_TEXT_FONT             = STANDARD_TEXT_FONT
+local _UIParent                       = UIParent
+local _Minimap                        = Minimap
 
 --- =========================================================
 --- Minimap Button
 --- =========================================================
 
-local MINIMAP_BUTTON_RADIUS = 80
+local MINIMAP_BUTTON_RADIUS           = 80
 
 local function updateMinimapButtonPosition(btn, angle)
     local rad = _rad(angle)
@@ -53,12 +57,22 @@ function view:CreateMinimapButton(settings)
     btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     btn:RegisterForDrag("LeftButton")
 
-    -- Circular icon
-    local iconTex = btn:CreateTexture(nil, "BACKGROUND")
-    iconTex:SetTexture(assets:GetClassIcon(params.character.class))
-    iconTex:SetTexCoord(0.05, 0.95, 0.05, 0.95)
-    iconTex:SetAllPoints()
-    iconTex:SetMask("Interface/CharacterFrame/TempPortraitAlphaMask")
+    local overlay = btn:CreateTexture(nil, "OVERLAY")
+    overlay:SetSize(53, 53)
+    overlay:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    overlay:SetPoint("TOPLEFT")
+
+    local background = btn:CreateTexture(nil, "BACKGROUND")
+    background:SetSize(20, 20)
+    background:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+    background:SetPoint("TOPLEFT", 7, -5)
+
+    local iconTex = btn:CreateTexture(nil, "ARTWORK")
+    local classIcon = assets:GetClassIcon(params.character.class)
+    iconTex:SetSize(17, 17)
+    iconTex:SetTexture(classIcon or "Interface\\Icons\\INV_Misc_QuestionMark")
+    iconTex:SetPoint("TOPLEFT", 7, -6)
+    iconTex:SetTexCoord(0, 1, 0, 1)
 
     -- Border
     local border = btn:CreateTexture(nil, "OVERLAY")
@@ -84,7 +98,7 @@ function view:CreateMinimapButton(settings)
     end)
     btn:SetScript("OnDragStop", function(self)
         self:SetScript("OnUpdate", nil)
-        settings.minimapPos = angle
+        view:Trigger("BitForge.Core.MinimapMoved", angle)
     end)
 
     -- Click
@@ -111,10 +125,20 @@ end
 --- Migration Dialog
 --- =========================================================
 
+--- @class frame
+--- @field scrollBox ScrollBoxListMixin
 local migrationDialog
 local migrationDialogWidgets = {} -- Track dynamically created widgets for cleanup
 
 local function clearMigrationDialogWidgets()
+    if migrationDialog then
+        migrationDialog.scrollBox:SetDataProvider(_CreateDataProvider())
+        migrationDialog.migrateButton = nil
+        migrationDialog.purgeButton = nil
+    end
+    for _, widget in _ipairs(migrationDialogWidgets) do
+        widget:Hide()
+    end
     _wipe(migrationDialogWidgets)
 end
 
@@ -127,7 +151,7 @@ local function createMigrationDialog()
     local dialog = gui:CreateFrame(_UIParent, {
         width = 500,
         height = 400,
-        title = L["migration:step1_title"],
+        title = L["migration:title"],
     })
 
     dialog:SetFrameStrata("DIALOG")
@@ -158,11 +182,33 @@ local function createMigrationDialog()
     description:SetWordWrap(true)
     dialog.description = description
 
-    -- List container for entries
-    local listContainer = _CreateFrame("Frame", nil, content)
-    listContainer:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -60)
-    listContainer:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 0)
-    dialog.listContainer = listContainer
+    -- Scrollable list area
+    local listArea = _CreateFrame("Frame", nil, content)
+    listArea:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -60)
+    listArea:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 0)
+
+    local scrollBox = _CreateFrame("Frame", nil, listArea, "WowScrollBoxList")
+    scrollBox:SetPoint("TOPLEFT", listArea, "TOPLEFT", 0, 0)
+    scrollBox:SetPoint("BOTTOMRIGHT", listArea, "BOTTOMRIGHT", -16, 0)
+
+    local scrollBar = _CreateFrame("EventFrame", nil, listArea, "MinimalScrollBar")
+    scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 4, 0)
+    scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 4, 0)
+
+    local linearView = _CreateScrollBoxListLinearView()
+    linearView:SetElementInitializer("BitForgeScrollElementAsCheckTemplate", function(frame, data)
+        frame.Label:SetText(data.label)
+        frame:SetChecked(data.checked)
+        frame:SetScript("OnClick", function(self)
+            data.checked = self:GetChecked()
+            if data.onClick then data.onClick(self) end
+        end)
+    end)
+    linearView:SetElementExtent(35)
+    _InitScrollBoxListWithScrollBar(scrollBox, scrollBar, linearView)
+
+    dialog.scrollBox = scrollBox
+    dialog.scrollBar = scrollBar
 
     -- Button container
     local buttonContainer = _CreateFrame("Frame", nil, dialog)
@@ -175,7 +221,7 @@ local function createMigrationDialog()
     return dialog
 end
 
-function view:ShowMigrationDialog(invalidList, onSelect, onSkip)
+function view:ShowMigrationDialog(invalidList, onSelect, onSkip, onSelectionChanged)
     if not migrationDialog then
         migrationDialog = createMigrationDialog()
     end
@@ -184,70 +230,49 @@ function view:ShowMigrationDialog(invalidList, onSelect, onSkip)
     clearMigrationDialogWidgets()
 
     -- Update title and description
-    migrationDialog:SetTitle(L["migration:step1_title"])
-    migrationDialog.description:SetText(L["migration:step1_desc"])
+    migrationDialog:SetTitle(L["migration:title"])
+    migrationDialog.description:SetText(L["migration:desc"])
 
-    -- Track selected radio button
-    local selectedGuid = nil
-    local radioButtons = {}
-    local migrateButton -- Declare early for closure access
-
-    -- Create radio button entries
-    local yOffset = 0
+    -- Populate scroll list
+    local dataObjects = {}
+    local dataProvider = _CreateDataProvider()
     for _, entry in _ipairs(invalidList) do
-        local row = _CreateFrame("Frame", nil, migrationDialog.listContainer)
-        row:SetSize(migrationDialog.listContainer:GetWidth(), 30)
-        row:SetPoint("TOPLEFT", migrationDialog.listContainer, "TOPLEFT", 0, yOffset)
-
-        -- Radio checkbox (simulated with regular checkbox)
-        local checkbox = gui:CreateCheckbox(row, {
-            text = _format("|cffff0000%s (Invalid)|r", entry.nameRealm),
+        local data = {
+            label   = _format("|cffff0000%s (Invalid)|r", entry.nameRealm),
             checked = false,
-            onClick = utils:SafeCallback(function(self)
-                local checked = self:GetChecked()
-                if checked then
-                    -- Deselect all other radio buttons
-                    for _, otherCheckbox in _ipairs(radioButtons) do
-                        if otherCheckbox ~= self then
-                            otherCheckbox:SetChecked(false)
-                        end
-                    end
-                    selectedGuid = entry.guid
-                else
-                    selectedGuid = nil
-                end
+        }
+        data.onClick = utils:SafeCallback(function(frame)
+            -- Capture state before clearing (ForEachFrame also unsets this frame)
+            local checked = frame:GetChecked()
 
-                -- Update migrate button state
-                if migrateButton then
-                    if selectedGuid then
-                        migrateButton:Enable()
-                    else
-                        migrateButton:Disable()
-                    end
-                end
-            end, "migration radio selection"),
-        })
-        checkbox:SetPoint("LEFT", row, "LEFT", 0, 0)
+            -- Radio: clear all others
+            for _, d in _ipairs(dataObjects) do d.checked = false end
+            migrationDialog.scrollBox:ForEachFrame(function(f) f:SetChecked(false) end)
 
-        radioButtons[#radioButtons + 1] = checkbox
-        migrationDialogWidgets[#migrationDialogWidgets + 1] = checkbox
+            data.checked = checked
+            frame:SetChecked(checked)
 
-        yOffset = yOffset - 35
+            if onSelectionChanged then
+                onSelectionChanged(checked and entry.guid or nil)
+            end
+        end, "migration radio selection")
+        dataObjects[#dataObjects + 1] = data
+        dataProvider:Insert(data)
     end
+    migrationDialog.scrollBox:SetDataProvider(dataProvider)
 
     -- Migrate button
-    migrateButton = gui:CreateButton(migrationDialog.buttonContainer, {
+    local migrateButton = gui:CreateButton(migrationDialog.buttonContainer, {
         text = L["migration:button_migrate"],
         width = 140,
         onClick = utils:SafeCallback(function()
-            if selectedGuid and onSelect then
-                onSelect(selectedGuid)
-            end
+            if onSelect then onSelect() end
         end, "migration migrate button"),
     })
     migrateButton:Disable()
     migrateButton:SetPoint("LEFT", migrationDialog.buttonContainer, "LEFT", 20, 0)
     migrationDialogWidgets[#migrationDialogWidgets + 1] = migrateButton
+    migrationDialog.migrateButton = migrateButton
 
     -- Skip button
     local skipButton = gui:CreateButton(migrationDialog.buttonContainer, {
@@ -265,7 +290,7 @@ function view:ShowMigrationDialog(invalidList, onSelect, onSkip)
     migrationDialog:Show()
 end
 
-function view:ShowPurgeDialog(invalidList, onPurge, onKeepAll)
+function view:ShowPurgeDialog(invalidList, onPurge, onKeepAll, onSelectionChanged)
     if not migrationDialog then
         migrationDialog = createMigrationDialog()
     end
@@ -274,73 +299,39 @@ function view:ShowPurgeDialog(invalidList, onPurge, onKeepAll)
     clearMigrationDialogWidgets()
 
     -- Update title and description
-    migrationDialog:SetTitle(L["migration:step2_title"])
-    migrationDialog.description:SetText(L["migration:step2_desc"])
+    migrationDialog:SetTitle(L["purge:title"])
+    migrationDialog.description:SetText(L["purge:desc"])
 
-    -- Track selected checkboxes
-    local selectedGuids = {}
-    local purgeButton -- Declare early for closure access
-
-    -- Create checkbox entries
-    local yOffset = 0
+    -- Populate scroll list
+    local dataProvider = _CreateDataProvider()
     for _, entry in _ipairs(invalidList) do
-        local row = _CreateFrame("Frame", nil, migrationDialog.listContainer)
-        row:SetSize(migrationDialog.listContainer:GetWidth(), 30)
-        row:SetPoint("TOPLEFT", migrationDialog.listContainer, "TOPLEFT", 0, yOffset)
-
-        -- Multi-select checkbox
-        local checkbox = gui:CreateCheckbox(row, {
-            text = _format("|cffff0000%s (Invalid)|r", entry.nameRealm),
+        local data = {
+            label   = _format(L["purge:label"], entry.nameRealm, entry.daysSince),
             checked = false,
-            onClick = utils:SafeCallback(function(self)
-                local checked = self:GetChecked()
-                if checked then
-                    selectedGuids[entry.guid] = true
-                else
-                    selectedGuids[entry.guid] = nil
-                end
-
-                -- Update purge button state (count selected)
-                local count = 0
-                for _ in _pairs(selectedGuids) do
-                    count = count + 1
-                end
-
-                if purgeButton then
-                    if count > 0 then
-                        purgeButton:Enable()
-                    else
-                        purgeButton:Disable()
-                    end
-                    purgeButton:SetText(_format("%s (%d)", L["migration:button_purge"], count))
-                end
-            end, "migration checkbox selection"),
-        })
-        checkbox:SetPoint("LEFT", row, "LEFT", 0, 0)
-
-        migrationDialogWidgets[#migrationDialogWidgets + 1] = checkbox
-
-        yOffset = yOffset - 35
+        }
+        data.onClick = utils:SafeCallback(function(frame)
+            local checked = frame:GetChecked()
+            data.checked = checked
+            if onSelectionChanged then
+                onSelectionChanged(entry.guid, checked)
+            end
+        end, "migration checkbox selection")
+        dataProvider:Insert(data)
     end
+    migrationDialog.scrollBox:SetDataProvider(dataProvider)
 
     -- Purge button
-    purgeButton = gui:CreateButton(migrationDialog.buttonContainer, {
+    local purgeButton = gui:CreateButton(migrationDialog.buttonContainer, {
         text = L["migration:button_purge"],
         width = 140,
         onClick = utils:SafeCallback(function()
-            if onPurge then
-                -- Convert selectedGuids table to array
-                local guidArray = {}
-                for guid in _pairs(selectedGuids) do
-                    guidArray[#guidArray + 1] = guid
-                end
-                onPurge(guidArray)
-            end
+            if onPurge then onPurge() end
         end, "migration purge button"),
     })
     purgeButton:Disable()
     purgeButton:SetPoint("LEFT", migrationDialog.buttonContainer, "LEFT", 20, 0)
     migrationDialogWidgets[#migrationDialogWidgets + 1] = purgeButton
+    migrationDialog.purgeButton = purgeButton
 
     -- Keep All button
     local keepAllButton = gui:CreateButton(migrationDialog.buttonContainer, {
@@ -356,6 +347,28 @@ function view:ShowPurgeDialog(invalidList, onPurge, onKeepAll)
     migrationDialogWidgets[#migrationDialogWidgets + 1] = keepAllButton
 
     migrationDialog:Show()
+end
+
+function view:UpdateMigrateButton(enabled)
+    if migrationDialog and migrationDialog.migrateButton then
+        if enabled then
+            migrationDialog.migrateButton:Enable()
+        else
+            migrationDialog.migrateButton:Disable()
+        end
+    end
+end
+
+function view:UpdatePurgeButton(count)
+    if migrationDialog and migrationDialog.purgeButton then
+        if count > 0 then
+            migrationDialog.purgeButton:Enable()
+            migrationDialog.purgeButton:SetText(_format("%s (%d)", L["migration:button_purge"], count))
+        else
+            migrationDialog.purgeButton:Disable()
+            migrationDialog.purgeButton:SetText(L["migration:button_purge"])
+        end
+    end
 end
 
 function view:HideMigrationDialog()

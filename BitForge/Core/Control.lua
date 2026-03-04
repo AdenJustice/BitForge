@@ -13,7 +13,6 @@ local control = ns.control
 --- =========================================================
 
 local _ipairs = ipairs
-local _pairs = pairs
 local _format = string.format
 local _time = time
 
@@ -24,6 +23,7 @@ local _IsAddOnLOD = C_AddOns.IsAddOnLoadOnDemand
 local _GetCategory = Settings.GetCategory
 local _RegisterCategory = Settings.RegisterVerticalLayoutCategory
 local _CreateCheckbox = Settings.CreateCheckbox
+local _CreateDropdown = Settings.CreateDropdown
 local _RegisterProxy = Settings.RegisterProxySetting
 local _RegisterAddon = Settings.RegisterAddOnCategory
 local _GetRealmName = GetRealmName
@@ -43,27 +43,9 @@ local function updateCharacterInfo(guid, name, realm)
         name      = name,
         realm     = realm,
         nameRealm = _format("%s-%s", name, realm),
+        class     = params.character.class,
         lastSeen  = _time(),
     })
-end
-
-local function searchInvalidCharacters()
-    local characters = model:GetCharacters()
-    local invalidEntries = {}
-
-    for guid, data in _pairs(characters) do
-        local isValid = model:IsValidCharacter(guid)
-        if not isValid and data.nameRealm then
-            invalidEntries[#invalidEntries + 1] = {
-                guid        = guid,
-                storedName  = data.name,
-                storedRealm = data.realm,
-                nameRealm   = data.nameRealm,
-            }
-        end
-    end
-
-    return #invalidEntries > 0 and invalidEntries
 end
 
 local function onCharacterLogin()
@@ -73,80 +55,81 @@ local function onCharacterLogin()
 
     if not (currentGUID and currentName and currentRealm) then return end
 
-    local characters     = model:GetCharacters()
-    local tracked        = characters[currentGUID]
-    local invalidEntries = searchInvalidCharacters()
-
-    if invalidEntries and not tracked then
-        control:ShowMigrationDialog(invalidEntries, currentGUID, currentName, currentRealm)
-    else
-        updateCharacterInfo(currentGUID, currentName, currentRealm)
-        if invalidEntries then
-            control:ShowPurgeDialog(invalidEntries)
+    if not model:GetCharacters()[currentGUID] then
+        local sameClassEntries = model:GetCharactersByClass(params.character.class, currentGUID)
+        if sameClassEntries then
+            control:ShowMigrationDialog(sameClassEntries, currentGUID, currentName, currentRealm)
+            return
         end
+    end
+
+    updateCharacterInfo(currentGUID, currentName, currentRealm)
+
+    local invalidList = model:GetInvalidCharacters(currentGUID)
+    if invalidList then
+        local threshold = model:GetLastSeenThreshold()
+        view:Print(_format(L["notification:invalidCharacters"], #invalidList, threshold))
     end
 end
 
-function control:ShowMigrationDialog(invalidList, guid, name, realm)
-    -- Callback when user selects a character to migrate from the invalid list
-    local onSelect = function(selectedGUID)
-        local selectedEntry
-        for _, entry in _ipairs(invalidList) do
-            if entry.guid == selectedGUID then
-                selectedEntry = entry
-                break
-            end
-        end
+function control:ShowMigrationDialog(matchList, guid, name, realm)
+    local selectedGuid
 
-        if not selectedEntry then return end
-
-        -- Migrate tracking GUID
-        model:MigrateCharacter(selectedGUID, guid)
-        -- Save current character with up-to-date info
+    local finish = function()
         updateCharacterInfo(guid, name, realm)
-
-        -- Remove the migrated entry from the invalid list
-        local remainingList = {}
-        for _, entry in _ipairs(invalidList) do
-            if entry.guid ~= selectedGUID then
-                remainingList[#remainingList + 1] = entry
-            end
-        end
-
-        -- Proceed to purge if there are still entries to clean up
-        if #remainingList > 0 then
-            control:ShowPurgeDialog(remainingList)
-        else
-            view:HideMigrationDialog()
-        end
-    end
-
-    -- Callback when user skips migration.
-    -- We save the current character immediately so the new GUID is registered
-    -- before Step 2, regardless of what the user decides to purge or keep there.
-    local onSkip = function()
-        updateCharacterInfo(guid, name, realm)
-        control:ShowPurgeDialog(invalidList)
-    end
-
-    view:ShowMigrationDialog(invalidList, onSelect, onSkip)
-end
-
-function control:ShowPurgeDialog(invalidList)
-    -- Callback when user purges selected invalid entries
-    local onPurge = function(selectedGuids)
-        if selectedGuids and #selectedGuids > 0 then
-            model:DeleteCharacters(selectedGuids)
-        end
         view:HideMigrationDialog()
     end
 
-    -- Callback when user keeps all invalid entries
+    local onSelectionChanged = function(newGuid)
+        selectedGuid = newGuid
+        view:UpdateMigrateButton(newGuid ~= nil)
+    end
+
+    local onSelect = function()
+        if not selectedGuid then return end
+        model:MigrateCharacter(selectedGuid, guid)
+        finish()
+    end
+
+    local onSkip = finish
+
+    view:ShowMigrationDialog(matchList, onSelect, onSkip, onSelectionChanged)
+end
+
+function control:ShowPurgeDialog(invalidList)
+    local selectedGuids = {}
+    local selectedCount = 0
+
+    local onSelectionChanged = function(guid, checked)
+        if checked then
+            if not selectedGuids[guid] then
+                selectedGuids[guid] = true
+                selectedCount       = selectedCount + 1
+            end
+        else
+            if selectedGuids[guid] then
+                selectedGuids[guid] = nil
+                selectedCount       = selectedCount - 1
+            end
+        end
+        view:UpdatePurgeButton(selectedCount)
+    end
+
+    local onPurge = function()
+        local guidList = {}
+        for guid in pairs(selectedGuids) do
+            guidList[#guidList + 1] = guid
+        end
+        model:DeleteCharacters(guidList)
+        view:HideMigrationDialog()
+        view:Print(_format(L["notification:purgeComplete"], #guidList))
+    end
+
     local onKeepAll = function()
         view:HideMigrationDialog()
     end
 
-    view:ShowPurgeDialog(invalidList, onPurge, onKeepAll)
+    view:ShowPurgeDialog(invalidList, onPurge, onKeepAll, onSelectionChanged)
 end
 
 --- =========================================================
@@ -217,6 +200,59 @@ local function registerSettings(activePlugins)
     end
 
     _RegisterAddon(category)
+
+    --- Characters section
+    layout:AddInitializer(CreateSettingsListSectionHeaderInitializer(L["settings:characters_header"]))
+
+    local thresholdDays = { 0, 30, 60, 90, 180, 365 }
+
+    local function createThresholdOptions()
+        local container = Settings.CreateControlTextContainer()
+        for i, days in _ipairs(thresholdDays) do
+            local label = days == 0 and L["settings:lastSeenThreshold_never"] or _format(L["settings:lastSeenThreshold_days"], days)
+            container:Add(i, label)
+        end
+        return container:GetData()
+    end
+
+    local function getThresholdIndex()
+        local current = model:GetLastSeenThreshold()
+        for i, days in _ipairs(thresholdDays) do
+            if days == current then return i end
+        end
+        return 1
+    end
+
+    local function setThresholdIndex(index)
+        model:SetLastSeenThreshold(thresholdDays[index] or 0)
+    end
+
+    local thresholdSetting = _RegisterProxy(
+        category,
+        "BITFORGE_LAST_SEEN_THRESHOLD",
+        Settings.VarType.Number,
+        L["settings:lastSeenThreshold"],
+        1,
+        getThresholdIndex,
+        setThresholdIndex
+    )
+    _CreateDropdown(category, thresholdSetting, createThresholdOptions, L["settings:lastSeenThreshold_tooltip"])
+
+    layout:AddInitializer(CreateSettingsButtonInitializer(
+        L["settings:purgeInvalidButton"],
+        L["settings:purgeInvalidButton"],
+        function()
+            local guid        = _UnitGUID("player") --[[@as string]]
+            local invalidList = model:GetInvalidCharacters(guid)
+            if not invalidList then
+                view:Print(L["notification:nothingToPurge"])
+            else
+                control:ShowPurgeDialog(invalidList)
+            end
+        end,
+        L["settings:purgeInvalidButton_tooltip"],
+        true
+    ))
 
     return category
 end
@@ -294,9 +330,41 @@ local function onUnitFaction()
     end
 end
 
+local function onMinimapMoved(_, angle)
+    model:SetMinimapPos(angle)
+end
+
 control:Subscribe("ADDON_LOADED", onAddOnLoaded)
 control:Subscribe("PLAYER_LOGIN", onPlayerLogin)
 control:Subscribe("PLAYER_LOGOUT", onPlayerLogout)
 control:Subscribe("SETTINGS_LOADED", onSettingsLoaded)
 control:Subscribe("PLAYER_LEVEL_UP", onPlayerLevelUp)
 control:Subscribe("UNIT_FACTION", onUnitFaction, "player")
+control:Subscribe("BitForge.Core.MinimapMoved", onMinimapMoved)
+
+--- =========================================================
+--- Debug Commands
+--- =========================================================
+
+local DEBUG = true
+
+if DEBUG then
+    SLASH_BITFORGE1 = "/bitforge"
+    SlashCmdList["BITFORGE"] = function(msg)
+        local cmd = msg:match("^(%S+)") or ""
+        cmd = cmd:lower()
+
+        if cmd == "testmigration" then
+            local guid     = _UnitGUID("player")
+            local name     = _UnitName("player")
+            local realm    = _GetRealmName()
+            local fakeList = {
+                { guid = "Player-0000-00000001", storedName = name .. "Alt1", storedRealm = realm, nameRealm = name .. "Alt1-" .. realm },
+                { guid = "Player-0000-00000002", storedName = name .. "Alt2", storedRealm = realm, nameRealm = name .. "Alt2-" .. realm },
+            }
+            control:ShowMigrationDialog(fakeList, guid, name, realm)
+        else
+            view:Print("Debug commands: testmigration")
+        end
+    end
+end

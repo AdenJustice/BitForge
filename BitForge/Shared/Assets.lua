@@ -27,5 +27,5 @@ end
 --- @param class string The class name (e.g. "WARRIOR", "MAGE")
 --- @return string iconPath The file path to the class icon asset
 function assets:GetClassIcon(class)
-    return _format("%s/%s.png", getAssetPath("Class"), _lower(class))
+    return _format("%s/%s", getAssetPath("Class"), _lower(class))
 end

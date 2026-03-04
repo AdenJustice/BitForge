@@ -17,6 +17,7 @@ Key responsibilities:
 - Plugin discovery and load-on-demand activation
 - Addon settings integration (including per-plugin settings)
 - Minimap button to open settings
+- Alt tracking: optionally flag alts you haven't logged into for a set number of days and clean up their leftover addon data with one click
 
 ### BitForge_BankBalance (Plugin)
 
@@ -25,7 +26,7 @@ Automatically balances your bag gold against a target amount using the Warband B
 Features:
 
 - Configurable desired balance (1k, 5k, 10k, 50k, 100k)
-- Optional margin ratio “safe zone” to ignore small fluctuations
+- Optional margin ratio "safe zone" to ignore small fluctuations (enabled by default)
 - Character-specific or Warband-shared settings
 - Localized for `enUS` and `koKR`
 

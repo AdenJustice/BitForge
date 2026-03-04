@@ -17,7 +17,6 @@ local _wipe = table.wipe
 local _format = string.format
 local _ipairs = ipairs
 local _next = next
-local _setmetatable = setmetatable
 
 local _GetEquipmentSetIDs = C_EquipmentSet.GetEquipmentSetIDs
 local _GetItemLocations = C_EquipmentSet.GetItemLocations
@@ -56,7 +55,7 @@ local defaults = {
         blacklist = {},
         args = {
             sellJunk = false,
-            includeDisenchantables = false,
+            keepDisenchantables = false,
             ilvlThreshold = 10,
             limitBatchTo12 = true,
         },
@@ -124,11 +123,11 @@ end
 --- =========================================================
 
 function model:SetKeepEnchantables(value)
-    dbChar.args.includeDisenchantables = value
+    dbChar.args.keepDisenchantables = value
 end
 
 function model:GetKeepEnchantables()
-    return dbChar.args.includeDisenchantables
+    return dbChar.args.keepDisenchantables
 end
 
 function model:SetItemLevelThreshold(value)

@@ -1,23 +1,17 @@
 --- @type ns.Core
-local ns = select(2, ...)
-local params = ns.params
+local ns       = select(2, ...)
+local params   = ns.params
 --- @class BF_CoreModel
-local model = ns.model
+local model    = ns.model
 
 --- =========================================================
 --- Caches
 --- =========================================================
 
-local _error = error
-local _type = type
-local _pairs = pairs
-local _GetPlayerInfoByGUID = GetPlayerInfoByGUID
-
-local function assertInitialized(self)
-    if not self.initialized then
-        _error("Database not initialized.", 3)
-    end
-end
+local _type    = type
+local _pairs   = pairs
+local _floor   = math.floor
+local _time    = time
 
 local defaults = {
     global = {
@@ -26,7 +20,8 @@ local defaults = {
             lock = false,
             minimapPos = 220,
         },
-        characters = {}, -- [guid] = {name, realm, nameRealm, lastSeen}
+        characters = {},       -- [guid] = {name, realm, nameRealm, lastSeen}
+        lastSeenThreshold = 0, -- days; 0 = Never
     },
     char = {
         plugins = {
@@ -44,8 +39,6 @@ function model:OnInit()
 end
 
 function model:OnDisable()
-    assertInitialized(self)
-
     self.db:CleanUp()
 end
 
@@ -79,8 +72,6 @@ end
 --- @param pluginName string The name of the plugin
 --- @param activated boolean True to activate, false to deactivate
 function model:SetPluginActivated(pluginName, activated)
-    assertInitialized(self)
-
     self.db.char.plugins[pluginName] = activated
 end
 
@@ -88,16 +79,12 @@ end
 --- @param pluginName string The name of the plugin (e.g., "BitForge_AutoBalance")
 --- @return boolean activated True if the plugin is activated, false if deactivated
 function model:IsPluginActivated(pluginName)
-    assertInitialized(self)
-
     return self.db.char.plugins[pluginName] == true
 end
 
 --- Get all plugin states for the current character
 --- @return table<string, boolean> Map of plugin names to activated states
 function model:GetAllPluginStates()
-    assertInitialized(self)
-
     return self.db.char.plugins
 end
 
@@ -108,9 +95,13 @@ end
 --- Get the minimap button settings
 --- @return table minimapButtonSettings The minimap button settings table
 function model:GetMinimapButtonSettings()
-    assertInitialized(self)
-
     return self.db.global.minimapButton
+end
+
+--- Save the minimap button angle
+--- @param angle number The angle in degrees
+function model:SetMinimapPos(angle)
+    self.db.global.minimapButton.minimapPos = angle
 end
 
 --- =========================================================
@@ -120,8 +111,6 @@ end
 --- Get the list of all alts with their GUIDs, names, and realms
 --- @return table alts List of character info tables: { [guid] = {name, realm, nameRealm, lastSeen} }
 function model:GetCharacters()
-    assertInitialized(self)
-
     return self.db.global.characters
 end
 
@@ -129,29 +118,77 @@ end
 --- @param guid string The character's GUID
 --- @param data table The character's info table: {name, realm, nameRealm, lastSeen}
 function model:SaveCharacter(guid, data)
-    assertInitialized(self)
-
     self.db.global.characters[guid] = data
 end
 
 --- Delete characters by their GUIDs
 --- @param guidList table List of GUIDs to delete
 function model:DeleteCharacters(guidList)
-    assertInitialized(self)
-
     for _, guid in _pairs(guidList) do
         self.db.global.characters[guid] = nil
     end
 end
 
---- Validate if a GUID corresponds to an existing character and return its name and realm
---- @param guid string The character's GUID
---- @return boolean? isValid True if the GUID is valid, nil otherwise
-function model:IsValidCharacter(guid)
-    local name = select(6, _GetPlayerInfoByGUID(guid))
+--- Get the lastSeen threshold in days (0 = Never)
+--- @return number days
+function model:GetLastSeenThreshold()
+    return self.db.global.lastSeenThreshold
+end
 
-    -- If name is nil, the GUID is invalid (character deleted/doesn't exist)
-    return name ~= nil
+--- Set the lastSeen threshold in days (0 = Never)
+--- @param days number
+function model:SetLastSeenThreshold(days)
+    self.db.global.lastSeenThreshold = days
+end
+
+--- Get characters whose lastSeen exceeds the threshold, excluding the given GUID
+--- @param excludeGUID string The current character's GUID to exclude
+--- @return table[]|nil List of {guid, nameRealm, daysSince}, or nil if threshold is 0 or none found
+function model:GetInvalidCharacters(excludeGUID)
+    local threshold = self.db.global.lastSeenThreshold
+    if not threshold or threshold == 0 then return nil end
+
+    local now        = _time()
+    local cutoff     = threshold * 86400
+    local characters = self.db.global.characters
+    local results    = {}
+
+    for guid, data in _pairs(characters) do
+        if guid ~= excludeGUID and data.lastSeen then
+            local elapsed = now - data.lastSeen
+            if elapsed >= cutoff then
+                results[#results + 1] = {
+                    guid      = guid,
+                    nameRealm = data.nameRealm,
+                    daysSince = _floor(elapsed / 86400),
+                }
+            end
+        end
+    end
+
+    return #results > 0 and results or nil
+end
+
+--- Get all DB characters that share the given class token, excluding the specified GUID
+--- @param class string The class token (e.g. "WARRIOR")
+--- @param excludeGUID string The GUID to exclude (the current character's GUID)
+--- @return table[]? entries List of matching entry tables, or nil if none found
+function model:GetCharactersByClass(class, excludeGUID)
+    local characters = self.db.global.characters
+    local matches    = {}
+
+    for guid, data in _pairs(characters) do
+        if guid ~= excludeGUID and data.class == class then
+            matches[#matches + 1] = {
+                guid        = guid,
+                storedName  = data.name,
+                storedRealm = data.realm,
+                nameRealm   = data.nameRealm,
+            }
+        end
+    end
+
+    return #matches > 0 and matches or nil
 end
 
 --- =========================================================
@@ -185,8 +222,6 @@ end
 --- @param oldGUID string The old character GUID
 --- @param newGUID string The new character GUID
 function model:MigrateCharacter(oldGUID, newGUID)
-    assertInitialized(self)
-
     local db = self.db
 
     migrateGUIDEntry(db.global and db.global.characters, oldGUID, newGUID)

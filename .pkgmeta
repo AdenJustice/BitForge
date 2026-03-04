@@ -12,7 +12,7 @@ ignore:
   - .gitsubmodules
   - .pkgmeta
   - .luarc.json
-  - meta.lua
   - Scripts
-  - BitForge_BatchSell
   - "*/.*"
+  - "*/meta.lua"
+  - BitForge_BatchSell
