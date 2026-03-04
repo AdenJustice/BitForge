@@ -2,34 +2,31 @@
 local ADDON_NAME, ns = ...
 local gui = ns.gui
 local L = ns.locale
---- @class BitForge.Views.BatchSell:BitForge.Views.Base
+--- @class BitForge.Views.BatchSell: BitForge.Views.Base
 local view = ns.view
 
 --- =========================================================
 --- Caches
 --- =========================================================
 
-local _min = math.min
-local _format = string.format
-local _tostring = tostring
-local _tonumber = tonumber
+local _type = type
 local _ipairs = ipairs
 local _pairs = pairs
 local _select = select
-local _insert = table.insert
+local _tonumber = tonumber
+local _tostring = tostring
+local _format = string.format
+local _min = math.min
 
 local _CreateFrame = CreateFrame
 local _CreateScrollBoxListLinearView = CreateScrollBoxListLinearView
 local _CreateDataProvider = CreateDataProvider
 local _InitScrollBoxListWithScrollBar = ScrollUtil.InitScrollBoxListWithScrollBar
-local _EasyMenu = EasyMenu
 local _GetMoneyString = GetMoneyString
 local _GetCursorInfo = GetCursorInfo
 local _ClearCursor = ClearCursor
 local _GetItemInfo = C_Item.GetItemInfo
 local _PickupItem = C_Item.PickupItem
-local _UIParent = UIParent
-local _UISpecialFrames = UISpecialFrames
 
 local _ACCEPT = ACCEPT
 local _CANCEL = CANCEL
@@ -47,10 +44,11 @@ local TAB_NAMES = {
 
 local frames = {}
 local selectedTab = 1
-local contextMenu = nil
 local settings = {}
 
---- [ frame creation helpers ]======================================================================
+--- =========================================================
+--- Frame Creation
+--- =========================================================
 
 local function createMainFrame()
     local f = gui:CreateFrame(MerchantFrame, {
@@ -108,172 +106,7 @@ local function createContentFrame(f)
     return content
 end
 
-local function createBottomSection(f)
-    local bar = _CreateFrame("Frame", nil, f)
-    bar:SetSize(FRAME_WIDTH - 32, 32)
-    bar:SetPoint("BOTTOMLEFT", f.Inset, "BOTTOMLEFT", 4, 4)
-    bar:SetPoint("BOTTOMRIGHT", f.Inset, "BOTTOMRIGHT", -4, 4)
-
-    -- Sell All button
-    local sellBtn = gui:CreateButton(bar, {
-        width   = 140,
-        height  = 28,
-        point   = { "LEFT", bar, "LEFT", 4, 0 },
-        text    = L["button:sell_all"],
-        onClick = function() _SendMessage("onSellRequested") end,
-    })
-    sellBtn:Hide()
-
-    bar.sellBtn = sellBtn
-
-    -- Info text
-    local infoText = bar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    infoText:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
-    infoText:SetText("")
-    bar.infoText = infoText
-
-    return bar
-end
-
---- [ element initializers ]======================================================================
-
---- [ context menu ]======================================================================
-
-local function _ShowContextMenu(anchorFrame, elementData)
-    if not contextMenu then
-        contextMenu = _CreateFrame("Frame", ADDON_NAME .. "_ContextMenu", _UIParent, "UIDropDownMenuTemplate")
-    end
-
-    local menuList = {}
-
-    if selectedTab == 1 then
-        -- Manifest tab
-        _insert(menuList, {
-            text = L["context:remove_from_manifest"],
-            func = function()
-                _SendMessage("onRemoveFromManifest", elementData.bag, elementData.slot)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, { text = "", isTitle = true, notCheckable = true })
-        _insert(menuList, {
-            text = L["context:add_to_warband_blacklist"],
-            func = function()
-                _SendMessage("onAddToBlacklist", elementData.itemLink, true, elementData.bag, elementData.slot)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, {
-            text = L["context:add_to_char_blacklist"],
-            func = function()
-                _SendMessage("onAddToBlacklist", elementData.itemLink, false, elementData.bag, elementData.slot)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, {
-            text = L["context:add_to_warband_whitelist"],
-            func = function()
-                _SendMessage("onAddToWhitelist", elementData.itemLink, true, elementData.bag, elementData.slot)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, {
-            text = L["context:add_to_char_whitelist"],
-            func = function()
-                _SendMessage("onAddToWhitelist", elementData.itemLink, false, elementData.bag, elementData.slot)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, { text = "", isTitle = true, notCheckable = true })
-        _insert(menuList, {
-            text = L["context:reset"],
-            func = function()
-                _SendMessage("onResetItemStatus", elementData.itemLink)
-            end,
-            notCheckable = true,
-        })
-    elseif selectedTab == 2 then
-        -- Blacklist tab
-        _insert(menuList, {
-            text = L["context:move_to_warband_blacklist"],
-            func = function()
-                _SendMessage("onMoveToList", elementData.itemLink, "blacklist", true)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, {
-            text = L["context:move_to_char_blacklist"],
-            func = function()
-                _SendMessage("onMoveToList", elementData.itemLink, "blacklist", false)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, {
-            text = L["context:move_to_warband_whitelist"],
-            func = function()
-                _SendMessage("onMoveToList", elementData.itemLink, "whitelist", true)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, {
-            text = L["context:move_to_char_whitelist"],
-            func = function()
-                _SendMessage("onMoveToList", elementData.itemLink, "whitelist", false)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, { text = "", isTitle = true, notCheckable = true })
-        _insert(menuList, {
-            text = L["context:remove_from_blacklist"],
-            func = function()
-                _SendMessage("onRemoveFromList", elementData.itemLink)
-            end,
-            notCheckable = true,
-        })
-    elseif selectedTab == 3 then
-        -- Whitelist tab
-        _insert(menuList, {
-            text = L["context:move_to_warband_whitelist"],
-            func = function()
-                _SendMessage("onMoveToList", elementData.itemLink, "whitelist", true)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, {
-            text = L["context:move_to_char_whitelist"],
-            func = function()
-                _SendMessage("onMoveToList", elementData.itemLink, "whitelist", false)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, {
-            text = L["context:move_to_warband_blacklist"],
-            func = function()
-                _SendMessage("onMoveToList", elementData.itemLink, "blacklist", true)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, {
-            text = L["context:move_to_char_blacklist"],
-            func = function()
-                _SendMessage("onMoveToList", elementData.itemLink, "blacklist", false)
-            end,
-            notCheckable = true,
-        })
-        _insert(menuList, { text = "", isTitle = true, notCheckable = true })
-        _insert(menuList, {
-            text = L["context:remove_from_whitelist"],
-            func = function()
-                _SendMessage("onRemoveFromList", elementData.itemLink)
-            end,
-            notCheckable = true,
-        })
-    end
-
-    _EasyMenu(menuList, contextMenu, anchorFrame, 0, 0, "MENU")
-end
-
-local function _InitializeElement(frame, elementData)
+local function listElementInitializer(frame, elementData)
     if not frame.initialized then
         frame:SetSize(FRAME_WIDTH - 60, ELEMENT_HEIGHT)
         frame:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestTitleHighlight", "ADD")
@@ -350,7 +183,7 @@ local function _InitializeElement(frame, elementData)
 
     -- Gear button click handler
     frame.gearBtn:SetScript("OnClick", function(btn)
-        _ShowContextMenu(btn, elementData)
+        -- TODO:
     end)
 
     -- Drag and drop for non-manifest tabs
@@ -365,38 +198,123 @@ local function _InitializeElement(frame, elementData)
     end
 end
 
---- [ scroll view creation ]======================================================================
-
-local function _CreateScrollView(parent)
-    -- Create ScrollBox and ScrollBar
-    ---@type WowScrollBoxList
-    local scrollBox = _CreateFrame("Frame", nil, parent, "WowScrollBoxList")
+local function createScroll(parent)
+    local scrollBox = _CreateFrame("Frame", nil, parent, "WowScrollBoxList") --[[@as WowScrollBoxList]]
     scrollBox:SetAllPoints(parent)
 
-    local scrollBar = _CreateFrame("EventFrame", nil, parent, "MinimalScrollBar")
+    local scrollBar = _CreateFrame("EventFrame", nil, parent, "MinimalScrollBar") --[[@as MinimalScrollBar]]
     scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 6, 0)
     scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 6, 0)
 
-    -- Create view with frame pool
     local listview = _CreateScrollBoxListLinearView()
-    listview:SetElementInitializer("Button", function(frame, elementData)
-        _InitializeElement(frame, elementData)
-    end)
+    listview:SetElementInitializer(
+        "Frame",
+        function(frame, elementData)
+            listElementInitializer(frame, elementData)
+        end)
     listview:SetElementExtent(ELEMENT_HEIGHT)
 
-    -- Create data provider
     local dataProvider = _CreateDataProvider()
 
-    -- Initialize scroll box
     _InitScrollBoxListWithScrollBar(scrollBox, scrollBar, listview)
     scrollBox:SetDataProvider(dataProvider)
 
     return scrollBox, scrollBar, dataProvider
 end
 
+local function createBottomSection(f)
+    local bar = _CreateFrame("Frame", nil, f)
+    bar:SetSize(FRAME_WIDTH - 32, 32)
+    bar:SetPoint("BOTTOMLEFT", f.Inset, "BOTTOMLEFT", 4, 4)
+    bar:SetPoint("BOTTOMRIGHT", f.Inset, "BOTTOMRIGHT", -4, 4)
+
+    -- Sell All button
+    local sellBtn = gui:CreateButton(bar, {
+        width   = 140,
+        height  = 28,
+        point   = { "LEFT", bar, "LEFT", 4, 0 },
+        text    = L["button:sell_all"],
+        onClick = function() _SendMessage("onSellRequested") end,
+    })
+    sellBtn:Hide()
+
+    bar.sellBtn = sellBtn
+
+    -- Info text
+    local infoText = bar:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    infoText:SetPoint("RIGHT", bar, "RIGHT", -4, 0)
+    infoText:SetText("")
+    bar.infoText = infoText
+
+    return bar
+end
+
+
+--- =========================================================
+--- Frame Update
+--- =========================================================
+
+function view:RefreshManifest(queue)
+    assert(not queue or _type(queue) == "table", "Expected table for manifest queue")
+
+    local dp = frames.dataProvider
+    dp:Flush()
+
+    if queue and #queue > 0 then
+        dp:InsertTable(queue)
+    end
+end
+
+function view:RefreshBlacklist(blacklistData)
+    assert(not blacklistData or _type(blacklistData) == "table", "Expected table for blacklistData")
+
+    local dp = frames.dataProvider
+    dp:Flush()
+    if blacklistData then
+        dp:InsertTable(blacklistData)
+    end
+end
+
+function view:RefreshWhitelist(whitelistData)
+    assert(not whitelistData or _type(whitelistData) == "table", "Expected table for whitelistData")
+
+    local dp = frames.dataProvider
+    dp:Flush()
+
+    if whitelistData then
+        dp:InsertTable(whitelistData)
+    end
+end
+
+--- @param show boolean
+function view:ToggleSellButton(show)
+    assert(frames.bottomBar and frames.bottomBar.sellBtn, "Sell button not initialized")
+
+    frames.bottomBar.sellBtn:SetShown(show)
+end
+
+--- =========================================================
+---
+--- =========================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 --- [ helpers ]======================================================================
 
-local function _UpdateBottomBar()
+local function updateBottomSection()
     local bar = frames.bottomBar
     if not bar then return end
 
@@ -420,7 +338,7 @@ local function _UpdateBottomBar()
     end
 end
 
-local function _CreateSettingsTab()
+local function createSettingsTab()
     local content = frames.content
     if not content then return end
 
@@ -451,8 +369,8 @@ local function _CreateSettingsTab()
         gui:CreateCheckbox(settingsFrame, {
             point   = { "TOPLEFT", settingsFrame, "TOPLEFT", 10, yOffset },
             text    = L["setting:include_disenchantables"],
-            checked = settings.includeDisenchantables or false,
-            onClick = function(self) _SendMessage("onSettingChanged", "includeDisenchantables", self:GetChecked()) end,
+            checked = settings.keepDisenchantables or false,
+            onClick = function(self) _SendMessage("onSettingChanged", "keepDisenchantables", self:GetChecked()) end,
         })
 
         yOffset = yOffset - 40
@@ -523,7 +441,7 @@ function view:UpdateSettings(updatedSettings)
     for k, v in _pairs(updatedSettings) do
         settings[k] = v
     end
-    _UpdateBottomBar()
+    updateBottomSection()
 end
 
 function view:Initialize()
@@ -539,13 +457,13 @@ function view:Initialize()
     frames.bottomBar = bottomBar
 
     -- Create scroll view
-    local scrollBox, scrollBar, dataProvider = _CreateScrollView(content)
+    local scrollBox, scrollBar, dataProvider = createScroll(content)
     frames.scrollBox = scrollBox
     frames.scrollBar = scrollBar
     frames.dataProvider = dataProvider
 
     -- Create settings tab
-    _CreateSettingsTab()
+    createSettingsTab()
 
     -- Select first tab
     self:OnSelectTab(1)
@@ -614,60 +532,9 @@ function view:OnSelectTab(tabIdx)
         end
     end
 
-    _UpdateBottomBar()
+    updateBottomSection()
 end
 
-function view:RefreshManifest(queue)
-    local dataProvider = frames.dataProvider
-    dataProvider:Flush()
-
-    if queue and #queue > 0 then
-        for _, item in _ipairs(queue) do
-            local itemLevel = _select(4, _GetItemInfo(item.link)) or item.itemLevel
-            dataProvider:Insert({
-                itemLink = item.link,
-                itemLevel = itemLevel,
-                sellPrice = item.price * item.stack,
-                bag = item.bag,
-                slot = item.slot,
-            })
-        end
-    end
-
-    _UpdateBottomBar()
-end
-
-function view:RefreshBlacklist(blacklistData)
-    local dataProvider = frames.dataProvider
-    dataProvider:Flush()
-
-    if blacklistData then
-        for _, item in _ipairs(blacklistData) do
-            dataProvider:Insert({
-                itemLink = item.itemLink,
-                isGlobal = item.isGlobal,
-            })
-        end
-    end
-
-    _UpdateBottomBar()
-end
-
-function view:RefreshWhitelist(whitelistData)
-    local dataProvider = frames.dataProvider
-    dataProvider:Flush()
-
-    if whitelistData then
-        for _, item in _ipairs(whitelistData) do
-            dataProvider:Insert({
-                itemLink = item.itemLink,
-                isGlobal = item.isGlobal,
-            })
-        end
-    end
-
-    _UpdateBottomBar()
-end
 
 --- [ Static Popup ]======================================================================
 
