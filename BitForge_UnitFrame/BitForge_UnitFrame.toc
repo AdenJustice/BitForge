@@ -1,0 +1,24 @@
+## Interface: 120001
+## Title: BitForge - UnitFrame
+## Version: @project-version@
+## Dependencies: BitForge
+
+Libs\oUF\oUF.xml
+
+Locales\enUS.lua
+Locales\koKR.lua
+Constants.lua
+Models\Model.lua
+Controllers\Core.lua
+Controllers\ClassPanel.lua
+Views\Helpers.lua
+Views\Player.lua
+Views\Target.lua
+Views\TargetTarget.lua
+Views\Focus.lua
+Views\Pet.lua
+Views\Boss.lua
+Views\Party.lua
+Views\Raid.lua
+Views\ClassPanel.lua
+Views\SettingsPanel.lua

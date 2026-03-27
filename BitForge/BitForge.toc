@@ -1,36 +1,17 @@
 ## Interface: 120001
-## Title: |cFFFFD700Bit|cFFB87333Forge|r
-## Notes: Core engine for the BitForge suite.
-## Notes-koKR: |cFFFFD700Bit|cFFB87333Forge|r 핵심 엔진입니다.
-## Author: AdenJustice (KR)
+## Title: BitForge
+## Notes: BitForge Addon Suite Core
+## Author: AdenJustice
 ## Version: @project-version@
 ## SavedVariables: BitForgeDB
-## X-Curse-Project-ID: 1475089
-## X-Wago-ID: bGoyJB60
+## IconTexture: Interface\AddOns\BitForge\icon
 
-## Category: BitForge
-## Group: BitForge
-## IconTexture: Interface/AddOns/BitForge/Assets/Icon
-
-BitForge.lua
-
-# Libraries
-Libs/LibBitForgeUI/embeds.xml
-
-# Locales
-Locales/enUS.lua
-Locales/koKR.lua
-
-# Shared
-Shared/Params.lua
-Shared/Utils.lua
-Shared/Assets.lua
-Shared/DBMS.lua
-Shared/GUI.lua
-Shared/Mixins.lua
-Shared/APIs.lua
-
-Core/Init.lua
-Core/Model.lua
-Core/View.lua
-Core/Control.lua
+Init.lua
+Constants.lua
+Models\DB.lua
+Models\ModuleList.lua
+Views\ChatOutput.lua
+Views\SettingsPanel.lua
+Controllers\CoreController.lua
+Controllers\SettingsController.lua
+Utils.lua

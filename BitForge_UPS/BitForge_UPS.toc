@@ -1,0 +1,19 @@
+## Interface: 120000
+## Title: BitForge_UPS
+## Notes: Reagent routing for alts
+## Author: BitForge
+## Version: 1.0.0
+## Dependencies: BitForge
+
+Locales\enUS.lua
+Locales\koKR.lua
+Constants.lua
+Models\Model.lua
+Controllers\Adapters\Syndicator.lua
+Controllers\ItemCountAdapters.lua
+Controllers\ProfessionScanner.lua
+Controllers\Routing.lua
+Views\BankButton.lua
+Views\AssignmentFrame.lua
+Views\SetupDialog.lua
+Views\SettingsPanel.lua

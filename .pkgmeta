@@ -1,18 +1,22 @@
 package-as: BitForge
 
 move-folders:
-  BitForge/BitForge: BitForge
-  BitForge/BitForge_BankBalance: BitForge_BankBalance
+BitForge_AutoBalance: BitForge_AutoBalance
+BitForge_UnitFrame: BitForge_UnitFrame
+BitForge_BatchSell: BitForge_BatchSell
+
+externals:
+BitForge_UnitFrame/Libs/oUF:
+url: https://github.com/oUF-wow/oUF
+tag: latest
 
 ignore:
-  - .github
-  - .vscode
-  - .gitattributes
-  - .gitignore
-  - .gitsubmodules
-  - .pkgmeta
-  - .luarc.json
-  - Scripts
-  - "*/.*"
-  - "*/meta.lua"
-  - BitForge_BatchSell
+
+- .pkgmeta
+- CLAUDE.md
+- .gitignore
+- .gitmodules
+- .github
+- .vscode
+- .luarc.json
+- docs

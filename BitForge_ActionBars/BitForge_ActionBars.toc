@@ -1,0 +1,17 @@
+## Interface: 120001
+## Title: BitForge ActionBars
+## Notes: Custom action bar layout for WoW 12.0+
+## Author: AdenJustice (KR)
+## Version: @project-version@
+## Dependencies: BitForge
+
+Constants.lua
+Models\Model.lua
+Controllers\Paging.lua
+Controllers\Core.lua
+Controllers\MainBar.lua
+Controllers\MultiBar.lua
+Controllers\StanceBar.lua
+Controllers\PetBar.lua
+Controllers\Keybind.lua
+Views\Helpers.lua

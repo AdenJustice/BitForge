@@ -1,13 +1,8 @@
-# --- WoW Specific ---
-*.lua.bak
+# External libraries managed by pkgmeta (fetched by BigWigs packager)
+BitForge_UnitFrame/Libs/oUF/
 
-# --- VS Code ---
-.vscode/settings.json
-*.code-workspace
+# Build artifacts
+.release/
 
-# --- Zed Editor ---
-.luarc.json
-
-# --- OS ---
-.DS_Store
-Thumbs.db
+.vscode/
+.DS_Store/

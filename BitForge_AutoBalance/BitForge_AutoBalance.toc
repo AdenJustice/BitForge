@@ -1,6 +1,6 @@
 ## Interface: 120001
-## Title: |cFFFFD700Bit|cFFB87333Forge|r – Batch Sell
-## Notes: Automatically sell items based on given criteria
+## Title: BitForge AutoBalance
+## Notes: Automatically balance gold with the Warband Bank on visit
 ## Author: AdenJustice (KR)
 ## Version: @project-version@
 ## Dependencies: BitForge
@@ -8,9 +8,6 @@
 Locales\enUS.lua
 Locales\koKR.lua
 Constants.lua
-Models\ItemData.lua
 Models\Model.lua
-Models\ItemInfo.lua
 Controllers\Core.lua
-Views\MerchantPanel.lua
 Views\SettingsPanel.lua

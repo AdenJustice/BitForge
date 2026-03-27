@@ -1,73 +1,77 @@
----@type ns.BatchSell
-local ns = select(2, ...)
----@class BitForge.Locales.BatchSell
-local L = ns.locale
+local _, ns                                   = ...
+local L                                       = {}
+ns.L                                          = L
 
---- [ UI TEXT ]======================================================================
+-- Panel
+L["panel:batchSell"]                          = "Batch Sell"
+L["panel:sellManifest"]                       = "Sell Manifest"
+L["panel:blacklist"]                          = "Blacklist"
+L["panel:whitelist"]                          = "Whitelist"
 
-L["title:main"] = "BitForge Batch Sell"
+-- Buttons
+L["btn:sellAll"]                              = "Sell All"
+L["btn:refresh"]                              = "Refresh"
 
-L["tab:manifest"] = "Manifest"
-L["tab:blacklist"] = "Blacklist"
-L["tab:whitelist"] = "Whitelist"
-L["tab:settings"] = "Settings"
+-- Context menu
+L["menu:addToBlacklist"]                      = "Add To Blacklist"
+L["menu:addToWhitelist"]                      = "Add To Whitelist"
+L["menu:addToBlacklistChar"]                  = "Add To Blacklist (Character)"
+L["menu:addToWhitelistChar"]                  = "Add To Whitelist (Character)"
+L["menu:resetListEntry"]                      = "Remove From List"
+L["menu:temporaryExclude"]                    = "Temporarily Exclude"
 
-L["button:sell_all"] = "Sell All"
+-- Status
+L["status:noItemsToSell"]                     = "No items to sell"
+L["status:itemsTotal"]                        = "%d items  |  Total: %s"
 
---- [ CONTEXT MENU ]======================================================================
+-- Settings
+L["settings:sellJunk"]                        = "Sell Junk"
+L["settings:sellJunkTip"]                     = "Sell all poor quality (grey) items automatically when visiting a vendor"
+L["settings:keepEquippable"]                  = "Keep Equippable"
+L["settings:keepEquippableTip"]               = "Keep all items equippable by your class"
+L["settings:keepBindOnAccount"]               = "Keep Bind on Account"
+L["settings:keepBindOnAccountTip"]            = "Keep Bind on Account (heirloom) gear"
+L["settings:keepBindOnAccountPastExpac"]      = "  Include Past Expansions"
+L["settings:keepBindOnAccountPastExpacTip"]   = "Also keep Bind on Account gear from past expansions"
+L["settings:keepDisenchantables"]             = "Keep Disenchantables"
+L["settings:keepDisenchantablesTip"]          = "Enchanters: keep BOP/BOE/BOA gear. Others: keep BOE/BOA gear for AH or alts"
+L["settings:keepDisenchantablesPastExpac"]    = "  Include Past Expansions"
+L["settings:keepDisenchantablesPastExpacTip"] = "Also keep disenchantable gear from past expansions"
+L["settings:limitBatch"]                      = "Limit Batch to 12"
+L["settings:limitBatchTip"]                   = "Sell at most 12 items per click to avoid server throttling"
+L["settings:qualityThreshold"]                = "Quality Threshold"
+L["settings:qualityThresholdTip"]             = "Sell items at or below this quality"
+L["settings:ilvlThreshold"]                   = "Item Level Margin"
+L["settings:ilvlThresholdTip"]                = "Keep equippable items within this many ilvls of your equipped gear (negative = keep better items)"
+L["settings:sellPastExpansion"]               = "Sell Past Expansion Items"
+L["settings:sellPastExpansionTip"]            = "Sell items from expansions older than the selected threshold"
+L["settings:expansionThreshold"]              = "Expansion Threshold"
+L["settings:expansionThresholdTip"]           = "Sell items from expansions older than the selected one"
 
-L["context:remove_from_manifest"] = "Remove from Manifest"
-L["context:add_to_warband_blacklist"] = "Add to Warband Blacklist"
-L["context:add_to_char_blacklist"] = "Add to Character Blacklist"
-L["context:add_to_warband_whitelist"] = "Add to Warband Whitelist"
-L["context:add_to_char_whitelist"] = "Add to Character Whitelist"
-L["context:move_to_warband_blacklist"] = "Move to Warband Blacklist"
-L["context:move_to_char_blacklist"] = "Move to Character Blacklist"
-L["context:move_to_warband_whitelist"] = "Move to Warband Whitelist"
-L["context:move_to_char_whitelist"] = "Move to Character Whitelist"
-L["context:remove_from_blacklist"] = "Remove from Blacklist"
-L["context:remove_from_whitelist"] = "Remove from Whitelist"
-L["context:reset"] = "Reset (Remove from All Lists)"
+-- Quality labels
+L["quality:poor"]                             = "Poor"
+L["quality:common"]                           = "Common"
+L["quality:uncommon"]                         = "Uncommon"
+L["quality:rare"]                             = "Rare"
+L["quality:epic"]                             = "Epic"
 
---- [ INFO TEXT ]======================================================================
+-- Expansion labels
+L["expansion:all"]                            = "All Expansions"
+L["expansion:classic"]                        = "Classic"
+L["expansion:burningCrusade"]                 = "The Burning Crusade"
+L["expansion:wrathOfTheLichKing"]             = "Wrath of the Lich King"
+L["expansion:cataclysm"]                      = "Cataclysm"
+L["expansion:mistsOfPandaria"]                = "Mists of Pandaria"
+L["expansion:warlordsOfDraenor"]              = "Warlords of Draenor"
+L["expansion:legion"]                         = "Legion"
+L["expansion:battleForAzeroth"]               = "Battle for Azeroth"
+L["expansion:shadowlands"]                    = "Shadowlands"
+L["expansion:dragonflight"]                   = "Dragonflight"
+L["expansion:theWarWithin"]                   = "The War Within"
 
-L["info:items_value"] = "%d items | Total: %s"
-L["info:no_items"] = "No items to sell"
-
---- [ SETTINGS ]======================================================================
-
-L["setting:sell_junk"] = "Automatically sell poor quality (junk) items"
-L["setting:include_disenchantables"] = "Allow selling disenchantable items (Enchanting)"
-L["setting:ilvl_threshold"] = "Item level threshold for selling"
-L["setting:ilvl_threshold_help"] = "If < 1: ratio (0.1 = 10% below equipped)\nIf >= 1: absolute level difference"
-L["setting:limit_to_12"] = "Limit batch sell to 12 items (preserves buyback slots)"
-
---- [ DIALOGS ]======================================================================
-
-L["popup:confirm_sell"] = "Sell %d items for %s?"
-
---- [ MESSAGES ]======================================================================
-
-L["msg:sell_complete"] = "Batch sell completed successfully!"
-
---- [ ERRORS ]======================================================================
-
-L["error:scan_in_progress"] = "Scan already in progress"
-
---- [ EVALUATION REASONS ]======================================================================
-
-L["evaluation:locked"] = "Item is locked"
-L["evaluation:in_equipment_set"] = "Item is part of a saved gear set"
-L["evaluation:no_item_info"] = "Unable to fetch item details from the server"
-L["evaluation:no_sell_price"] = "Item cannot be sold to vendors"
-L["evaluation:refundable"] = "Item is still refundable"
-L["evaluation:whitelisted"] = "Item is whitelisted"
-L["evaluation:blacklisted"] = "Item is blacklisted"
-L["evaluation:junk_filter"] = "'Sell junk' is enabled"
-L["evaluation:disenchantable"] = "Disenchantable by Enchanting"
-L["evaluation:not_equipment"] = "Item is not armor or a weapon"
-L["evaluation:wrong_armor_type"] = "Armor type doesn't match character's primary armor type"
-L["evaluation:current_expansion_unbound"] = "Unbound item from the current expansion"
-L["evaluation:no_slot_mapping"] = "No equipment slot available for this item"
-L["evaluation:lower_ilvl"] = "Item level is lower than your equipped item"
-L["evaluation:not_trash"] = "Item does not qualify as junk"
+-- List reset buttons
+L["listReset:warbandBlacklist"]               = "Reset Warband Blacklist"
+L["listReset:warbandWhitelist"]               = "Reset Warband Whitelist"
+L["listReset:charBlacklist"]                  = "Reset Character Blacklist"
+L["listReset:charWhitelist"]                  = "Reset Character Whitelist"
+L["listReset:confirm"]                        = "Are you sure you want to clear this list? This cannot be undone."
