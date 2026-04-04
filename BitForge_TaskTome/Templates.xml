@@ -1,0 +1,4 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- Tree row button used in ConfigFrame's editable task list -->
+    <Button name="BitForge_TaskTomeRowTemplate" virtual="true"/>
+</Ui>

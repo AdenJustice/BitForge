@@ -1,13 +1,32 @@
-## Interface: 120001
-## Title: BitForge AutoBalance
+## Interface: 120100
+## Title: |cFFFFD700Bit|cFFB87333Forge|r – AutoBalance
 ## Notes: Automatically balance gold with the Warband Bank on visit
-## Author: AdenJustice (KR)
+## Notes-koKR: 방문 시 전투부대 은행과 골드를 자동으로 균형 조정
+## Notes-deDE: Gleicht Gold automatisch mit der Kriegsbandbank beim Besuch ab
+## Notes-esES: Equilibra automáticamente el oro con el Banco de Banda de Guerra al visitarlo
+## Notes-esMX: Equilibra automáticamente el oro con el Banco de Banda de Guerra al visitarlo
+## Notes-frFR: Équilibre automatiquement l'or avec la Banque de la Troupe lors d'une visite
+## Notes-itIT: Bilancia automaticamente l'oro con la Banca della Banda di Guerra alla visita
+## Notes-ptBR: Equilibra automaticamente o ouro com o Banco da Banda de Guerra ao visitar
+## Notes-ruRU: Автоматически выравнивает золото с Банком Военного Отряда при посещении
+## Notes-zhCN: 访问时自动与战团银行平衡金币
+## Notes-zhTW: 拜訪時自動與戰團銀行平衡金幣
+## Author: AdenJustice
 ## Version: @project-version@
 ## Dependencies: BitForge
 
+Init.lua
 Locales\enUS.lua
 Locales\koKR.lua
-Constants.lua
-Models\Model.lua
-Controllers\Core.lua
-Views\SettingsPanel.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+model.lua
+control.lua
+view.lua

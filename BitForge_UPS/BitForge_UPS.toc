@@ -1,19 +1,33 @@
-## Interface: 120000
-## Title: BitForge_UPS
-## Notes: Reagent routing for alts
-## Author: BitForge
-## Version: 1.0.0
+## Interface: 120100
+## Title: |cFFFFD700Bit|cFFB87333Forge|r – UPS
+## Notes: Deposits reagents, recipes your alts need, and anything you curate to the Warband Bank
+## Notes-koKR: 재료와 부캐릭터에게 필요한 제조법, 직접 지정한 물품을 전쟁부대 은행에 보관합니다
+## Notes-deDE: Verstaut Reagenzien, von Twinks benötigte Rezepte und selbst gewählte Gegenstände in der Kriegsmeutebank
+## Notes-esES: Deposita materiales, recetas que tus alters necesitan y los objetos que clasifiques en el Banco de tropa de guerra
+## Notes-esMX: Guarda materiales, recetas que tus personajes secundarios necesitan y los objetos que clasifiques en el Banco de tropa de guerra
+## Notes-frFR: Dépose les composants, les recettes utiles à vos rerolls et les objets que vous triez à la banque de bataillon
+## Notes-itIT: Deposita materiali, ricette utili ai tuoi alt e gli oggetti che cataloghi nella Banca della Compagnia
+## Notes-ptBR: Deposita reagentes, receitas que seus alts precisam e os itens que você organizar no Banco do Bando de Guerra
+## Notes-ruRU: Складывает реагенты, нужные другим персонажам рецепты и отмеченные вами предметы в банк отряда
+## Notes-zhCN: 将材料、小号需要的配方以及你指定的物品存入战团银行
+## Notes-zhTW: 將材料、分身需要的配方以及你指定的物品存入戰隊銀行
+## Author: AdenJustice
+## Version: @project-version@
 ## Dependencies: BitForge
 
+Init.lua
 Locales\enUS.lua
 Locales\koKR.lua
-Constants.lua
-Models\Model.lua
-Controllers\Adapters\Syndicator.lua
-Controllers\ItemCountAdapters.lua
-Controllers\ProfessionScanner.lua
-Controllers\Routing.lua
-Views\BankButton.lua
-Views\AssignmentFrame.lua
-Views\SetupDialog.lua
-Views\SettingsPanel.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+model.lua
+view.lua
+adapters.lua
+control.lua

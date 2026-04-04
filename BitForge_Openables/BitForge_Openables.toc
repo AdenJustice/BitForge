@@ -1,0 +1,34 @@
+## Interface: 120100
+## Title: |cFFFFD700Bit|cFFB87333Forge|r – Openables
+## Notes: One button for the next openable or usable item in your bags
+## Notes-koKR: 가방 속 다음 개봉 가능 아이템을 위한 단일 버튼
+## Notes-deDE: Eine Schaltfläche für den nächsten benutzbaren Gegenstand in deinen Taschen
+## Notes-esES: Un botón para el siguiente objeto abrible o usable de tus bolsas
+## Notes-esMX: Un botón para el siguiente objeto abrible o usable de tus bolsas
+## Notes-frFR: Un bouton pour le prochain objet à ouvrir ou utiliser dans vos sacs
+## Notes-itIT: Un pulsante per il prossimo oggetto apribile o utilizzabile nelle borse
+## Notes-ptBR: Um botão para o próximo item abrível ou usável nas suas bolsas
+## Notes-ruRU: Одна кнопка для следующего открываемого или используемого предмета в сумках
+## Notes-zhCN: 用一个按钮打开或使用背包中的下一件物品
+## Notes-zhTW: 用一個按鈕開啟或使用背包中的下一件物品
+## Author: AdenJustice
+## Version: @project-version@
+## Dependencies: BitForge
+## X-Credits: Based on New Openables by PeknaMrcha, continued by srhinos and cont1nuity (MIT)
+
+Init.lua
+Locales\enUS.lua
+Locales\koKR.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+ItemData.lua
+model.lua
+view.lua
+control.lua

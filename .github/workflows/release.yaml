@@ -7,10 +7,13 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,3 +43,15 @@ jobs:
           name: packaged-addon
           path: .release/*.zip
           retention-days: 7
+
+      - name: Delete old successful runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh run list \
+            --repo "${{ github.repository }}" \
+            --workflow="release.yaml" \
+            --status=success \
+            --json databaseId \
+            --jq '.[1:].[].databaseId' \
+          | xargs -r -I{} gh run delete --repo "${{ github.repository }}" {}

@@ -1,8 +1,8 @@
-# External libraries managed by pkgmeta (fetched by BigWigs packager)
-BitForge_UnitFrame/Libs/oUF/
-
-# Build artifacts
-.release/
-
 .vscode/
-.DS_Store/
+.DS_Store
+.worktrees/
+.superpowers/
+__pycache__/
+*.pyc
+.wow-api-audit/report.md
+.wow-api-audit/findings.json

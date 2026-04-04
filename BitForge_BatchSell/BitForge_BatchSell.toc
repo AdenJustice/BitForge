@@ -1,16 +1,33 @@
-## Interface: 120001
+## Interface: 120100
 ## Title: |cFFFFD700Bit|cFFB87333Forge|r – Batch Sell
 ## Notes: Automatically sell items based on given criteria
-## Author: AdenJustice (KR)
+## Notes-koKR: 지정된 기준에 따라 아이템을 자동으로 판매
+## Notes-deDE: Verkauft Gegenstände automatisch anhand festgelegter Kriterien
+## Notes-esES: Vende automáticamente objetos según los criterios establecidos
+## Notes-esMX: Vende automáticamente objetos según los criterios establecidos
+## Notes-frFR: Vend automatiquement des objets selon les critères définis
+## Notes-itIT: Vende automaticamente gli oggetti in base ai criteri definiti
+## Notes-ptBR: Vende automaticamente itens com base nos critérios definidos
+## Notes-ruRU: Автоматически продаёт предметы по заданным критериям
+## Notes-zhCN: 根据设定条件自动出售物品
+## Notes-zhTW: 根據設定條件自動出售物品
+## Author: AdenJustice
 ## Version: @project-version@
 ## Dependencies: BitForge
 
+Init.lua
 Locales\enUS.lua
 Locales\koKR.lua
-Constants.lua
-Models\ItemData.lua
-Models\Model.lua
-Models\ItemInfo.lua
-Controllers\Core.lua
-Views\MerchantPanel.lua
-Views\SettingsPanel.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+ItemData.lua
+model.lua
+view.lua
+control.lua

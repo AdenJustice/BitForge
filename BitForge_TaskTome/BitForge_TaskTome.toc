@@ -1,0 +1,32 @@
+## Interface: 120100
+## Title: |cFFFFD700Bit|cFFB87333Forge|r – TaskTome
+## Notes: Warband chore tracker
+## Notes-koKR: 전투부대 일과 추적기
+## Notes-deDE: Kriegsband-Aufgaben-Tracker
+## Notes-esES: Rastreador de tareas de la Banda de Guerra
+## Notes-esMX: Rastreador de tareas de la Banda de Guerra
+## Notes-frFR: Suivi des tâches de la Troupe
+## Notes-itIT: Tracker delle faccende della Banda di Guerra
+## Notes-ptBR: Rastreador de tarefas da Banda de Guerra
+## Notes-ruRU: Трекер задач Военного Отряда
+## Notes-zhCN: 战团日常任务追踪器
+## Notes-zhTW: 戰團日常任務追蹤器
+## Author: AdenJustice
+## Version: @project-version@
+## Dependencies: BitForge
+
+Init.lua
+Locales\enUS.lua
+Locales\koKR.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+model.lua
+view.lua
+control.lua

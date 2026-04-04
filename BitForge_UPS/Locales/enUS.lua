@@ -1,63 +1,70 @@
-local _, ns                     = ...
-ns.L                            = {}
-local L                         = ns.L
+---@class BitForge.UPS
+local ns = select(2, ...)
+local L = ns.locale
 
 -- Settings panel
-L["settings:enabled"]           = "Enable UPS"
-L["settings:guildBankPull"]     = "Pull from Guild Bank"
-L["settings:guildBankPullTip"]  = "Pull assigned items from guild bank (one-man guild use)"
-L["settings:guildBankPush"]     = "Push to Guild Bank"
-L["settings:guildBankPushTip"]  = "Push unassigned items to guild bank (one-man guild use)"
-L["settings:activeAdapter"]     = "Active Adapter"
-L["settings:manageAssignments"] = "Manage Assignments"
-L["settings:setupWizard"]       = "Setup Wizard"
-L["panel:title"]                = "Undermine Parcel Service"
+L["panel:title"] = "Undermine Parcel Service"
+L["settings:enabled"] = "Enable UPS"
+L["settings:enabledTooltip"] = "Deposit crafting reagents to the Warband Bank when you visit a bank"
+L["settings:previewMoves"] = "Preview before depositing"
+L["settings:previewMovesTooltip"] = "Show a confirmation window listing every move before anything is deposited"
 
 -- Bank button
-L["btn:parcel"]                 = "Parcel"
-L["btn:parceling"]              = "Parceling… %d"
+L["btn:deposit"] = "Deposit"
+L["btn:depositing"] = "Depositing… %d"
+
+-- Preview dialog
+L["preview:title"] = "Confirm Deposit"
+L["preview:summary"] = "%d item(s) in %d move(s)"
+L["preview:toWarband"] = "→ Warband Bank"
+L["preview:dontAskAgain"] = "Don't ask again"
+L["btn:confirm"] = "Confirm"
+L["btn:cancel"] = "Cancel"
 
 -- Messages
-L["msg:noVacancy"]              = "UPS: No free slots. Sorting destination — click Parcel to retry."
-L["msg:done"]                   = "UPS: Done. Moved %d item(s)."
-L["msg:nothingToDo"]            = "UPS: Nothing to move."
-L["msg:unclassified"]           = "You have unclassified reagents. Open Assignments to categorize them."
+L["msg:nothingToDo"] = "UPS: Nothing to move."
+L["msg:done"] = "UPS: Done. Moved %d item(s)."
+L["msg:noVacancy"] = "UPS: The Warband Bank is full."
+L["msg:blockedCombat"] = "UPS: Stopped — you are in combat."
+L["msg:blockedBankClosed"] = "UPS: Stopped — the bank closed."
+L["msg:blockedCursor"] = "UPS: Stopped — something is on your cursor."
+L["msg:blockedLocked"] = "UPS: Stopped — an item is locked."
+L["msg:moveFailed"] = "UPS: Stopped — a move did not complete."
+L["msg:openProfession"] = "UPS: Open your %s window once so UPS can record which recipes you know."
 
--- Setup dialog
-L["setup:modePrompt"]           = "How would you like to run setup for %s?"
-L["btn:setupReset"]             = "Reset"
-L["btn:setupAppend"]            = "Append"
-L["setup:categoryOptIn"]        = "Should %s receive %s?"
-L["setup:expansionFilter"]      = "Should this include %s from past expansions?"
-L["setup:complete"]             = "Setup complete. You can refine assignments anytime in the Assignment Frame."
-L["btn:currentExpacOnly"]       = "Current Expansion Only"
-L["btn:skipSetup"]              = "Skip Setup"
-L["btn:done"]                   = "Done"
-L["btn:yes"]                    = "Yes"
-L["btn:no"]                     = "No"
+-- Curation window
+L["curation:title"] = "UPS — Item Curation"
+L["curation:open"] = "Curate Items"
+L["curation:search"] = "Search"
+L["curation:filterDestination"] = "Any destination"
+L["curation:filterClass"] = "Any item type"
+L["curation:source"] = "Source: %s"
+L["curation:sourceBuiltIn"] = "This character"
+L["curation:count"] = "%d item(s)"
+L["curation:unscanned"] = "Never scanned for recipes: %s. Until they are, every recipe for their professions looks wanted and will be deposited."
+L["curation:heldBy"] = "Held by"
+L["curation:overrideTooltip"] = "You chose this destination. Reset to default to follow the rules again."
 
--- Assignment frame
-L["panel:assignments"]          = "Category Assignments"
-L["panel:characters"]           = "Characters"
-L["panel:expansions"]           = "Expansions"
-L["panel:itemsDropHint"]        = "Drag items here to override routing"
-L["panel:items"]                = "Items"
-L["btn:deleteCategory"]         = "Delete Category"
-L["btn:addCategory"]            = "Add Category"
-L["menu:removeItem"]            = "Remove from category"
-L["settings:allExpansions"]     = "All Expansions"
-L["panel:customSection"]        = "Custom"
+-- Destinations
+L["dest:warband"] = "Warband Bank"
+L["dest:private"] = "Your Bank"
+L["dest:privateOwned"] = "Your Bank (%s)"
+L["dest:ignore"] = "Leave alone"
 
--- Expansion names
-L["expansion:classic"]          = "Classic"
-L["expansion:tbc"]              = "The Burning Crusade"
-L["expansion:wotlk"]            = "Wrath of the Lich King"
-L["expansion:cata"]             = "Cataclysm"
-L["expansion:mop"]              = "Mists of Pandaria"
-L["expansion:wod"]              = "Warlords of Draenor"
-L["expansion:legion"]           = "Legion"
-L["expansion:bfa"]              = "Battle for Azeroth"
-L["expansion:sl"]               = "Shadowlands"
-L["expansion:df"]               = "Dragonflight"
-L["expansion:tww"]              = "The War Within"
-L["expansion:midnight"]         = "Midnight"
+-- Private destination
+L["preview:toPrivate"] = "→ Your Bank"
+L["preview:reclaim"] = "Warband Bank → Your Bank"
+L["msg:noVacancyPrivate"] = "UPS: Your bank is full."
+L["curation:privateTooltip"] = "Kept in a character's own bank rather than shared storage. With no owner chosen, the first character to visit a bank claims it."
+
+-- Target quantity
+L["curation:targetSuffix"] = "keep %d"
+L["target:title"] = "Target Quantity"
+L["target:prompt"] = "How many %s should each owner keep?"
+
+-- Row menu
+L["menu:resetToDefault"] = "Reset to default"
+L["menu:owners"] = "Owners"
+L["menu:target"] = "Target quantity"
+L["menu:targetNone"] = "No limit"
+L["menu:targetOther"] = "Other…"

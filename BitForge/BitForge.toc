@@ -1,17 +1,33 @@
-## Interface: 120001
-## Title: BitForge
+## Interface: 120100
+## Title: |cFFFFD700Bit|cFFB87333Forge|r
 ## Notes: BitForge Addon Suite Core
+## Notes-koKR: BitForge 애드온 스위트 코어
+## Notes-deDE: BitForge Addon-Suite-Kern
+## Notes-esES: Núcleo de la suite de addons BitForge
+## Notes-esMX: Núcleo de la suite de addons BitForge
+## Notes-frFR: Noyau de la suite d'addons BitForge
+## Notes-itIT: Nucleo della suite di addon BitForge
+## Notes-ptBR: Núcleo da suíte de addons BitForge
+## Notes-ruRU: Ядро набора аддонов BitForge
+## Notes-zhCN: BitForge 插件套件核心
+## Notes-zhTW: BitForge 插件套件核心
 ## Author: AdenJustice
 ## Version: @project-version@
 ## SavedVariables: BitForgeDB
-## IconTexture: Interface\AddOns\BitForge\icon
+## IconTexture: Interface/AddOns/BitForge/icon
 
 Init.lua
-Constants.lua
-Models\DB.lua
-Models\ModuleList.lua
-Views\ChatOutput.lua
-Views\SettingsPanel.lua
-Controllers\CoreController.lua
-Controllers\SettingsController.lua
-Utils.lua
+APIs/Settings.lua
+APIs/MinimapButton.lua
+APIs/UI/Core.lua
+APIs/UI/Templates/Frame.lua
+APIs/UI/Templates/Buttons.lua
+APIs/UI/Templates/EditBox.lua
+APIs/UI/Templates/Dropdown.lua
+APIs/UI/Templates/Slider.lua
+APIs/UI/Templates/Tab.lua
+APIs/Utils.lua
+
+model.lua
+view.lua
+control.lua
