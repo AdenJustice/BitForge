@@ -1,23 +1,22 @@
 package-as: BitForge
 
 move-folders:
-BitForge/BitForge: BitForge
-BitForge/BitForge_AutoBalance: BitForge_AutoBalance
-BitForge/BitForge_BatchSell: BitForge_BatchSell
-BitForge/BitForge_TaskTome: BitForge_TaskTome
-BitForge/BitForge_UPS: BitForge_UPS
-BitForge/BitForge_Openables: BitForge_Openables
+  BitForge/BitForge: BitForge
+  BitForge/BitForge_AutoBalance: BitForge_AutoBalance
+  BitForge/BitForge_BatchSell: BitForge_BatchSell
+  BitForge/BitForge_TaskTome: BitForge_TaskTome
+  BitForge/BitForge_UPS: BitForge_UPS
+  BitForge/BitForge_Openables: BitForge_Openables
 
 enable-nolib-creation: no
 
 ignore:
-
-- .claude
-- .github
-- .wow-api-audit
-- docs
-- Scripts
-- tests
-- .gitignore
-- .luarc.json
-- CLAUDE.md
+  - .claude
+  - .github
+  - .wow-api-audit
+  - docs
+  - Scripts
+  - tests
+  - .gitignore
+  - .luarc.json
+  - CLAUDE.md
