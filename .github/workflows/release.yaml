@@ -11,6 +11,9 @@ permissions:
 
 jobs:
   release:
+    # Publish from the public repository only. The private mirror carries the
+    # same tags, and releasing from both would double-publish to CurseForge.
+    if: github.repository == 'AdenJustice/BitForge'
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
