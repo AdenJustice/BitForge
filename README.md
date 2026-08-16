@@ -2,6 +2,10 @@
 
 A modular World of Warcraft addon suite for WoW 12.0+ (Midnight). Each module is independent — enable only what you need. The **BitForge** core addon is required by all modules.
 
+> **AI disclosure:** BitForge is developed with heavy AI assistance. Much of the code,
+> localization, and documentation in this repository was written with Claude. Bug reports
+> and corrections are very welcome.
+
 ---
 
 ## Compatibility
