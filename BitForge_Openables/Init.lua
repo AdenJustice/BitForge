@@ -12,7 +12,7 @@ local enum = {
     },
 
     -- Why detector.Classify surfaced an item. Carried on the candidate purely
-    -- as diagnostics -- nothing in the pipeline branches on it -- so the DEBUG
+    -- as diagnostics -- nothing in the pipeline branches on it -- so the debug
     -- tooltip can explain a surprising pick without re-deriving the decision.
     REASON = {
         QUEST_GATE   = "QUEST_GATE",   -- quest-gated item, gate still open; detail is the questID
@@ -26,7 +26,7 @@ local enum = {
 
     -- Why detector.Classify turned an item away. Returned alongside the nil
     -- priority, so nothing in the pipeline sees it -- callers test the priority
-    -- and stop. It exists for the DEBUG dump, which is otherwise left asking why
+    -- and stop. It exists for the debug dump, which is otherwise left asking why
     -- an item that plainly looks openable never reaches the button.
     REJECTED = {
         BLACKLIST      = "BLACKLIST",      -- permanently blacklisted by the player
@@ -57,6 +57,11 @@ local enum = {
 
     -- Debounce window for rescans, in seconds. Zero coalesces to end of frame.
     RESCAN_DELAY = 0,
+
+    -- Bumped whenever the stored shape changes incompatibly. Every version
+    -- needs a migration step registered in control.lua; core refuses to start
+    -- the module against a shape nothing converted.
+    SCHEMA_VERSION = 1,
 }
 ns.enum = enum
 

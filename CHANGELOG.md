@@ -1,5 +1,55 @@
 # Changelog
 
+## [v12.1.0.2] — 2026-08-18
+
+### Added
+
+- **TaskTome** — the widget can show every character on your account, not just the one you
+  are playing. One header button switches between "this character" and "all characters",
+  and a second flips the layout: group by character to see who still owes what, or group
+  by task to see who has already done it. Every collapsible header carries a done/total
+  count. The all-characters view is read-only — you still tick chores off on the character
+  that owes them.
+- **TaskTome** — the config panel gained a character selector, so you can opt an alt in or
+  out of a chore without logging that character in.
+- **TaskTome** — the widget can be resized by dragging its bottom-right corner, and
+  remembers the size.
+- **BitForge** — the minimap button can be dragged anywhere around the minimap ring, and
+  it remembers where you left it for every character on the account.
+- **BitForge** — BitForge now has an entry in the minimap's addon compartment, so the menu
+  can be opened from there as well as from the button itself.
+
+### Changed
+
+- **TaskTome** — **your existing Task Tome data is cleared once, the first time you log in
+  after this update.** Tasks, completions and per-character assignments all reset, and a
+  message explains what is about to happen before anything is deleted. Where this
+  information is stored had to change so that one character can see and correct another's,
+  and carrying the old data across would have produced a list that looked right without
+  being trustworthy.
+- **TaskTome** — two confusingly similar config labels renamed. "Warband Task" is now
+  "Assigned to all characters", and the "Warband" completion scope is now "Shared — one
+  completion for the account". They control genuinely different things: who is expected to
+  do a chore, and whether one character doing it counts for everybody.
+- **Openables** — **your Openables settings reset once, the first time you log in after
+  this update.** The button position, its size, the blacklist and the count and cooldown
+  toggles all return to their defaults. Openables was saving under a different name from
+  every other module, and correcting that leaves the old entry behind. Nothing else is
+  affected, and it happens only this once.
+- **BitForge** — the minimap button now sits out on the minimap ring and follows the
+  minimap's size, instead of a fixed distance from the centre. It keeps the angle it was
+  already at, so it stays in the same direction but moves outward — from inside the map
+  onto its edge.
+- **BitForge** — the shared BitForge text, such as the minimap button's tooltip, is now
+  translated into every supported language rather than only English.
+
+### Fixed
+
+- **TaskTome** — daily and weekly chores now reset for every character, not only the one
+  you happened to be playing when the reset came round. An alt logged out across a reset
+  used to keep yesterday's ticks indefinitely; it is now corrected the next time any of
+  your characters logs in.
+
 ## [v12.1.0.1] — 2026-08-17
 
 ### Added

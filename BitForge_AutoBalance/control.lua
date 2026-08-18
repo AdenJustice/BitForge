@@ -1,5 +1,5 @@
----@class BitForge.AutoBalance
-local ns = select(2, ...)
+---@type string, BitForge.AutoBalance
+local ADDON_NAME, ns = ...
 
 local format = string.format
 
@@ -200,9 +200,6 @@ end
 -- ================================================================================
 -- Events
 -- ================================================================================
---
--- EventRegistry callbacks receive the registry's owner ID as their first
--- argument, ahead of the event payload, so each handler discards it.
 
 -- BankFrame registers three interaction types against the same frame
 -- (Blizzard_UIPanels_Game/Mainline/BankFrame.lua:101-111). Which one the server
@@ -215,7 +212,7 @@ local BANK_INTERACTIONS = {
     [Enum.PlayerInteractionType.AccountBanker]   = true,
 }
 
-local function onInteractionShow(_, interactionType)
+local function onInteractionShow(interactionType)
     if not BANK_INTERACTIONS[interactionType] then return end
     if armed then return end
     armed = true
@@ -224,7 +221,7 @@ local function onInteractionShow(_, interactionType)
     pollReady(generation)
 end
 
-local function onInteractionHide(_, interactionType)
+local function onInteractionHide(interactionType)
     if not BANK_INTERACTIONS[interactionType] then return end
     armed = false
 end
@@ -233,13 +230,23 @@ local function onPlayerMoney()
     transfer.Confirm()
 end
 
-local function onPlayerReady()
+local function startModule()
     playerName = BitForge:GetCurrentCharacter()
     ns.view.Init()
 end
 
-EventRegistry:RegisterFrameEventAndCallback("PLAYER_INTERACTION_MANAGER_FRAME_SHOW", onInteractionShow)
-EventRegistry:RegisterFrameEventAndCallback("PLAYER_INTERACTION_MANAGER_FRAME_HIDE", onInteractionHide)
-EventRegistry:RegisterFrameEventAndCallback("PLAYER_MONEY", onPlayerMoney)
+local function onPlayerReady()
+    BitForge:UpgradeModuleDB(ADDON_NAME, {
+        version = enum.SCHEMA_VERSION,
+        steps   = {
+            -- Data written before this module was versioned already matches the
+            -- version-1 shape, so adopting the version is the whole migration.
+            [1] = function() end,
+        },
+    }, startModule)
+end
 
+ns:Subscribe(E.PLAYER_INTERACTION_MANAGER_FRAME_SHOW, onInteractionShow)
+ns:Subscribe(E.PLAYER_INTERACTION_MANAGER_FRAME_HIDE, onInteractionHide)
+ns:Subscribe(E.PLAYER_MONEY, onPlayerMoney)
 ns:Subscribe(E.PLAYER_READY, onPlayerReady)

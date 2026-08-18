@@ -12,7 +12,7 @@ A modular World of Warcraft addon suite for WoW 12.0+ (Midnight). Each module is
 
 | Field           | Value                                                    |
 | --------------- | -------------------------------------------------------- |
-| WoW version     | 12.0.5 (Midnight)                                        |
+| WoW version     | 12+ (Midnight)                                        |
 | Retail only     | Yes                                                      |
 | Saved variables | `BitForgeDB` (core only — no per-module saved variables) |
 
@@ -45,7 +45,16 @@ PeknaMrcha, continued by srhinos and cont1nuity. MIT licensed.
 
 ### BitForge TaskTome
 
-A Warband chore tracker for daily, weekly, and one-time tasks. Supports per-character opt-in/out, nested sub-tasks, a draggable in-game widget, and a drag-and-drop config panel in WoW Settings.
+A Warband chore tracker for daily, weekly, and one-time tasks, with nested sub-tasks and
+per-character opt-in/out. The in-game widget is draggable and resizable, and shows either
+the character you are playing or every character on the account — grouped by character to
+see who still owes what, or by task to see who has already done it, with a done/total
+count on each heading.
+
+Chores reset on your realm's own schedule, and an alt that was logged out across a reset
+is corrected the next time any of your characters logs in. The config panel supports
+drag-and-drop reordering, and can set another character's assignments without you logging
+in as them.
 
 ### BitForge UPS _(Undermine Parcel Service)_
 

@@ -3,86 +3,106 @@ local ns = select(2, ...)
 local model = ns.model
 local view = ns.view
 local enum = ns.enum
+---@class BitForge.Core.Control
+local control = ns.control
 local E = BitForge.Events
 
 local C_AddOns = C_AddOns
 local EventRegistry = EventRegistry
 local ipairs = ipairs
-local select = select
 local sub = string.sub
-local unpack = unpack
 
 -- ================================================================================
--- Event Bus
+-- Minimap button
 -- ================================================================================
 
--- eventBus: modules register their listeners here
-local bus = CreateFromMixins(CallbackRegistryMixin)
-bus:OnLoad()
-bus:SetUndefinedEventsAllowed(true)
+---@class BitForge.Core.Control.MinimapButton
+local minimapButton = {}
 
-local stickyEvents = {
-    [E.CORE_LOADED] = true,
-    [E.PLAYER_READY] = true,
-}
+local entries = {}
 
-local firedStickyEvents = {}
-
-local function TriggerEvent(event, ...)
-    if stickyEvents[event] then
-        firedStickyEvents[event] = { n = select("#", ...), ... }
-    end
-    bus:TriggerEvent(event, ...)
+--- Builds the shared module menu. Anchored to whatever opened it -- the minimap
+--- button or the addon compartment entry.
+---@param anchor Frame
+function minimapButton.OpenMenu(anchor)
+    MenuUtil.CreateContextMenu(anchor, function(_, rootDescription)
+        rootDescription:CreateTitle("BitForge")
+        for _, entry in ipairs(entries) do
+            rootDescription:CreateButton(entry.label, entry.onToggle)
+        end
+    end)
 end
 
-function BitForge.Subscribe(event, callback, owner)
-    bus:RegisterCallback(event, callback, owner)
-
-    local payload = firedStickyEvents[event]
-    if payload then
-        callback(unpack(payload, 1, payload.n))
-    end
+---@param angle number degrees
+function minimapButton.OnPositionChanged(angle)
+    model.UpdateDatabase("minimapPos", angle)
 end
 
-function BitForge.Unsubscribe(event, owner)
-    bus:UnregisterCallback(event, owner)
+--- Built at PLAYER_LOGIN rather than on load: the position depends on the
+--- minimap's real dimensions and on GetMinimapShape, and any UI addon providing
+--- either has finished loading by then.
+function minimapButton.Init()
+    view.minimapButton.Create(minimapButton.OpenMenu, minimapButton.OnPositionChanged)
+    view.minimapButton.SetPosition(
+        model.ReadDatabase("minimapPos") or enum.DB_DEFAULTS.global.minimapPos)
 end
 
-function ns:Subscribe(event, fn)
-    BitForge.Subscribe(event, fn, self)
+control.minimapButton = minimapButton
+
+--- Registers a module entry in the BitForge menu.
+---@param entry { label: string, icon: string, onToggle: function }  icon is reserved for future menu icon support
+function BitForge.RegisterMinimapButton(entry)
+    entries[#entries + 1] = entry
 end
 
-function ns:Unsubscribe(event)
-    BitForge.Unsubscribe(event, self)
+-- The addon compartment calls these by name out of the TOC, so they have to be
+-- globals rather than namespace members. Blizzard dispatches them as
+-- _G[func](addonName, ...) after calling forceinsecure()
+-- (Blizzard_Minimap/Mainline/AddonCompartment.lua:97-119).
+
+-- Only the enter and leave callbacks are handed the frame; the click callback
+-- receives the mouse button's name instead (:99-103). Hovering necessarily
+-- precedes clicking, so the anchor is captured here.
+local compartmentAnchor
+
+function BitForge_OnAddonCompartmentEnter(_, anchor)
+    compartmentAnchor = anchor
+    view.minimapButton.ShowTooltip(anchor, "minimap:compartmentTooltip")
 end
+
+function BitForge_OnAddonCompartmentLeave()
+    GameTooltip:Hide()
+end
+
+function BitForge_OnAddonCompartmentClick()
+    minimapButton.OpenMenu(compartmentAnchor or AddonCompartmentFrame)
+end
+
+-- ================================================================================
+-- Lifecycle
+-- ================================================================================
+--
+-- The bus and the relay registry live in events.lua. Only the two events core
+-- publishes itself are wired here; every other event in BitForge.Events is a
+-- relay that registers itself when a module first subscribes to it.
 
 EventRegistry:RegisterFrameEventAndCallback("PLAYER_LOGIN", function()
     BitForge:RegisterCharacter()
-    TriggerEvent(E.PLAYER_READY)
+    minimapButton.Init()
+    control.TriggerEvent(E.PLAYER_READY)
 end)
 
+-- No module observes logout, so this stays a private core registration rather
+-- than an entry in BitForge.Events.
 EventRegistry:RegisterFrameEventAndCallback("PLAYER_LOGOUT", function()
-    TriggerEvent(E.PLAYER_LEAVING)
     model.CleanupDatabase()
-end)
-
-EventRegistry:RegisterFrameEventAndCallback("BANKFRAME_OPENED", function()
-    TriggerEvent(E.BANK_OPENED)
-end)
-
-EventRegistry:RegisterFrameEventAndCallback("BANKFRAME_CLOSED", function()
-    TriggerEvent(E.BANK_CLOSED)
-end)
-
-EventRegistry:RegisterFrameEventAndCallback("SKILL_LINES_CHANGED", function()
-    TriggerEvent(E.SKILL_LINES_CHANGED)
 end)
 
 -- ================================================================================
 -- Settings
 -- ================================================================================
 
-local PREFIX = "BitForge_"
+local PREFIX = enum.ADDON_PREFIX
 local PREFIX_LEN = #PREFIX
 
 -- =========================================================
@@ -117,10 +137,8 @@ local function OnToggle(addonName, enable)
         if not C_AddOns.IsAddOnLoaded(addonName) then
             C_AddOns.LoadAddOn(addonName)
         end
-        bus:TriggerEvent(E.MODULE_ENABLED, addonName)
     else
         C_AddOns.DisableAddOn(addonName)
-        bus:TriggerEvent(E.MODULE_DISABLED, addonName)
     end
 end
 
@@ -155,5 +173,5 @@ end
 EventUtil.ContinueOnAddOnLoaded("BitForge", function()
     model.InitializeDatabase()
     OnCoreLoaded()
-    TriggerEvent(E.CORE_LOADED)
+    control.TriggerEvent(E.CORE_LOADED)
 end)

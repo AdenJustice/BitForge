@@ -14,8 +14,8 @@ local control = ns.control
 ---@class BitForge.Openables.View
 local view = ns.view
 
-local BUTTON_NAME = "BitForge_OpenablesButton"
-local HIDER_NAME = "BitForge_OpenablesHider"
+local BUTTON_NAME = ADDON_NAME .. "Button"
+local HIDER_NAME = ADDON_NAME .. "Hider"
 
 local pendingCandidate
 local pendingDirty = false
@@ -53,12 +53,12 @@ end
 -- Tooltip
 -- ================================================================================
 
--- Debug output is deliberately not routed through ns.locale: it exists only
--- while BitForge.DEBUG is true, which the ship skill turns off, so translating
--- it into all eleven locale files would be upkeep for text no player sees.
+-- Debug output is deliberately not routed through ns.locale: it appears only
+-- for a profile that has hand-set the module's debug flag, so translating it
+-- into all eleven locale files would be upkeep for text no player sees.
 local DEBUG_COLOR = CreateColor(0.55, 0.55, 0.55)
 
--- Inverted on first use rather than at file read: with DEBUG off nothing ever
+-- Inverted on first use rather than at file read: unflagged, nothing ever
 -- asks for a name, and Enum.TooltipDataLineType carries dozens of members.
 local lineTypeNames
 
@@ -97,7 +97,7 @@ end
 -- here. Item class is the discriminator the pipeline leans on hardest, so it
 -- is reported even though nothing in the reason string mentions it.
 local function addDebugLines(candidate)
-    if not BitForge.DEBUG then return end
+    if not model.IsDebug() then return end
 
     local _, itemType, itemSubType, _, _, classID, subClassID =
         C_Item.GetItemInfoInstant(candidate.itemID)
@@ -509,7 +509,7 @@ function blacklistFrame.Refresh()
 end
 
 local function CreateMainFrame()
-    mainFrame = CreateFrame("Frame", "BitForge_OpenablesBlacklistFrame", UIParent)
+    mainFrame = CreateFrame("Frame", ADDON_NAME .. "BlacklistFrame", UIParent)
     mainFrame:SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
     mainFrame:SetPoint("CENTER")
     mainFrame:SetFrameStrata("HIGH")

@@ -62,6 +62,11 @@ local enum = {
     -- rather than prose, so it is a constant and not a locale string; the sentence
     -- explaining it lives in L["tooltip:charOverride"].
     CHAR_OVERRIDE_MARK = "!",
+
+    -- Bumped whenever the stored shape changes incompatibly. Every version
+    -- needs a migration step registered in control.lua; core refuses to start
+    -- the module against a shape nothing converted.
+    SCHEMA_VERSION = 1,
 }
 ns.enum = enum
 

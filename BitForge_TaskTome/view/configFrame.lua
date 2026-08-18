@@ -1,8 +1,5 @@
 ---@class BitForge.TaskTome
----@field view BitForge.TaskTome.View
-
----@type string, BitForge.TaskTome
-local ADDON_NAME, ns = ...
+local ns = select(2, ...)
 
 local CreateFrame = CreateFrame
 local UIParent = UIParent
@@ -10,224 +7,22 @@ local UIParent = UIParent
 local ipairs = ipairs
 local format = string.format
 
+---@type BitForge.TaskTome.Model
 local model = ns.model
+---@type BitForge.TaskTome.Control
 local control = ns.control
-local UI = BitForge.UI
+---@type BitForge.TaskTome.Locale
 local locale = ns.locale
+---@type BitForge.TaskTome.Enum
 local enum = ns.enum
+local UI = BitForge.UI
 
----@class BitForge.TaskTome.View
+---@type BitForge.TaskTome.View
 local view = ns.view
-
--- =============================================================================
--- Widget
--- =============================================================================
-
-do
-    local widget = {}
-
-    local frame = UI.CreateFrame(UIParent)
-    frame:SetSize(220, 300)
-    frame:SetFrameStrata("MEDIUM")
-    frame:Hide()
-
-    local header = CreateFrame("Frame", nil, frame)
-    header:SetPoint("TOPLEFT", frame, "TOPLEFT", 6, -6)
-    header:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -6, -6)
-    PixelUtil.SetHeight(header, 20, 1)
-
-    local titleText = header:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
-    titleText:SetPoint("LEFT", header, "LEFT", 4, 0)
-    titleText:SetText(locale["status:widgetTitle"])
-
-    -- Gear button (opens Config)
-    local gearBtn = CreateFrame("Button", nil, header)
-    gearBtn:SetSize(16, 16)
-    gearBtn:SetPoint("RIGHT", header, "RIGHT", -20, 0)
-    local gearIcon = gearBtn:CreateTexture(nil, "ARTWORK")
-    gearIcon:SetAllPoints()
-    gearIcon:SetTexture("Interface/Buttons/UI-OptionsButton")
-
-    local function OnGearClick() view.configFrame.Toggle() end
-    gearBtn:SetScript("OnClick", OnGearClick)
-
-    -- Lock button
-    local lockBtn = CreateFrame("Button", nil, header)
-    lockBtn:SetSize(16, 16)
-    lockBtn:SetPoint("RIGHT", header, "RIGHT", -2, 0)
-    local lockIcon = lockBtn:CreateTexture(nil, "ARTWORK")
-    lockIcon:SetAllPoints()
-
-    local function UpdateLockVisual()
-        if model.IsWidgetLocked() then
-            lockIcon:SetTexture("Interface/Buttons/LockButton-Locked-Up")
-            frame:SetMovable(false)
-        else
-            lockIcon:SetTexture("Interface/Buttons/LockButton-Unlocked-Up")
-            frame:SetMovable(true)
-            frame:RegisterForDrag("LeftButton")
-        end
-    end
-
-    local function OnLockClick()
-        model.SetWidgetLocked(not model.IsWidgetLocked())
-        UpdateLockVisual()
-    end
-    lockBtn:SetScript("OnClick", OnLockClick)
-
-    local function OnDragStart(self) self:StartMoving() end
-    local function OnDragStop(self)
-        self:StopMovingOrSizing()
-        local x, y = self:GetCenter()
-        model.SetWidgetPos(x, y)
-    end
-
-    frame:SetScript("OnDragStart", OnDragStart)
-    frame:SetScript("OnDragStop", OnDragStop)
-
-    function widget.Show()
-        local pos = model.GetWidgetPos()
-        frame:ClearAllPoints()
-        if pos.x ~= 0 or pos.y ~= 0 then
-            frame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", pos.x, pos.y)
-        else
-            frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-        end
-        UpdateLockVisual()
-        widget.Refresh()
-        frame:Show()
-        model.SetWidgetVisible(true)
-    end
-
-    function widget.Hide()
-        frame:Hide()
-        model.SetWidgetVisible(false)
-    end
-
-    function widget.Toggle()
-        if frame:IsShown() then
-            widget.Hide()
-        else
-            widget.Show()
-        end
-    end
-
-    -- Task Tree (ScrollBoxListTreeListView)
-
-    local scrollBox = CreateFrame("Frame", nil, frame, "WowScrollBoxList")
-    scrollBox:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, -32)
-    scrollBox:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -22, 8)
-
-    local scrollBar = CreateFrame("EventFrame", nil, frame, "MinimalScrollBar")
-    scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 4, 0)
-    scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 4, 0)
-
-    local treeView = CreateScrollBoxListTreeListView(20, 2, 2, 2, 2, 1)
-    treeView:SetElementExtent(22)
-
-    local function OnCheckboxClick(self)
-        local taskId = self:GetParent().taskId
-        if model.IsCompleted(taskId) then
-            control.tasks.UncompleteTask(taskId)
-        else
-            control.tasks.CompleteTask(taskId)
-        end
-        widget.Refresh()
-    end
-
-    local function OnRowMouseDown(self, mouseButton)
-        if mouseButton == "LeftButton" and self._elementData and self._elementData:HasChildren() then
-            self._elementData:ToggleCollapsed()
-            widget.Refresh()
-        end
-    end
-
-    treeView:SetElementFactory(function(factory, node)
-        factory("Frame", function(rowFrame, elementData)
-            -- One-time frame setup
-            if not rowFrame._initialized then
-                rowFrame._initialized = true
-
-                -- Collapse arrow
-                rowFrame.arrow = rowFrame:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
-                rowFrame.arrow:SetPoint("LEFT", rowFrame, "LEFT", 2, 0)
-                rowFrame.arrow:SetWidth(12)
-
-                -- Task name
-                rowFrame.nameText = rowFrame:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
-                rowFrame.nameText:SetPoint("LEFT", rowFrame.arrow, "RIGHT", 2, 0)
-                rowFrame.nameText:SetPoint("RIGHT", rowFrame, "RIGHT", -28, 0)
-                rowFrame.nameText:SetJustifyH("LEFT")
-                rowFrame.nameText:SetWordWrap(false)
-
-                -- Checkbox
-                rowFrame.checkbox = UI.CreateCheckButton(nil, rowFrame, nil, true)
-                rowFrame.checkbox:SetSize(20, 20)
-                rowFrame.checkbox:SetPoint("RIGHT", rowFrame, "RIGHT", -4, 0)
-                rowFrame.checkbox:SetScript("OnClick", OnCheckboxClick)
-
-                rowFrame:SetScript("OnMouseDown", OnRowMouseDown)
-            end
-
-            -- Data bind
-            local data = elementData:GetData()
-            local task = data.task
-            rowFrame.taskId = task.id
-            rowFrame._elementData = elementData
-
-            -- Arrow
-            if elementData:HasChildren() then
-                rowFrame.arrow:SetText(elementData:IsCollapsed() and "▶" or "▼")
-                rowFrame.arrow:Show()
-            else
-                rowFrame.arrow:SetText("")
-                rowFrame.arrow:Hide()
-            end
-
-            -- Name (strikethrough if completed)
-            local completed = model.IsCompleted(task.id)
-            if completed then
-                rowFrame.nameText:SetTextColor(0.5, 0.5, 0.5)
-                -- No native strikethrough in WoW fonts; use gray + dim as visual cue
-            else
-                rowFrame.nameText:SetTextColor(1, 1, 1)
-            end
-            rowFrame.nameText:SetText(task.name)
-
-            -- Checkbox
-            rowFrame.checkbox:SetChecked(completed)
-        end)
-    end)
-
-    ScrollUtil.InitScrollBoxListWithScrollBar(scrollBox, scrollBar, treeView)
-
-    -- Note: must not be called from within the ScrollBox frame factory or initializer —
-    -- SetDataProvider is not re-entrant. Safe to call from user input handlers (OnClick/OnMouseDown).
-    function widget.Refresh()
-        local dataProvider = CreateTreeDataProvider()
-
-        local function insertNodes(parentNode, subtree)
-            for _, entry in ipairs(subtree) do
-                local node = parentNode:Insert({ task = entry.task })
-                if #entry.children > 0 then
-                    insertNodes(node, entry.children)
-                end
-            end
-        end
-
-        insertNodes(dataProvider, model.GetVisibleTaskTree())
-        scrollBox:SetDataProvider(dataProvider)
-    end
-
-    view.widget = widget
-end
-
--- =============================================================================
--- Config Frame
--- =============================================================================
 
 do
     local LEFT_WIDTH = 236
+    ---@class BitForge.TaskTome.View.ConfigFrame
     local configFrame = {}
 
     local frame = CreateFrame("Frame", "BitForge_TaskTomeConfig", UIParent, "BackdropTemplate")
@@ -394,6 +189,11 @@ do
 
     -- configFrame.PopulateForm defined below in Form Binding section
 
+    -- Assigned in the Right Panel section below, once the character selector it
+    -- resets exists. Forward-declared because Show is defined above that section
+    -- and only ever runs long after the whole file has loaded.
+    local ResetCharSelector
+
     function configFrame.Show()
         local pos = model.GetConfigPos()
         frame:ClearAllPoints()
@@ -402,7 +202,11 @@ do
         else
             frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
         end
+        ResetCharSelector()
         configFrame.RefreshTree()
+        -- Re-read the form for the character the selector was just reset to, so
+        -- the opt state on screen belongs to the name above it.
+        configFrame.PopulateForm(selectedId)
         frame:Show()
     end
 
@@ -424,9 +228,48 @@ do
     rightPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", 252, -40)
     rightPanel:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -8, 36)
 
+    -- Which character's assignment this form edits. Task fields below belong to
+    -- the task itself and are unaffected by this; only the opt state is
+    -- re-targeted.
+    local selectedChar = nil  -- nil means the logged-in character
+
+    local function CurrentFormChar()
+        return selectedChar or BitForge:GetCurrentCharacter()
+    end
+
+    local charLabel = rightPanel:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
+    charLabel:SetPoint("TOPLEFT", rightPanel, "TOPLEFT", 4, -8)
+    charLabel:SetText(locale["settings:editingFor"])
+
+    local charDropdown = UI.CreateDropdown(rightPanel, BitForge:GetCurrentCharacter())
+    charDropdown:SetPoint("TOPLEFT", charLabel, "BOTTOMLEFT", 0, -2)
+    charDropdown:SetWidth(200)
+    charDropdown:SetupMenu(function(dropdown, root)
+        for _, charKey in ipairs(BitForge:GetKnownCharacters()) do
+            local key = charKey
+            root:CreateRadio(key,
+                function() return CurrentFormChar() == key end,
+                function()
+                    selectedChar = key
+                    charDropdown.Label:SetText(key)
+                    if selectedId then configFrame.PopulateForm(selectedId) end
+                end
+            )
+        end
+    end)
+
+    -- Spec §8: the selector defaults to the current character. Without a reset,
+    -- picking an alt once leaves the form editing that alt for the rest of the
+    -- session -- including the next time the frame is opened, where the label
+    -- would be the only clue and nothing would have led the player to look.
+    function ResetCharSelector()
+        selectedChar = nil
+        charDropdown.Label:SetText(BitForge:GetCurrentCharacter())
+    end
+
     -- Name
     local nameLabel = rightPanel:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
-    nameLabel:SetPoint("TOPLEFT", rightPanel, "TOPLEFT", 4, -8)
+    nameLabel:SetPoint("TOPLEFT", charDropdown, "BOTTOMLEFT", 0, -8)
     nameLabel:SetText(locale["settings:taskName"])
 
     local nameEdit = UI.CreateEditBox(rightPanel)
@@ -528,7 +371,7 @@ do
             warbandAssigned = warbandCheck:GetChecked(),
             completionScope = scopeValue,
         })
-        control.tasks.SetOptState(selectedId, optValue)
+        control.tasks.SetOptStateFor(selectedId, CurrentFormChar(), optValue)
         configFrame.RefreshTree()
     end
     saveBtn:SetScript("OnClick", OnSaveClick)
@@ -627,6 +470,7 @@ do
             scopeDropdown.Label:SetText(SCOPE_LABELS[1])
             optValue = OPT_VALUES[1]
             optDropdown.Label:SetText(OPT_LABELS[1])
+            optLabel:SetText(locale["settings:optState"])
             SetFormEnabled(false)
             return
         end
@@ -656,12 +500,23 @@ do
             end
         end
 
-        -- Opt state
-        optValue = model.GetOptState(id)
+        -- Opt state belongs to the selected character, not to the task.
+        optValue = model.GetOptStateFor(id, CurrentFormChar())
         for i, optVal in ipairs(OPT_VALUES) do
             if optVal == optValue then
                 optDropdown.Label:SetText(OPT_LABELS[i]); break
             end
+        end
+
+        -- Never leave it ambiguous whose assignment is being changed. Falls
+        -- back to the generic label when the per-character template isn't
+        -- available yet, rather than throwing on string.format(nil, ...).
+        local formChar = CurrentFormChar()
+        local optStateForTemplate = locale["settings:optStateFor"]
+        if optStateForTemplate and formChar ~= BitForge:GetCurrentCharacter() then
+            optLabel:SetText(format(optStateForTemplate, formChar))
+        else
+            optLabel:SetText(locale["settings:optState"])
         end
 
         SetFormEnabled(true)
@@ -671,28 +526,4 @@ do
     SetFormEnabled(false)
 
     view.configFrame = configFrame
-end
-
--- =============================================================================
---  Settings Panel
--- =============================================================================
-
-do
-    local settingsPanel = {}
-
-    local function OnOpenConfig()
-        view.configFrame.Show()
-    end
-
-    function settingsPanel.Init()
-        local cat = BitForge.Settings.NewSubcategory(ADDON_NAME, locale["settings:taskTomePanel"], locale)
-        cat:AddInitializer(CreateSettingsButtonInitializer(
-            locale["settings:config"],
-            locale["settings:openConfig"],
-            OnOpenConfig,
-            nil, true
-        ))
-    end
-
-    view.settingsPanel = settingsPanel
 end

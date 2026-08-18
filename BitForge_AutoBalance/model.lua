@@ -1,5 +1,5 @@
----@class BitForge.AutoBalance
-local ns = select(2, ...)
+---@type string, BitForge.AutoBalance
+local ADDON_NAME, ns = ...
 
 local abs = math.abs
 local min = math.min
@@ -18,7 +18,7 @@ local DB_DEFAULTS = {
 }
 local db
 
-BitForge:AllocateModuleDB("AutoBalance", DB_DEFAULTS, function(moduleDB)
+BitForge:AllocateModuleDB(ADDON_NAME, DB_DEFAULTS, function(moduleDB)
     db = moduleDB
 end)
 

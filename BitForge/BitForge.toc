@@ -17,10 +17,23 @@
 ## IconTexture: Interface/AddOns/BitForge/icon
 ## X-Curse-Project-ID: 1475089
 ## X-Wago-ID: bGoyJB60
+## AddonCompartmentFunc: BitForge_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: BitForge_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: BitForge_OnAddonCompartmentLeave
 
 Init.lua
+Locales\enUS.lua
+Locales\koKR.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
 APIs/Settings.lua
-APIs/MinimapButton.lua
 APIs/UI/Core.lua
 APIs/UI/Templates/Frame.lua
 APIs/UI/Templates/Buttons.lua
@@ -30,6 +43,7 @@ APIs/UI/Templates/Slider.lua
 APIs/UI/Templates/Tab.lua
 APIs/Utils.lua
 
+events.lua
 model.lua
 view.lua
 control.lua

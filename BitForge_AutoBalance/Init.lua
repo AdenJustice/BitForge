@@ -22,6 +22,11 @@ local enum = {
 
     -- How long to wait for PLAYER_MONEY to confirm a dispatched transfer, in seconds.
     CONFIRM_TIMEOUT = 2,
+
+    -- Bumped whenever the stored shape changes incompatibly. Every version
+    -- needs a migration step registered in control.lua; core refuses to start
+    -- the module against a shape nothing converted.
+    SCHEMA_VERSION = 1,
 }
 ns.enum = enum
 

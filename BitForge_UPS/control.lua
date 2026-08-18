@@ -1,5 +1,5 @@
----@class BitForge.UPS
-local ns = select(2, ...)
+---@type string, BitForge.UPS
+local ADDON_NAME, ns = ...
 
 local model = ns.model
 local enum = ns.enum
@@ -571,7 +571,7 @@ function deposit.Start(plan)
     executeNext()
 end
 
-EventRegistry:RegisterFrameEventAndCallback("BAG_UPDATE_DELAYED", function()
+ns:Subscribe(events.BAG_UPDATE_DELAYED, function()
     onBagUpdateDelayed()
 end)
 
@@ -630,7 +630,7 @@ local function onBankClosed()
     view.curationWindow.Reload()
 end
 
-local function onPlayerReady()
+local function startModule()
     view.settingsPanel.Init()
 
     BitForge.RegisterMinimapButton({
@@ -646,23 +646,33 @@ local function onPlayerReady()
     recipes.PromptForScans()
 end
 
-EventRegistry:RegisterFrameEventAndCallback("TRADE_SKILL_LIST_UPDATE", function()
+local function onPlayerReady()
+    BitForge:UpgradeModuleDB(ADDON_NAME, {
+        version = enum.SCHEMA_VERSION,
+        steps   = {
+            -- Data written before this module was versioned already matches the
+            -- version-1 shape, so adopting the version is the whole migration.
+            [1] = function() end,
+        },
+    }, startModule)
+end
+
+ns:Subscribe(events.TRADE_SKILL_LIST_UPDATE, function()
     harvestOpenWindow()
 end)
 
-EventRegistry:RegisterFrameEventAndCallback("NEW_RECIPE_LEARNED",
-    function(_, recipeID, recipeLevel, baseRecipeID)
-        recipes.OnNewRecipeLearned(recipeID, recipeLevel, baseRecipeID)
-    end)
+ns:Subscribe(events.NEW_RECIPE_LEARNED, function(recipeID, recipeLevel, baseRecipeID)
+    recipes.OnNewRecipeLearned(recipeID, recipeLevel, baseRecipeID)
+end)
 
 -- Losing or gaining a profession invalidates what was recorded for this
 -- character, so the profession list is rebuilt. Learned recipes are left alone:
 -- they are re-harvested on the next window open, and discarding them here would
 -- make every recipe look wanted in the meantime.
-EventRegistry:RegisterFrameEventAndCallback("SKILL_LINES_CHANGED", function()
+ns:Subscribe(events.SKILL_LINES_CHANGED, function()
     recipes.RecordProfessions()
 end)
 
-ns:Subscribe(events.BANK_OPENED, onBankOpened)
-ns:Subscribe(events.BANK_CLOSED, onBankClosed)
+ns:Subscribe(events.BANKFRAME_OPENED, onBankOpened)
+ns:Subscribe(events.BANKFRAME_CLOSED, onBankClosed)
 ns:Subscribe(events.PLAYER_READY, onPlayerReady)

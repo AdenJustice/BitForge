@@ -28,5 +28,7 @@ Locales\ruRU.lua
 Locales\zhCN.lua
 Locales\zhTW.lua
 model.lua
-view.lua
+view\view.lua
+view\widget.lua
+view\configFrame.lua
 control.lua

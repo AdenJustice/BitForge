@@ -4,12 +4,6 @@ function BitForge:Print(...)
     print("|cff00ccff[BitForge]|r ", ...)
 end
 
-function BitForge:Debug(...)
-    if BitForge.DEBUG then
-        print("|cff888888[BitForge:Debug]|r", ...)
-    end
-end
-
 function BitForge:ShortValue(n)
     return AbbreviateNumbers(n)
 end

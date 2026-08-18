@@ -26,6 +26,14 @@ local enum = {
     -- unadvanced and still in the past, which RESET_MIN_DELAY would retry at 1 Hz;
     -- a persistent fault should report about once a minute, not stream.
     RESET_ERROR_DELAY = 60, -- seconds
+    -- Bumped whenever the stored shape changes incompatibly. A database below
+    -- this version is reset rather than migrated; see the design doc §5.3.
+    SCHEMA_VERSION    = 1,
+    -- Widget view modes. Persisted in db.char; do not change the values.
+    SCOPE_ME          = "me",
+    SCOPE_ALL         = "all",
+    ORIENT_BY_CHAR    = "byCharacter",
+    ORIENT_BY_TASK    = "byTask",
 }
 ns.enum = enum
 

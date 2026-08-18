@@ -63,6 +63,11 @@ local enum = {
         -- question curation ever raises: "did I already decide this one?"
         OVERRIDE = CreateColor(1, 0.82, 0),
     },
+
+    -- Bumped whenever the stored shape changes incompatibly. Every version
+    -- needs a migration step registered in control.lua; core refuses to start
+    -- the module against a shape nothing converted.
+    SCHEMA_VERSION = 1,
 }
 ns.enum = enum
 

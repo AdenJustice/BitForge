@@ -1,5 +1,5 @@
----@class BitForge.BatchSell
-local ns = select(2, ...)
+---@type string, BitForge.BatchSell
+local ADDON_NAME, ns = ...
 
 local ipairs = ipairs
 local next = next
@@ -33,7 +33,7 @@ local DB_DEFAULTS = {
 }
 local db
 
-BitForge:AllocateModuleDB("BatchSell", DB_DEFAULTS, function(moduleDB)
+BitForge:AllocateModuleDB(ADDON_NAME, DB_DEFAULTS, function(moduleDB)
     db = moduleDB
 end)
 

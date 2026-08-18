@@ -1,5 +1,6 @@
----@class BitForge.Openables
-local ns = select(2, ...)
+---@type string, BitForge.Openables
+local ADDON_NAME, ns = ...
+local E = BitForge.Events
 
 local ipairs = ipairs
 
@@ -332,7 +333,7 @@ local function reviewAllowListEntry(bag, slot, itemID)
 
     model.RecordCurationReview("ALLOW_LIST", itemID, verdict)
 
-    if BitForge.DEBUG and priority then
+    if model.IsDebug() and priority then
         BitForge:Print(("Openables: ALLOW_LIST entry %d looks redundant (%s)")
             :format(itemID, verdict))
     end
@@ -361,7 +362,7 @@ local function reviewQuestGatedEntry(bag, slot, itemID)
 
     model.RecordCurationReview("QUEST_GATED", itemID, verdict)
 
-    if BitForge.DEBUG and reported then
+    if model.IsDebug() and reported then
         BitForge:Print(("Openables: QUEST_GATED entry %d -- %s"):format(itemID, verdict))
     end
 end
@@ -393,7 +394,7 @@ local function collectCandidates()
                             stackCount   = info.stackCount or 1,
                             onCooldown   = (startTime or 0) > 0 and (duration or 0) > 0,
                             locked       = locked or false,
-                            -- Diagnostics for the DEBUG tooltip; see enum.REASON.
+                            -- Diagnostics for the debug tooltip; see enum.REASON.
                             reason       = reason,
                             reasonDetail = detail,
                         }
@@ -444,8 +445,8 @@ local function onBagUpdate()
     scanner.RequestScan()
 end
 
--- EventRegistry passes the owner ID ahead of the payload; discard it.
-local function onItemDataLoaded(_, itemID, success)
+-- ITEM_DATA_LOAD_RESULT payload is (itemID, success).
+local function onItemDataLoaded(itemID, success)
     if not pendingItems[itemID] then return end
     pendingItems[itemID] = nil
     if success then
@@ -482,8 +483,8 @@ local function onLevelUp()
     scanner.RequestScan()
 end
 
--- EventRegistry passes the owner ID ahead of the payload; discard it.
-local function onCVarUpdate(_, name)
+-- CVAR_UPDATE payload is (cvarName, value).
+local function onCVarUpdate(name)
     if name == "ActionButtonUseKeyDown" then
         view.ApplyClickRegistration()
     end
@@ -493,23 +494,34 @@ local function onUpdateBindings()
     view.RefreshHotKey()
 end
 
-local function Init()
+local function startModule()
     view.Init()
     scanner.RequestScan()
 end
 
-EventRegistry:RegisterFrameEventAndCallback("BAG_UPDATE_DELAYED", onBagUpdate)
-EventRegistry:RegisterFrameEventAndCallback("ITEM_DATA_LOAD_RESULT", onItemDataLoaded)
-EventRegistry:RegisterFrameEventAndCallback("ACTIONBAR_UPDATE_COOLDOWN", onCooldownUpdate)
-EventRegistry:RegisterFrameEventAndCallback("PLAYER_REGEN_ENABLED", onRegenEnabled)
-EventRegistry:RegisterFrameEventAndCallback("QUEST_ACCEPTED", onQuestChanged)
-EventRegistry:RegisterFrameEventAndCallback("QUEST_TURNED_IN", onQuestChanged)
-EventRegistry:RegisterFrameEventAndCallback("QUEST_REMOVED", onQuestChanged)
-EventRegistry:RegisterFrameEventAndCallback("PLAYER_LEVEL_UP", onLevelUp)
-EventRegistry:RegisterFrameEventAndCallback("CVAR_UPDATE", onCVarUpdate)
-EventRegistry:RegisterFrameEventAndCallback("UPDATE_BINDINGS", onUpdateBindings)
+local function Init()
+    -- Allocated under the full addon name, unlike every other module.
+    BitForge:UpgradeModuleDB(ADDON_NAME, {
+        version = enum.SCHEMA_VERSION,
+        steps   = {
+            -- Data written before this module was versioned already matches the
+            -- version-1 shape, so adopting the version is the whole migration.
+            [1] = function() end,
+        },
+    }, startModule)
+end
 
-ns:Subscribe(BitForge.Events.PLAYER_READY, Init)
+ns:Subscribe(E.BAG_UPDATE_DELAYED, onBagUpdate)
+ns:Subscribe(E.ITEM_DATA_LOAD_RESULT, onItemDataLoaded)
+ns:Subscribe(E.ACTIONBAR_UPDATE_COOLDOWN, onCooldownUpdate)
+ns:Subscribe(E.PLAYER_REGEN_ENABLED, onRegenEnabled)
+ns:Subscribe(E.QUEST_ACCEPTED, onQuestChanged)
+ns:Subscribe(E.QUEST_TURNED_IN, onQuestChanged)
+ns:Subscribe(E.QUEST_REMOVED, onQuestChanged)
+ns:Subscribe(E.PLAYER_LEVEL_UP, onLevelUp)
+ns:Subscribe(E.CVAR_UPDATE, onCVarUpdate)
+ns:Subscribe(E.UPDATE_BINDINGS, onUpdateBindings)
+ns:Subscribe(E.PLAYER_READY, Init)
 
 -- ================================================================================
 -- Debug dump
@@ -519,10 +531,16 @@ ns:Subscribe(BitForge.Events.PLAYER_READY, Init)
 -- into the SavedVariable, so a surprising decision can be inspected offline.
 -- With no argument it dumps whatever is on the button.
 --
--- Guarded at file scope: a shipped build defines none of this. It writes to the
--- BitForgeDB root rather than through model.lua, keeping diagnostic junk clear
--- of the default seeding and logout pruning the real settings go through.
-if BitForge.DEBUG then
+-- Guarded at file scope, so a profile that has not set the module's debug flag
+-- defines none of this. model.lua runs before this file and core is loaded
+-- before either, so the flag is already readable here. Toggling it mid-session
+-- therefore reaches the checks inside the pipeline but not this command; that
+-- needs a reload.
+--
+-- It writes to the BitForgeDB root rather than through model.lua, keeping
+-- diagnostic junk clear of the default seeding and logout pruning the real
+-- settings go through.
+if model.IsDebug() then
     local DUMP_KEY = "OpenablesDebugDump"
 
     -- Every field is flattened with tostring: tooltip data can carry secret

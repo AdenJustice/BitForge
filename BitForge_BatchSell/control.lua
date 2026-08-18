@@ -1,5 +1,5 @@
----@class BitForge.BatchSell
-local ns = select(2, ...)
+---@type string, BitForge.BatchSell
+local ADDON_NAME, ns = ...
 
 local ipairs = ipairs
 local huge = math.huge
@@ -243,9 +243,6 @@ end
 -- ================================================================================
 -- Events
 -- ================================================================================
---
--- EventRegistry callbacks receive the registry's owner ID as their first
--- argument, ahead of the event payload, so each handler discards it.
 
 local function onMerchantShow()
     merchantOpen = true
@@ -277,9 +274,8 @@ local function onEquipmentSetsChanged()
     end
 end
 
--- ITEM_DATA_LOAD_RESULT payload is (itemID, success); the leading parameter is
--- the EventRegistry owner ID.
-local function onItemDataLoaded(_, itemID, success)
+-- ITEM_DATA_LOAD_RESULT payload is (itemID, success).
+local function onItemDataLoaded(itemID, success)
     if not scanner.ResolveLoad(itemID) then return end
     if success and merchantOpen then
         scanner.Scan()
@@ -295,15 +291,7 @@ local function onSkillLinesChanged()
     end
 end
 
-local function onCoreLoaded()
-    EventRegistry:RegisterFrameEventAndCallback("MERCHANT_SHOW", onMerchantShow)
-    EventRegistry:RegisterFrameEventAndCallback("MERCHANT_CLOSED", onMerchantClosed)
-    EventRegistry:RegisterFrameEventAndCallback("BAG_UPDATE_DELAYED", onBagUpdateDelayed)
-    EventRegistry:RegisterFrameEventAndCallback("EQUIPMENT_SETS_CHANGED", onEquipmentSetsChanged)
-    EventRegistry:RegisterFrameEventAndCallback("ITEM_DATA_LOAD_RESULT", onItemDataLoaded)
-end
-
-local function onPlayerReady()
+local function startModule()
     local classFilename = UnitClassBase("player")
     model.SetPlayerClass(classFilename)
     buildEquipmentSetCache()
@@ -311,6 +299,21 @@ local function onPlayerReady()
     view.settingsPanel.Init()
 end
 
-ns:Subscribe(E.CORE_LOADED, onCoreLoaded)
-ns:Subscribe(E.PLAYER_READY, onPlayerReady)
+local function onPlayerReady()
+    BitForge:UpgradeModuleDB(ADDON_NAME, {
+        version = enum.SCHEMA_VERSION,
+        steps   = {
+            -- Data written before this module was versioned already matches the
+            -- version-1 shape, so adopting the version is the whole migration.
+            [1] = function() end,
+        },
+    }, startModule)
+end
+
+ns:Subscribe(E.MERCHANT_SHOW, onMerchantShow)
+ns:Subscribe(E.MERCHANT_CLOSED, onMerchantClosed)
+ns:Subscribe(E.BAG_UPDATE_DELAYED, onBagUpdateDelayed)
+ns:Subscribe(E.EQUIPMENT_SETS_CHANGED, onEquipmentSetsChanged)
+ns:Subscribe(E.ITEM_DATA_LOAD_RESULT, onItemDataLoaded)
 ns:Subscribe(E.SKILL_LINES_CHANGED, onSkillLinesChanged)
+ns:Subscribe(E.PLAYER_READY, onPlayerReady)

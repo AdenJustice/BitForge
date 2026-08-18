@@ -1,5 +1,5 @@
----@class BitForge.UPS
-local ns = select(2, ...)
+---@type string, BitForge.UPS
+local ADDON_NAME, ns = ...
 
 local select = select
 local ipairs = ipairs
@@ -69,7 +69,7 @@ local function dropRetiredKeys(moduleDB)
 end
 
 -- Called at file-read time, per the core DB contract.
-BitForge:AllocateModuleDB("UPS", DB_DEFAULTS, function(moduleDB)
+BitForge:AllocateModuleDB(ADDON_NAME, DB_DEFAULTS, function(moduleDB)
     db = moduleDB
     dropRetiredKeys(moduleDB)
 end)
@@ -238,7 +238,7 @@ function model.WantedByAlt(subClassID, itemID)
     -- at a remembered moment: if this ID is the recipe's own then it turns up in
     -- some character's knownRecipes once they have been scanned, and if it is a
     -- separate teaching spell it never will. Once per item per session.
-    if BitForge.DEBUG and not reportedSpells[itemID] then
+    if db.debug and not reportedSpells[itemID] then
         reportedSpells[itemID] = true
         BitForge:Print(format("UPS debug: recipe item %d casts spell %d", itemID, spellID))
     end

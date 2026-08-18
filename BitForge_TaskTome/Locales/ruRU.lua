@@ -16,16 +16,16 @@ L["btn:deleteTask"] = "Удалить задание"
 L["btn:save"] = "Сохранить"
 L["settings:taskName"] = "Название"
 L["settings:resetCycle"] = "Сброс"
-L["settings:warbandAssigned"] = "Задание Военного союза"
+L["settings:warbandAssigned"] = "Назначено всем персонажам"
 L["settings:completionScope"] = "Область выполнения"
-L["settings:optState"] = "Мой статус"
+L["settings:optState"] = "Моё назначение"
 
 -- Dropdowns
 L["menu:resetNone"] = "Нет"
 L["menu:resetDaily"] = "Ежедневно"
 L["menu:resetWeekly"] = "Еженедельно"
 L["menu:scopeChar"] = "Персонаж"
-L["menu:scopeWarband"] = "Военный союз"
+L["menu:scopeWarband"] = "Общее — одно выполнение засчитывается для всего аккаунта"
 L["menu:optFollow"] = "По умолчанию"
 L["menu:optIn"] = "Всегда показывать"
 L["menu:optOut"] = "Всегда скрывать"
@@ -41,3 +41,14 @@ L["msg:nameRequired"] = "Название задания не может быт�
 L["settings:taskTomePanel"] = "Книга заданий"
 L["settings:config"] = "Настройки"
 L["settings:openConfig"] = "Открыть"
+
+-- Widget modes
+L["group:accountWide"] = "Для всего аккаунта"
+L["tooltip:scopeMe"] = "Показан этот персонаж. Нажмите, чтобы показать всех персонажей."
+L["tooltip:scopeAll"] = "Показаны все персонажи. Нажмите, чтобы показать только этого персонажа."
+L["tooltip:orientByChar"] = "Группировка по персонажам. Нажмите, чтобы группировать по заданиям."
+L["tooltip:orientByTask"] = "Группировка по заданиям. Нажмите, чтобы группировать по персонажам."
+
+-- Config
+L["settings:editingFor"] = "Редактирование для"
+L["settings:optStateFor"] = "Назначение для %s"

@@ -1,4 +1,5 @@
-local ns = select(2, ...)
+---@type string, BitForge.Openables
+local ADDON_NAME, ns = ...
 
 local pairs = pairs
 local sort = table.sort
@@ -31,10 +32,20 @@ local model = ns.model
 -- reload would be indistinguishable from a permanent blacklist.
 model.sessionSkip = {}
 
-BitForge:AllocateModuleDB("BitForge_Openables", DB_DEFAULTS, function(moduleDB)
+BitForge:AllocateModuleDB(ADDON_NAME, DB_DEFAULTS, function(moduleDB)
     db = moduleDB
     wipe(model.sessionSkip)
 end)
+
+--- Whether this module's diagnostics are switched on for this profile.
+---
+--- Set by hand in the saved variables -- BitForgeDB.modules.Openables.debug --
+--- rather than from a setting, and read live, so it is nil for every player who
+--- has not gone looking for it. Control and view reach it through here for the
+--- same reason they reach every other stored value through here: db is private
+--- to this file.
+---@return boolean|nil
+function model.IsDebug() return db.debug end
 
 function model.IsEnabled() return db.global.enabled end
 

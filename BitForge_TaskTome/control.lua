@@ -1,5 +1,5 @@
----@class BitForge.TaskTome
-local ns = select(2, ...)
+---@type string, BitForge.TaskTome
+local ADDON_NAME, ns = ...
 local E = BitForge.Events
 
 local ipairs = ipairs
@@ -77,29 +77,33 @@ local function clientNextReset(resetType)
     return time() + seconds
 end
 
---- The next reset for `resetType` as an absolute timestamp comparable to time().
+--- The client's last weekly reset boundary, or nil when it has not given a
+--- usable reading.
 ---
---- Falling back to one whole period when the client has no usable reading restores
---- the strictly-future guarantee the hand-rolled advanceToNext used to provide:
---- without it a non-future stamp is due again on the very next check and re-clears
---- completions the player has just recorded. The fallback is a guess, though, so a
---- stamp seeded from it can be off by up to a period; the reconcile pass in
---- resets.Check is what eventually replaces it with the client's truth.
-local function nextResetTime(resetType)
-    return clientNextReset(resetType) or (time() + RESET_PERIOD[resetType])
-end
-
-local function storeNextReset(resetType, value)
-    if resetType == enum.RESET_DAILY then
-        model.SetNextDailyReset(value)
-    else
-        model.SetNextWeeklyReset(value)
+--- The same guard clientNextReset applies, and for the same reason: this is read
+--- on every PLAYER_ENTERING_WORLD, which includes the loading screen before the
+--- server has necessarily sent time data. The consequence of trusting a bad
+--- reading is far worse here than on the daily path, because nothing downstream
+--- can tell it apart from a genuine boundary crossing. A 0 differs from every
+--- stored stamp, so IsWeeklyDue says "due" for every character and for the
+--- warband at once, and the pass clears every weekly completion on the account;
+--- the stamp then heals itself, leaving no trace but the missing ticks.
+---
+--- Returning nil rather than a fallback guess is the point. There is no
+--- arithmetic that can reconstruct this value, so the only safe answer to "no
+--- reading" is to leave the weekly stamps exactly as they are and re-check on
+--- the next pass, which is at most RESET_MIN_DELAY away.
+local function clientWeeklyStart()
+    local startTime = C_DateAndTime.GetWeeklyResetStartTime()
+    if not startTime or startTime <= 0 then
+        return nil
     end
+    return startTime
 end
 
---- Arms a one-shot timer for the nearer of the two stored resets, replacing any
---- timer still outstanding. The cancel matters: without it every zone transition
---- would stack another timer on the last.
+--- Arms a one-shot timer for the nearer of every stamp set's daily stamp,
+--- replacing any timer still outstanding. The cancel matters: without it every
+--- zone transition would stack another timer on the last.
 ---
 --- `minDelay` raises the floor for this arming only, so a caller that knows the
 --- last check failed can keep a past-due stamp from retrying at 1 Hz.
@@ -111,9 +115,17 @@ function resets.Arm(minDelay)
     end
 
     local floor = minDelay or enum.RESET_MIN_DELAY
-    local nearest = model.GetNextDailyReset()
-    local weekly = model.GetNextWeeklyReset()
-    if weekly < nearest then nearest = weekly end
+
+    -- The nearest daily across every stamp set. Weekly needs no entry here: it
+    -- is detected by comparing reset-start times, not by waiting for a
+    -- deadline, so waking for the daily boundary is enough to catch it.
+    local nearest = model.GetWarbandReset().daily
+    for _, charKey in ipairs(BitForge:GetKnownCharacters()) do
+        local stamps = model.GetCharReset(charKey)
+        if stamps.daily > 0 and (nearest == 0 or stamps.daily < nearest) then
+            nearest = stamps.daily
+        end
+    end
 
     local delay = nearest - time()
     if delay < floor then
@@ -123,62 +135,69 @@ function resets.Arm(minDelay)
     resetTimer = C_Timer.NewTimer(delay, resets.Check)
 end
 
-local RESET_TYPES = { enum.RESET_DAILY, enum.RESET_WEEKLY }
-
---- Seeds, applies, and reconciles the stored stamps, appending each reset type
---- that fires to `due`. Split out of resets.Check so the whole body can run under
---- an xpcall; see the re-arm reasoning there.
+--- Seeds, sweeps, and advances every stamp, recording in `changed` whether any
+--- completion was actually cleared. Split out of resets.Check so the whole body
+--- can run under an xpcall; see the re-arm reasoning there.
 ---
---- `due` is an out-parameter rather than a return value on purpose. A throw after
---- ClearAllCompletionsForReset would discard a return, leaving completions cleared
---- in the database while the UI still shows them until something unrelated
---- repaints. Appending as we go means the caller can refresh whatever actually
---- happened before the error.
----
---- Passing it through xpcall's trailing arguments is a WoW extension to stock Lua
---- 5.1, not an oversight -- Blizzard relies on it (Blizzard_SettingsPanel.lua:534,
---- Blizzard_SharedXMLBase/FunctionUtil.lua:4). Do not "fix" it into a closure.
-local function applyDueResets(due)
-    -- Seed anything never seeded. Not for the due comparison below -- GetDueResets
-    -- already treats 0 as never due -- but for resets.Arm, which takes the nearer of
-    -- the two stamps and would otherwise compute its delay against 0, floor it to
-    -- RESET_MIN_DELAY, and spin at 1 Hz. On the common path the reconcile pass
-    -- overwrites what this writes with the identical value; on the fallback path,
-    -- where the client gives nothing, this is the only writer.
-    if model.GetNextDailyReset() == 0 then
-        storeNextReset(enum.RESET_DAILY, nextResetTime(enum.RESET_DAILY))
-    end
-    if model.GetNextWeeklyReset() == 0 then
-        storeNextReset(enum.RESET_WEEKLY, nextResetTime(enum.RESET_WEEKLY))
-    end
+--- `changed` is an out-parameter rather than a return value on purpose. A throw
+--- after a clear would discard a return, leaving completions cleared in the
+--- database while the UI still shows them until something unrelated repaints.
+local function applyDueResets(changed)
+    local nowDaily = clientNextReset(enum.RESET_DAILY)
+    local weeklyStart = clientWeeklyStart()
 
-    for _, resetType in ipairs(model.GetDueResets(
-        time(), model.GetNextDailyReset(), model.GetNextWeeklyReset()))
-    do
-        model.ClearAllCompletionsForReset(resetType)
-        due[#due + 1] = resetType
-        storeNextReset(resetType, nextResetTime(resetType))
-    end
+    --- One stamp set: seed what is unseeded, clear what is due, advance.
+    ---@param stamps    table     the stored { daily, weeklyStart } record
+    ---@param setStamp  fun(field: string, value: number)
+    ---@param clear     fun(resetType: string)
+    local function sweep(stamps, setStamp, clear)
+        -- Seed rather than fire on a first sight of either stamp. A fresh
+        -- profile has recorded no completions, so there is nothing to clear.
+        if stamps.daily == 0 then
+            setStamp("daily", nowDaily or (time() + RESET_PERIOD[enum.RESET_DAILY]))
+        elseif time() >= stamps.daily then
+            clear(enum.RESET_DAILY)
+            changed[#changed + 1] = enum.RESET_DAILY
+            setStamp("daily", nowDaily or (time() + RESET_PERIOD[enum.RESET_DAILY]))
+        elseif nowDaily then
+            -- Reconcile: a stamp written by an older build, or seeded from the
+            -- fallback guess, is corrected. A not-yet-due stamp has not fired,
+            -- so replacing it can only correct a wrong prediction.
+            setStamp("daily", nowDaily)
+        end
 
-    -- Reconcile every stamp against the client. Without this a stamp is only ever
-    -- written when it is 0 or when it just came due, so a stamp left by an older
-    -- build's hardcoded calendar -- or seeded from the fallback guess at an
-    -- arbitrary login time -- would stand uncorrected for a whole period. A
-    -- not-yet-due stamp has not fired, so replacing it can only correct a wrong
-    -- prediction; no boundary is skipped.
-    --
-    -- Two invariants:
-    --   * This must run after the due loop. The client's answer is always strictly
-    --     future, so reconciling first would overwrite the very stamp GetDueResets
-    --     needs to see as past, and no reset would ever fire.
-    --   * Only a reading the client actually gave is adopted. Adopting the fallback
-    --     here would let one bad reading overwrite a good stamp on every check.
-    for _, resetType in ipairs(RESET_TYPES) do
-        local fromClient = clientNextReset(resetType)
-        if fromClient then
-            storeNextReset(resetType, fromClient)
+        -- Skipped entirely without a reading, rather than seeded or cleared from
+        -- one. Unlike the daily path there is no fallback worth guessing at: the
+        -- stored stamp is only ever compared against a client reading, so
+        -- leaving it untouched costs one pass and nothing else.
+        if weeklyStart then
+            if stamps.weeklyStart == 0 then
+                setStamp("weeklyStart", weeklyStart)
+            elseif model.IsWeeklyDue(stamps.weeklyStart, weeklyStart) then
+                clear(enum.RESET_WEEKLY)
+                changed[#changed + 1] = enum.RESET_WEEKLY
+                setStamp("weeklyStart", weeklyStart)
+            end
         end
     end
+
+    -- Every character, not just the one online. An alt that has not logged in
+    -- for a week is corrected by this session; without this the alt would never
+    -- see its own boundary, because the stamp that would have told it had
+    -- already been advanced by whoever was online at the time.
+    for _, charKey in ipairs(BitForge:GetKnownCharacters()) do
+        sweep(
+            model.GetCharReset(charKey),
+            function(field, value) model.SetCharReset(charKey, field, value) end,
+            function(resetType) model.ClearCharCompletionsForReset(charKey, resetType) end
+        )
+    end
+
+    sweep(
+        model.GetWarbandReset(),
+        model.SetWarbandReset,
+        model.ClearWarbandCompletionsForReset
+    )
 end
 
 --- One reset check. Idempotent, so it is safe to call from any trigger: a second
@@ -204,8 +223,8 @@ function resets.Check()
     -- reported callstack height itself (Blizzard_SharedXMLBase/ErrorUtil.lua:1).
     -- pcall discards the stack before we could re-raise, so the report would blame
     -- this function instead of the one that threw.
-    local due = {}
-    local ok = xpcall(applyDueResets, CallErrorHandler, due)
+    local changed = {}
+    local ok = xpcall(applyDueResets, CallErrorHandler, changed)
 
     -- On failure, back the retry well off RESET_MIN_DELAY. A throw can leave a stamp
     -- unadvanced and still in the past, which Arm floors to one second -- so a
@@ -214,7 +233,7 @@ function resets.Check()
     -- extreme is right.
     resets.Arm(not ok and enum.RESET_ERROR_DELAY or nil)
 
-    if #due > 0 then
+    if #changed > 0 then
         -- RefreshTree ends in widget.Refresh, so it covers both views.
         view.configFrame.RefreshTree()
     end
@@ -237,18 +256,19 @@ function tasks.UpdateTask(id, fields)
     model.UpdateTask(id, fields)
 end
 
--- Deletes a task and all descendants, clearing their completions and opt states.
+-- Deletes a task and all descendants, clearing every character's completion and
+-- opt state for each -- not just the logged-in one's. Both tables are
+-- account-wide now, so an alt's row is reachable from here and would otherwise
+-- never be cleaned up by anything.
 function tasks.DeleteTask(id)
     local toDelete = { id }
     local descendants = model.GetDescendantIds(id)
-    for _, did in ipairs(descendants) do
-        toDelete[#toDelete + 1] = did
+    for _, descendantId in ipairs(descendants) do
+        toDelete[#toDelete + 1] = descendantId
     end
-    for _, did in ipairs(toDelete) do
-        model.ClearWarbandCompleted(did)
-        model.ClearCharCompleted(did)
-        model.SetOptState(did, nil)
-        model.DeleteTask(did)
+    for _, taskId in ipairs(toDelete) do
+        model.ClearAllRecordsFor(taskId)
+        model.DeleteTask(taskId)
     end
 end
 
@@ -275,6 +295,10 @@ end
 
 function tasks.SetOptState(taskId, state)
     model.SetOptState(taskId, state)
+end
+
+function tasks.SetOptStateFor(taskId, charKey, state)
+    model.SetOptStateFor(taskId, charKey, state)
 end
 
 -- Moves a task to a new parent at a given sortOrder position.
@@ -329,9 +353,6 @@ control.tasks = tasks
 -- out and whether C_Timer survives an OS suspend with its deadline intact is not
 -- determinable from the client source. These two events cover the moments a
 -- drifted timer would matter: coming back to the game.
---
--- EventRegistry callbacks receive the registry's owner ID as their first
--- argument, ahead of the payload.
 
 local wasAFK = false
 
@@ -340,9 +361,9 @@ local function onEnteringWorld()
     resets.Check()
 end
 
--- PLAYER_FLAGS_CHANGED payload is (unitTarget); the leading parameter is the
--- EventRegistry owner ID. Only the AFK-to-active edge is interesting.
-local function onPlayerFlagsChanged(_, unitTarget)
+-- PLAYER_FLAGS_CHANGED payload is (unitTarget). Only the AFK-to-active edge is
+-- interesting.
+local function onPlayerFlagsChanged(unitTarget)
     if unitTarget ~= "player" then return end
     local isAFK = UnitIsAFK("player")
     if wasAFK and not isAFK then
@@ -351,7 +372,9 @@ local function onPlayerFlagsChanged(_, unitTarget)
     wasAFK = isAFK
 end
 
-local function onPlayerReady()
+--- The normal startup sequence, run either directly or after the upgrade popup
+--- is acknowledged.
+local function startModule()
     wasAFK = UnitIsAFK("player")
     resets.Check()
     if model.IsWidgetVisible() then
@@ -365,7 +388,24 @@ local function onPlayerReady()
     view.settingsPanel.Init()
 end
 
-EventRegistry:RegisterFrameEventAndCallback("PLAYER_ENTERING_WORLD", onEnteringWorld)
-EventRegistry:RegisterFrameEventAndCallback("PLAYER_FLAGS_CHANGED", onPlayerFlagsChanged)
+local function onPlayerReady()
+    BitForge:UpgradeModuleDB(ADDON_NAME, {
+        version = enum.SCHEMA_VERSION,
+        -- Named explicitly: ResolveModuleTitle's .toc fallback only ever reads
+        -- the untranslated "BitForge – TaskTome" line every module's .toc
+        -- ships, since no module ships a localized ## Title-<locale>. This is
+        -- the module's own translated display name instead.
+        title   = locale["settings:taskTomePanel"],
+        hasData = model.HasStoredData,
+        steps   = {
+            -- The pre-cross-character shape stored completions per character in
+            -- a layout with no warband equivalent; there is nothing to map it
+            -- onto. See the design doc's 5.3.
+            [1] = BitForge.SCHEMA_RESET,
+        },
+    }, startModule)
+end
 
+ns:Subscribe(E.PLAYER_ENTERING_WORLD, onEnteringWorld)
+ns:Subscribe(E.PLAYER_FLAGS_CHANGED, onPlayerFlagsChanged)
 ns:Subscribe(E.PLAYER_READY, onPlayerReady)
