@@ -134,13 +134,17 @@ function Handle:RegisterProxy(name, varType, label, getter, setter)
 end
 
 function Handle:AddInitializer(initializer)
+    if self._currentSection then
+        local section = self._currentSection
+        initializer:AddShownPredicate(function() return section:IsExpanded() end)
+    end
     if self._layout then
         self._layout:AddInitializer(initializer)
     end
 end
 
 --- Adds a collapsible section to the settings list. Items added after this call
---- (via AddCheckbox/AddDropdown/AddSlider) are hidden when the section is collapsed.
+--- (via AddCheckbox/AddColorPicker/AddDropdown/AddSlider/AddInitializer) are hidden when the section is collapsed.
 ---@param name    string       Already-resolved display title for the section
 ---@param expanded boolean|nil Initial expanded state; defaults to true when nil
 ---@return table initializer
@@ -176,8 +180,17 @@ function Handle:AddExpandableSection(name, expanded)
         end
     end
 
+    -- A section header must never be gated behind any section's predicate --
+    -- neither its own (that would make a collapsed section hide its own header,
+    -- taking everything under it with it) nor the previous section's (that
+    -- would tie one section's visibility to whether an unrelated, earlier one
+    -- happens to be expanded). So the header goes straight to the layout,
+    -- bypassing AddInitializer's predicate-attaching logic entirely, and only
+    -- afterwards does _currentSection update to gate whatever controls follow.
+    if self._layout then
+        self._layout:AddInitializer(initializer)
+    end
     self._currentSection = initializer
-    self:AddInitializer(initializer)
     return initializer
 end
 

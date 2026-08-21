@@ -22,13 +22,36 @@ local enum = {
         NO_SELL_PRICE     = "NO_SELL_PRICE",
         REFUNDABLE        = "REFUNDABLE",
         WHITELISTED       = "WHITELISTED",
+        TEMP_INCLUDED     = "TEMP_INCLUDED",
+        CATEGORY          = "CATEGORY",
+        CURRENT_EXPANSION = "CURRENT_EXPANSION",
         BIND_ON_ACCOUNT   = "BIND_ON_ACCOUNT",
-        EQUIPPABLE        = "EQUIPPABLE",
-        CLOSE_TO_EQUIPPED = "CLOSE_TO_EQUIPPED",
         DISENCHANTABLE    = "DISENCHANTABLE",
-        PAST_EXPANSION    = "PAST_EXPANSION",
-        QUALITY_THRESHOLD = "QUALITY_THRESHOLD",
+        EQUIPPABLE        = "EQUIPPABLE",
+        OUTCLASSED        = "OUTCLASSED",
+        SELL_MODE         = "SELL_MODE",
+        -- The defensive tail. Unreachable by construction -- see model.Decide --
+        -- and kept so a future gap in the rules keeps an item rather than sells it.
         DEFAULT           = "DEFAULT",
+    },
+
+    -- The three buckets model.GetCategory sorts an item into. Equipment is
+    -- decided by the gear rules; the other two by their own sell mode.
+    CATEGORY_KEY = {
+        EQUIPMENT = "EQUIPMENT",
+        MATERIALS = "MATERIALS",
+        OTHER     = "OTHER",
+    },
+
+    -- How far back a non-equipment category is willing to sell. KEEP_CURRENT
+    -- reads the live expansion level, so it tracks a new expansion launching
+    -- without the player touching anything; KEEP_FROM pins to a chosen one.
+    -- Materials offers all four, Other only KEEP_ALL and KEEP_CURRENT.
+    SELL_MODE = {
+        KEEP_ALL     = "KEEP_ALL",
+        KEEP_CURRENT = "KEEP_CURRENT",
+        KEEP_FROM    = "KEEP_FROM",
+        SELL_ALL     = "SELL_ALL",
     },
 
     -- bindType values returned by C_Item.GetItemInfo.
@@ -56,6 +79,12 @@ local enum = {
     COLOR = {
         -- Marks a merchant row whose character status contradicts its warband status.
         CHAR_OVERRIDE = CreateColor(1, 0.5, 0.25),
+        -- The debug scan-result block on item tooltips. Grey, so it reads as
+        -- an annotation rather than as part of the item's own tooltip.
+        DEBUG = CreateColor(0.55, 0.55, 0.55),
+        -- The player-facing verdict on an item tooltip.
+        SELL = CreateColor(1, 0.35, 0.35),
+        KEEP = CreateColor(0.4, 0.9, 0.4),
     },
 
     -- Glyph prefixed to a merchant row carrying a character override. Punctuation
@@ -66,7 +95,7 @@ local enum = {
     -- Bumped whenever the stored shape changes incompatibly. Every version
     -- needs a migration step registered in control.lua; core refuses to start
     -- the module against a shape nothing converted.
-    SCHEMA_VERSION = 1,
+    SCHEMA_VERSION = 2,
 }
 ns.enum = enum
 

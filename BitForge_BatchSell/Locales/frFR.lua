@@ -30,11 +30,33 @@ L["status:itemsTotal"] = "%d objets  |  Total : %s"
 L["tooltip:charOverride"] =
 "Le réglage de ce personnage prime sur la liste de la troupe de guerre – cet objet sera vendu."
 
+-- Section titles
+L["section:general"] = "Général"
+L["section:equipment"] = "Équipement"
+L["section:materials"] = "Matériaux d'artisanat"
+L["section:other"] = "Consommables et divers"
+L["section:lists"] = "Listes"
+
 -- Settings
 L["settings:sellJunk"] = "Vendre les déchets"
 L["settings:sellJunkTooltip"] = "Vendre automatiquement tous les objets de mauvaise qualité (gris) lors d'une visite chez un marchand"
-L["settings:keepEquippable"] = "Garder les équipables"
-L["settings:keepEquippableTooltip"] = "Garder tous les objets équipables par votre classe"
+L["settings:limitBatch"] = "Limiter le lot à 12"
+L["settings:limitBatchTooltip"] = "Vendre au maximum 12 objets par clic pour éviter la limitation du serveur"
+L["settings:sellEquipment"] = "Vendre l'équipement"
+L["settings:sellEquipmentTooltip"] =
+"Autoriser la vente des armures et des armes. Si cette option est désactivée, aucun équipement n'est jamais vendu"
+L["settings:ilvlThreshold"] = "Marge de niveau d'objet"
+L["settings:ilvlThresholdTooltip"] =
+"De combien de niveaux d'objet un objet peut être inférieur à celui équipé dans cet emplacement tout en étant gardé"
+L["settings:marginOnHigherQuality"] = "  Appliquer la marge à une qualité supérieure"
+L["settings:marginOnHigherQualityTooltip"] =
+"Appliquer la marge à l'équipement d'une qualité supérieure à celle de votre équipement actuel. Si cette option est désactivée, toute amélioration de qualité est gardée quel que soit son niveau d'objet"
+L["settings:marginOnSameQuality"] = "  Appliquer la marge à la même qualité"
+L["settings:marginOnSameQualityTooltip"] =
+"Appliquer la marge à l'équipement de la même qualité que celle de votre équipement actuel. Si cette option est désactivée, seul l'équipement au niveau d'objet équipé ou au-dessus est gardé"
+L["settings:marginOnLowerQuality"] = "  Appliquer la marge à une qualité inférieure"
+L["settings:marginOnLowerQualityTooltip"] =
+"Appliquer la marge à l'équipement d'une qualité inférieure à celle de votre équipement actuel. Si cette option est désactivée, toute régression de qualité est vendue quel que soit son niveau d'objet. L'équipement de deux qualités ou plus en dessous ne reçoit jamais la marge"
 L["settings:keepBindOnAccount"] = "Garder les liaisons au compte"
 L["settings:keepBindOnAccountTooltip"] = "Garder l'équipement lié au compte (héritage)"
 L["settings:keepBindOnAccountPastExpac"] = "  Inclure les extensions passées"
@@ -43,27 +65,51 @@ L["settings:keepDisenchantables"] = "Garder les désenchantables"
 L["settings:keepDisenchantablesTooltip"] = "Enchanteurs : garder l'équipement LPC/LPÉ/LàC. Autres : garder l'équipement LPÉ/LàC pour l'HV ou les alts"
 L["settings:keepDisenchantablesPastExpac"] = "  Inclure les extensions passées"
 L["settings:keepDisenchantablesPastExpacTooltip"] = "Garder également l'équipement désenchantable des extensions passées"
-L["settings:limitBatch"] = "Limiter le lot à 12"
-L["settings:limitBatchTooltip"] = "Vendre au maximum 12 objets par clic pour éviter la limitation du serveur"
-L["settings:qualityThreshold"] = "Seuil de qualité"
-L["settings:qualityThresholdTooltip"] = "Vendre les objets ayant cette qualité ou inférieure"
-L["settings:ilvlThreshold"] = "Marge de niveau d'objet"
-L["settings:ilvlThresholdTooltip"] =
-"Garder les objets équipables dans cette plage de niveaux d'objet par rapport à votre équipement (négatif = garder les meilleurs objets)"
-L["settings:sellPastExpansion"] = "Vendre les objets des extensions passées"
-L["settings:sellPastExpansionTooltip"] = "Vendre les objets des extensions plus anciennes que le seuil sélectionné"
-L["settings:expansionThreshold"] = "Seuil d'extension"
-L["settings:expansionThresholdTooltip"] = "Vendre les objets des extensions plus anciennes que celle sélectionnée"
+L["settings:materialsMode"] = "Matériaux d'artisanat"
+L["settings:materialsModeTooltip"] =
+"Que faire des réactifs, biens commerciaux, gemmes, enchantements et recettes"
+L["settings:materialsExpansion"] = "  Garder à partir de l'extension"
+L["settings:materialsExpansionTooltip"] =
+"Garder les matériaux à partir de cette extension et vendre tout ce qui est plus ancien. Utilisé uniquement lorsque Matériaux d'artisanat est réglé pour garder à partir d'une extension choisie"
+L["settings:otherMode"] = "Consommables et divers"
+L["settings:otherModeTooltip"] =
+"Que faire des consommables, contenants, mascottes de combat, équipement de métier et décorations de logement"
 
--- Quality labels
-L["quality:poor"] = "Médiocre"
-L["quality:common"] = "Commun"
-L["quality:uncommon"] = "Peu commun"
-L["quality:rare"] = "Rare"
-L["quality:epic"] = "Épique"
+-- Sell modes
+L["mode:keepAll"] = "Tout garder"
+L["mode:keepCurrent"] = "Garder l'extension actuelle"
+L["mode:keepFrom"] = "Garder à partir de l'extension"
+L["mode:sellAll"] = "Tout vendre"
+
+-- List tabs
+L["btn:removeEntry"] = "Retirer"
+L["list:warband"] = "Troupe de guerre"
+L["list:character"] = "Personnage"
+L["status:listEmpty"] = "Cette liste est vide"
+L["status:listCount"] = "%d entrées"
+
+-- Tooltip verdict. One reason per enum.RULE value; the mapping is total, and
+-- tests/test_batchsell_tooltip.lua iterates the enum to prove it stays total.
+L["verdict:sell"] = "Vente groupée : sera vendu"
+L["verdict:keep"] = "Vente groupée : sera gardé"
+L["reason:TEMP_EXCLUDED"] = "Exclu pour cette visite chez le marchand"
+L["reason:BLACKLISTED"] = "Sur votre liste noire"
+L["reason:LOCKED"] = "L'objet est verrouillé"
+L["reason:EQUIPMENT_SET"] = "Fait partie d'un ensemble d'équipement"
+L["reason:NO_SELL_PRICE"] = "Aucun marchand ne l'achètera"
+L["reason:REFUNDABLE"] = "Encore dans son délai de remboursement"
+L["reason:WHITELISTED"] = "Sur votre liste blanche"
+L["reason:TEMP_INCLUDED"] = "Ajouté pour cette visite chez le marchand"
+L["reason:CATEGORY"] = "Ce type d'objet est réglé pour être gardé"
+L["reason:CURRENT_EXPANSION"] = "Provient d'une extension que vous gardez"
+L["reason:BIND_ON_ACCOUNT"] = "L'équipement lié au compte est gardé"
+L["reason:DISENCHANTABLE"] = "Vaut la peine d'être désenchanté ou revendu"
+L["reason:EQUIPPABLE"] = "Suffisant par rapport à votre équipement actuel"
+L["reason:OUTCLASSED"] = "Surpassé par votre équipement actuel"
+L["reason:SELL_MODE"] = "Ce type d'objet est réglé pour être vendu"
+L["reason:DEFAULT"] = "Aucune règle ne l'a réclamé, il est donc gardé"
 
 -- Expansion labels
-L["expansion:all"] = "Toutes les extensions"
 L["expansion:classic"] = "Classic"
 L["expansion:burningCrusade"] = "La Croisade ardente"
 L["expansion:wrathOfTheLichKing"] = "La Colère du roi-liche"
@@ -75,6 +121,7 @@ L["expansion:battleForAzeroth"] = "La Bataille pour Azeroth"
 L["expansion:shadowlands"] = "Shadowlands"
 L["expansion:dragonflight"] = "Dragonflight"
 L["expansion:theWarWithin"] = "La Guerre intérieure"
+L["expansion:midnight"] = "Midnight"
 
 -- List reset buttons
 L["listReset:warbandBlacklist"] = "Réinitialiser la liste noire de la troupe de guerre"
@@ -82,3 +129,7 @@ L["listReset:warbandWhitelist"] = "Réinitialiser la liste blanche de la troupe 
 L["listReset:charBlacklist"] = "Réinitialiser la liste noire du personnage"
 L["listReset:charWhitelist"] = "Réinitialiser la liste blanche du personnage"
 L["listReset:confirm"] = "Êtes-vous sûr de vouloir effacer cette liste ? Cette action est irréversible."
+
+-- Chat messages. Printed through BitForge:Print, which prefixes [BitForge].
+L["msg:dropRefused"] = "Impossible de vendre %s pour le moment : %s"
+L["msg:dropUnexcluded"] = "%s n'est plus exclu et sera vendu lors de cette visite"

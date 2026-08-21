@@ -30,40 +30,86 @@ L["status:itemsTotal"] = "%d предм.  |  Итого: %s"
 L["tooltip:charOverride"] =
 "Настройка этого персонажа важнее списка Военного союза — этот предмет будет продан."
 
+-- Section titles
+L["section:general"] = "Общее"
+L["section:equipment"] = "Экипировка"
+L["section:materials"] = "Материалы для крафта"
+L["section:other"] = "Расходники и другое"
+L["section:lists"] = "Списки"
+
 -- Settings
 L["settings:sellJunk"] = "Продавать хлам"
 L["settings:sellJunkTooltip"] = "Автоматически продавать все предметы низкого качества (серые) при посещении торговца"
-L["settings:keepEquippable"] = "Сохранять надеваемые"
-L["settings:keepEquippableTooltip"] = "Сохранять все предметы, доступные вашему классу"
+L["settings:limitBatch"] = "Ограничить пакет до 12"
+L["settings:limitBatchTooltip"] = "Продавать не более 12 предметов за клик во избежание ограничений сервера"
+L["settings:sellEquipment"] = "Продавать экипировку"
+L["settings:sellEquipmentTooltip"] =
+"Разрешить продажу брони и оружия. Если выключено, экипировка никогда не продаётся"
+L["settings:ilvlThreshold"] = "Запас уровня предмета"
+L["settings:ilvlThresholdTooltip"] =
+"На сколько уровней предмет может быть ниже надетого в этом слоте и всё ещё сохраняться"
+L["settings:marginOnHigherQuality"] = "  Применять запас к более высокому качеству"
+L["settings:marginOnHigherQualityTooltip"] =
+"Применяет запас к экипировке более высокого качества, чем надетая. Если выключено, любое повышение качества сохраняется независимо от уровня предмета"
+L["settings:marginOnSameQuality"] = "  Применять запас к такому же качеству"
+L["settings:marginOnSameQualityTooltip"] =
+"Применяет запас к экипировке того же качества, что и надетая. Если выключено, сохраняется только экипировка на уровне надетой или выше"
+L["settings:marginOnLowerQuality"] = "  Применять запас к более низкому качеству"
+L["settings:marginOnLowerQualityTooltip"] =
+"Применяет запас к экипировке более низкого качества, чем надетая. Если выключено, любое понижение качества продаётся независимо от уровня предмета. Экипировка на два и более качества ниже никогда не получает запас"
 L["settings:keepBindOnAccount"] = "Сохранять привязанные к аккаунту"
 L["settings:keepBindOnAccountTooltip"] = "Сохранять предметы, привязанные к аккаунту (фамильные реликвии)"
 L["settings:keepBindOnAccountPastExpac"] = "  Включить прошлые дополнения"
 L["settings:keepBindOnAccountPastExpacTooltip"] = "Также сохранять привязанные к аккаунту предметы из прошлых дополнений"
-L["settings:keepDisenchantables"] = "Сохранять расплавляемые"
+L["settings:keepDisenchantables"] = "Сохранять распыляемые"
 L["settings:keepDisenchantablesTooltip"] = "Чародеи: сохранять BOP/BOE/BOA экипировку. Остальные: сохранять BOE/BOA для АГ или альтов"
 L["settings:keepDisenchantablesPastExpac"] = "  Включить прошлые дополнения"
-L["settings:keepDisenchantablesPastExpacTooltip"] = "Также сохранять расплавляемую экипировку из прошлых дополнений"
-L["settings:limitBatch"] = "Ограничить пакет до 12"
-L["settings:limitBatchTooltip"] = "Продавать не более 12 предметов за клик во избежание ограничений сервера"
-L["settings:qualityThreshold"] = "Порог качества"
-L["settings:qualityThresholdTooltip"] = "Продавать предметы данного качества и ниже"
-L["settings:ilvlThreshold"] = "Запас уровня предмета"
-L["settings:ilvlThresholdTooltip"] =
-"Сохранять надеваемые предметы в пределах данного числа уровней от надетой экипировки (отрицательное = сохранять более качественные предметы)"
-L["settings:sellPastExpansion"] = "Продавать предметы из прошлых дополнений"
-L["settings:sellPastExpansionTooltip"] = "Продавать предметы из дополнений старше выбранного порога"
-L["settings:expansionThreshold"] = "Порог дополнения"
-L["settings:expansionThresholdTooltip"] = "Продавать предметы из дополнений, вышедших раньше выбранного"
+L["settings:keepDisenchantablesPastExpacTooltip"] = "Также сохранять распыляемую экипировку из прошлых дополнений"
+L["settings:materialsMode"] = "Материалы для крафта"
+L["settings:materialsModeTooltip"] =
+"Что делать с реагентами, торговыми товарами, самоцветами, чарами и рецептами"
+L["settings:materialsExpansion"] = "  Сохранять с дополнения"
+L["settings:materialsExpansionTooltip"] =
+"Сохранять материалы начиная с этого дополнения и продавать всё более старое. Используется, только если для материалов для крафта выбрано сохранение с определённого дополнения"
+L["settings:otherMode"] = "Расходники и другое"
+L["settings:otherModeTooltip"] =
+"Что делать с расходниками, контейнерами, боевыми питомцами, снаряжением для профессий и предметами интерьера"
 
--- Quality labels
-L["quality:poor"] = "Низкое"
-L["quality:common"] = "Обычное"
-L["quality:uncommon"] = "Необычное"
-L["quality:rare"] = "Редкое"
-L["quality:epic"] = "Эпическое"
+-- Sell modes
+L["mode:keepAll"] = "Сохранять всё"
+L["mode:keepCurrent"] = "Сохранять текущее дополнение"
+L["mode:keepFrom"] = "Сохранять с дополнения"
+L["mode:sellAll"] = "Продавать всё"
+
+-- List tabs
+L["btn:removeEntry"] = "Удалить"
+L["list:warband"] = "Военный союз"
+L["list:character"] = "Персонаж"
+L["status:listEmpty"] = "Этот список пуст"
+L["status:listCount"] = "%d записей"
+
+-- Tooltip verdict. One reason per enum.RULE value; the mapping is total, and
+-- tests/test_batchsell_tooltip.lua iterates the enum to prove it stays total.
+L["verdict:sell"] = "Массовая продажа: будет продано"
+L["verdict:keep"] = "Массовая продажа: будет сохранено"
+L["reason:TEMP_EXCLUDED"] = "Исключено для этого визита к торговцу"
+L["reason:BLACKLISTED"] = "В вашем чёрном списке"
+L["reason:LOCKED"] = "Предмет заблокирован"
+L["reason:EQUIPMENT_SET"] = "Часть комплекта экипировки"
+L["reason:NO_SELL_PRICE"] = "Ни один торговец его не купит"
+L["reason:REFUNDABLE"] = "Ещё в пределах срока возврата"
+L["reason:WHITELISTED"] = "В вашем белом списке"
+L["reason:TEMP_INCLUDED"] = "Добавлено для этого визита к торговцу"
+L["reason:CATEGORY"] = "Этот тип предметов настроен на сохранение"
+L["reason:CURRENT_EXPANSION"] = "Из дополнения, которое вы сохраняете"
+L["reason:BIND_ON_ACCOUNT"] = "Предметы, привязанные к аккаунту, сохраняются"
+L["reason:DISENCHANTABLE"] = "Стоит сохранить, чтобы распылить или продать"
+L["reason:EQUIPPABLE"] = "Достаточно хорош по сравнению с надетой экипировкой"
+L["reason:OUTCLASSED"] = "Уступает надетой экипировке"
+L["reason:SELL_MODE"] = "Этот тип предметов настроен на продажу"
+L["reason:DEFAULT"] = "Ни одно правило не подошло, поэтому предмет сохраняется"
 
 -- Expansion labels
-L["expansion:all"] = "Все дополнения"
 L["expansion:classic"] = "Classic"
 L["expansion:burningCrusade"] = "Пылающий крестовый поход"
 L["expansion:wrathOfTheLichKing"] = "Гнев Короля-лича"
@@ -75,6 +121,7 @@ L["expansion:battleForAzeroth"] = "Битва за Азерот"
 L["expansion:shadowlands"] = "Темные земли"
 L["expansion:dragonflight"] = "Возрождение Драконов"
 L["expansion:theWarWithin"] = "Война изнутри"
+L["expansion:midnight"] = "Полночь"
 
 -- List reset buttons
 L["listReset:warbandBlacklist"] = "Сбросить чёрный список Военного союза"
@@ -82,3 +129,7 @@ L["listReset:warbandWhitelist"] = "Сбросить белый список Во
 L["listReset:charBlacklist"] = "Сбросить чёрный список персонажа"
 L["listReset:charWhitelist"] = "Сбросить белый список персонажа"
 L["listReset:confirm"] = "Вы уверены, что хотите очистить этот список? Отменить действие невозможно."
+
+-- Chat messages. Printed through BitForge:Print, which prefixes [BitForge].
+L["msg:dropRefused"] = "Невозможно продать %s прямо сейчас: %s"
+L["msg:dropUnexcluded"] = "Предмет %s больше не исключён и будет продан в этот визит"

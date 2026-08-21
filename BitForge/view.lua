@@ -129,9 +129,15 @@ local ICON_SIZE = 18
 local BACKGROUND_SIZE = 24
 local BORDER_SIZE = 50
 
--- How far the icon's texture coordinates pull in while the button is held, so a
+-- How far the icon's visible area pulls in while the button is held, so a
 -- draggable control acknowledges the grab.
 local PRESS_INSET = 0.05
+
+-- Cropping PRESS_INSET off each edge and refilling the same area magnifies by
+-- 1 / (1 - 2 * inset). The mask is held at ICON_SIZE, so growing the icon to
+-- this size is that same zoom -- expressed the only way a masked texture
+-- allows, since SetTexCoord is rejected once a texture carries a mask.
+local PRESS_SIZE = ICON_SIZE / (1 - 2 * PRESS_INSET)
 
 -- TODO: replace with a real BitForge suite icon when one exists. See section 6
 -- of the design doc -- BitForge.toc's IconTexture points at a file that has
@@ -182,7 +188,18 @@ function minimapButton.Create(onClick, onPositionChanged)
     icon:SetSize(ICON_SIZE, ICON_SIZE)
     icon:SetPoint("CENTER")
     icon:SetTexture(PLACEHOLDER_ICON)
-    icon:SetMask("Interface\\CharacterFrame\\TempPortraitAlphaMask")
+
+    -- Anchored to the button rather than applied with SetMask, so the circle
+    -- stays put while the icon resizes underneath it. SetMask binds the mask to
+    -- the icon's own rectangle, which would scale the crop along with the press
+    -- instead of zooming within it. The wrap modes are what SetMask supplied
+    -- implicitly and have to be named when the mask is built by hand.
+    local iconMask = button:CreateMaskTexture()
+    iconMask:SetTexture("Interface\\CharacterFrame\\TempPortraitAlphaMask",
+        "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    iconMask:SetSize(ICON_SIZE, ICON_SIZE)
+    iconMask:SetPoint("CENTER")
+    icon:AddMaskTexture(iconMask)
 
     local border = button:CreateTexture(nil, "OVERLAY")
     border:SetSize(BORDER_SIZE, BORDER_SIZE)
@@ -192,7 +209,7 @@ function minimapButton.Create(onClick, onPositionChanged)
     local draggedAngle
 
     local function ResetPressState()
-        icon:SetTexCoord(0, 1, 0, 1)
+        icon:SetSize(ICON_SIZE, ICON_SIZE)
     end
 
     local function OnUpdate()
@@ -227,7 +244,7 @@ function minimapButton.Create(onClick, onPositionChanged)
     end)
 
     button:SetScript("OnMouseDown", function()
-        icon:SetTexCoord(PRESS_INSET, 1 - PRESS_INSET, PRESS_INSET, 1 - PRESS_INSET)
+        icon:SetSize(PRESS_SIZE, PRESS_SIZE)
     end)
 
     button:SetScript("OnMouseUp", ResetPressState)

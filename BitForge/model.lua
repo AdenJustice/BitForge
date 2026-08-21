@@ -68,6 +68,34 @@ local function SeedDefaults(tbl, src)
     end
 end
 
+--- The module's stored diagnostics value, normalized to a container.
+---
+--- The shape a module reads is `{ enabled = <boolean>, dump = <table> }`, but
+--- the value in the saved file is hand-written, so it arrives in whatever shape
+--- a developer typed. The documented one-liner is still a bare
+--- `/run BitForgeDB.modules.UPS.debug = true`, and indexing that scalar for
+--- .enabled would raise, so a truthy scalar is upgraded in place the first time
+--- it is read. A container typed without its dump table is completed the same
+--- way, so nothing downstream has to check whether dump exists.
+---
+--- The upgrade is a write during a read, which is what keeps the flag live: the
+--- container the module ends up holding is the one in the saved file, so a dump
+--- written into it persists rather than landing in a copy.
+---@param module table  The module's raw saved container.
+---@return table|nil
+local function DebugContainer(module)
+    local stored = module.debug
+    if not stored then return nil end
+    if type(stored) ~= "table" then
+        stored = { enabled = true }
+        module.debug = stored
+    end
+    if stored.dump == nil then
+        stored.dump = {}
+    end
+    return stored
+end
+
 local function Allocate(name, moduleDefaults, callback)
     local modules = db.modules
     -- Recorded before the container is created: a module with no prior
@@ -120,9 +148,14 @@ local function Allocate(name, moduleDefaults, callback)
     -- instead of the next login. It is deliberately not part of the module's
     -- defaults or its schema: nothing seeds it, nothing migrates it, and a
     -- module that has never been flagged reads nil.
+    --
+    -- What comes back is the container, not a boolean: a module asks it for
+    -- .enabled and parks diagnostics in .dump. Returning the container rather
+    -- than unwrapping it here is what lets a dump written by a module reach the
+    -- saved file, since it is the stored table itself.
     local proxies = setmetatable({ global = globalProxy, char = charProxy }, {
         __index = function(_, k)
-            if k == "debug" then return module.debug end
+            if k == "debug" then return DebugContainer(module) end
         end,
     })
     moduleProxyRegistry[name] = proxies
@@ -284,6 +317,24 @@ function model.CleanupDatabase()
             -- for diagnostics but otherwise left at defaults would lose the
             -- flag on logout if an empty global and char were enough to drop
             -- the whole entry.
+            --
+            -- The diagnostics container earns that only while it carries
+            -- something. Switched off with nothing dumped it says exactly what
+            -- an absent one says, and because any table is truthy, leaving it
+            -- behind would pin the module's whole entry in the saved file
+            -- forever. The empty dump goes first -- reading the flag next
+            -- session recreates it -- and a container left holding neither an
+            -- enabled flag nor a dump goes with it.
+            local diagnostics = module.debug
+            if type(diagnostics) == "table" then
+                if diagnostics.dump and not next(diagnostics.dump) then
+                    diagnostics.dump = nil
+                end
+                if not diagnostics.enabled and not diagnostics.dump then
+                    module.debug = nil
+                end
+            end
+
             if not module.global and not module.char and not module.debug then
                 db.modules[name] = nil
             end
@@ -304,7 +355,8 @@ end
 --- Allocates a dedicated DB table for a module and delivers a live reference via callback.
 --- If called before DB:Init(), the request is queued and processed once Init() completes.
 --- db.global is account-wide; db.char is isolated to the current character;
---- db.debug is the module's diagnostics flag, true or nil, read live.
+--- db.debug is the module's diagnostics container, `{ enabled, dump }` or nil,
+--- read live.
 ---
 --- Pass the addon's own name from `...` -- core derives the storage key and
 --- keeps the full name to look the module's .toc title up by.

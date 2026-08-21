@@ -5,6 +5,9 @@ local ipairs = ipairs
 local huge = math.huge
 local format = string.format
 
+local ClearCursor = ClearCursor
+local GetCursorInfo = GetCursorInfo
+
 local C_Container = C_Container
 local C_EquipmentSet = C_EquipmentSet
 local C_Item = C_Item
@@ -14,6 +17,7 @@ local C_TradeSkillUI = C_TradeSkillUI
 local enum = ns.enum
 local model = ns.model
 local view = ns.view
+local L = ns.locale
 local E = BitForge.Events
 
 ---@class BitForge.BatchSell.Control
@@ -40,29 +44,41 @@ local merchantOpen = false
 
 local scanner = {}
 
---- Item levels currently equipped in the slots this item could occupy, or nil
---- when the item is not equippable at all. Rings and trinkets yield up to two
---- entries.
+--- The equipped items occupying the slots this item could fill, or nil when the
+--- item is not equippable at all. Rings and trinkets yield up to two entries.
 ---
 --- Deliberately returns the raw list rather than reducing it: the comparison is
---- existential over slots, and model.IsCloseToEquipped owns that loop where it
---- can be unit-tested. Reducing here — to a max or a min — would move the one
+--- existential over slots, and model.CompareToEquipped owns that loop where it
+--- can be unit-tested. Reducing here -- to a max or a min -- would move the one
 --- piece of real logic into the one file that cannot be tested.
-local function equippedIlvls(equipLoc)
+---
+--- Quality travels with the level because the comparison's tolerance depends on
+--- the gap between the candidate's quality and the equipped one's.
+local function equippedItems(equipLoc)
     local slots = enum.SLOT_LOOKUP[equipLoc]
     if not slots then return nil end
 
-    local levels = {}
+    local items = {}
     for _, slotID in ipairs(slots) do
         local equippedLink = GetInventoryItemLink("player", slotID)
         if equippedLink then
-            local equippedIlvl = C_Item.GetDetailedItemLevelInfo(equippedLink)
-            if equippedIlvl then
-                levels[#levels + 1] = equippedIlvl
+            local equippedLevel = C_Item.GetDetailedItemLevelInfo(equippedLink)
+            local equippedQuality = select(3, C_Item.GetItemInfo(equippedLink))
+            if equippedLevel and equippedQuality then
+                items[#items + 1] = { level = equippedLevel, quality = equippedQuality }
+            else
+                -- Something occupies the slot but its item data has not arrived
+                -- yet (right after login, or a /reload at a vendor) -- unlike a
+                -- slot that genuinely holds nothing, this is not permission to
+                -- sell. A sentinel keeps it in the list rather than silently
+                -- dropping it, so model.CompareToEquipped can treat it as
+                -- inconclusive instead of letting the candidate fall through to
+                -- the equipment terminal unopposed.
+                items[#items + 1] = { unreadable = true }
             end
         end
     end
-    return levels
+    return items
 end
 
 --- Items bought and still inside their refund window must not be sold: doing so
@@ -80,7 +96,7 @@ end
 --- not arrived yet. Uncached items are requested and rescanned; see Events.
 ---@return table|nil facts
 ---@return number|nil pendingItemID  set when the slot was skipped pending a load
-local function gather(bagIndex, slotIndex)
+function scanner.Gather(bagIndex, slotIndex)
     local slotInfo = C_Container.GetContainerItemInfo(bagIndex, slotIndex)
     if not slotInfo or not slotInfo.itemID then return nil, nil end
 
@@ -90,7 +106,7 @@ local function gather(bagIndex, slotIndex)
 
     local hyperlink = slotInfo.hyperlink
     local name, itemLink, quality, _, _, _, _, _, equipLoc, _, sellPrice,
-    classID, subclassID, bindType, expacID = C_Item.GetItemInfo(hyperlink)
+    classID, subclassID, bindType, expacID, _, isCraftingReagent = C_Item.GetItemInfo(hyperlink)
     -- Deliberately no pending ID here. IsItemDataCachedByID reports on the base
     -- item, so it can succeed while GetItemInfo on this specific hyperlink does
     -- not; requesting a load would resolve immediately, clear the pending entry,
@@ -116,15 +132,17 @@ local function gather(bagIndex, slotIndex)
         subclassID     = subclassID,
         bindType       = bindType,
         expacID        = expacID or 0,
+        isCraftingReagent = isCraftingReagent == true,
 
         isLocked       = slotInfo.isLocked == true,
         inEquipmentSet = model.IsInEquipmentSet(format("%d:%d", bagIndex, slotIndex)),
         isRefundable   = isRefundable(bagIndex, slotIndex),
-        equippedIlvls  = equippedIlvls(equipLoc),
+        equippedItems  = equippedItems(equipLoc),
 
         isProhibited   = listStatus == enum.LIST_STATUS.BLACKLIST,
         isEnforced     = listStatus == enum.LIST_STATUS.WHITELIST,
         isTempExcluded = model.IsTempExcluded(resolvedLink),
+        isTempIncluded = model.IsTempIncluded(resolvedLink),
 
         -- Read by the merchant panel only; model.Decide never consults it.
         isCharOverride = model.HasCharOverride(slotInfo.itemID),
@@ -172,7 +190,7 @@ function scanner.Scan()
     for bagIndex = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
         local numSlots = C_Container.GetContainerNumSlots(bagIndex)
         for slotIndex = 1, numSlots do
-            local facts, pendingItemID = gather(bagIndex, slotIndex)
+            local facts, pendingItemID = scanner.Gather(bagIndex, slotIndex)
             if facts then
                 if model.Decide(facts, settings) == enum.DECISION.SELL then
                     items[#items + 1] = facts
@@ -185,6 +203,36 @@ function scanner.Scan()
 
     model.SetManifest(items)
     view.merchantPanel.Refresh()
+end
+
+--- The full decision one slot would receive: the facts, the settings they were
+--- judged against, the verdict, and the rule that produced it.
+---
+--- Deliberately re-decides rather than reading the manifest back. The manifest
+--- holds only the items that decided SELL and keeps no rule, so it can answer
+--- neither "why was this kept" nor "which step decided". Re-deciding also means
+--- the answer is current with the lists and settings as they stand now, not as
+--- they stood at the last scan, and stays available away from a merchant.
+---
+--- One gather per call. The item tooltip calls this only when it has
+--- something to render -- the player-facing verdict while the merchant is
+--- open, the debug block while the module's debug flag is set -- and skips it
+--- entirely when neither applies, rather than gathering for nothing on every
+--- bag item a player hovers away from a vendor.
+---@return table|nil report  { facts, settings, verdict, rule }, or nil when the
+---                          slot is empty or its item data has not arrived
+function scanner.Explain(bagIndex, slotIndex)
+    local facts = scanner.Gather(bagIndex, slotIndex)
+    if not facts then return nil end
+
+    local settings = model.GetSettingsSnapshot()
+    local verdict, rule = model.Decide(facts, settings)
+    return {
+        facts    = facts,
+        settings = settings,
+        verdict  = verdict,
+        rule     = rule,
+    }
 end
 
 control.scanner = scanner
@@ -211,6 +259,87 @@ function seller.SellBatch()
 end
 
 control.seller = seller
+
+-- ================================================================================
+-- Manifest Drop
+-- ================================================================================
+--
+-- Dragging a bag item onto the manifest includes it in this merchant visit's
+-- sale, overriding rules that merely did not select it. The item never moves:
+-- the cursor is cleared immediately, before anything else can fail, so the
+-- item always lands back in the slot it came from and a refusal never
+-- strands it on the cursor.
+
+--- Accepts an item dropped onto the manifest.
+---
+--- Matches the cursor's item to a bag slot primarily by itemID -- a
+--- hyperlink read off the cursor may be a secret value and is not guaranteed
+--- to compare equal to the container's own hyperlink for the same item --
+--- but prefers a candidate whose own hyperlink equals the cursor's link when
+--- one is found, falling back to the first itemID match otherwise. Without
+--- that preference, two bag slots sharing an itemID with different links
+--- (different bonus IDs, two upgrade tracks of the same piece) could
+--- force-sell the wrong variant: AddTempInclude is link-keyed, and Gather
+--- recomputes isTempIncluded per slot from its own resolved link.
+---
+--- Everything below keys on facts.itemLink -- the value Gather actually
+--- produced for the matched slot -- rather than the cursor's own link, for
+--- the same secret-value reason.
+---
+--- model.CanTempInclude is checked before anything is mutated. It is
+--- deliberately silent about a temporary exclusion, so an item that is both
+--- excluded and blacklisted keeps its exclusion rather than losing it to a
+--- drop that gets refused anyway.
+function control.AcceptManifestDrop()
+    local cursorType, cursorItemID, cursorItemLink = GetCursorInfo()
+    if cursorType ~= "item" then return end
+    ClearCursor()
+
+    local bagIndex, slotIndex
+    local fallbackBag, fallbackSlot
+    for candidateBag = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
+        local numSlots = C_Container.GetContainerNumSlots(candidateBag)
+        for candidateSlot = 1, numSlots do
+            local slotInfo = C_Container.GetContainerItemInfo(candidateBag, candidateSlot)
+            if slotInfo and slotInfo.itemID == cursorItemID then
+                if cursorItemLink and slotInfo.hyperlink == cursorItemLink then
+                    bagIndex, slotIndex = candidateBag, candidateSlot
+                    break
+                elseif not fallbackBag then
+                    fallbackBag, fallbackSlot = candidateBag, candidateSlot
+                end
+            end
+        end
+        if bagIndex then break end
+    end
+    bagIndex = bagIndex or fallbackBag
+    slotIndex = slotIndex or fallbackSlot
+    if not bagIndex then return end
+
+    local facts, pendingItemID = scanner.Gather(bagIndex, slotIndex)
+    if not facts then
+        -- Item data has not arrived yet. scanner.Scan handles the same
+        -- signal by requesting the load; a silent no-op here would leave the
+        -- drop unexplained on a slot that would resolve moments later.
+        if pendingItemID then scanner.RequestLoad(pendingItemID) end
+        return
+    end
+    local itemLink = facts.itemLink
+
+    local blockingRule = model.CanTempInclude(facts)
+    if blockingRule then
+        BitForge:Print(format(L["msg:dropRefused"], itemLink, L["reason:" .. blockingRule]))
+        return
+    end
+
+    if model.IsTempExcluded(itemLink) then
+        model.RemoveTempExclude(itemLink)
+        BitForge:Print(format(L["msg:dropUnexcluded"], itemLink))
+    end
+
+    model.AddTempInclude(itemLink)
+    scanner.Scan()
+end
 
 -- ================================================================================
 -- Caches
@@ -258,7 +387,21 @@ end
 local function onMerchantClosed()
     merchantOpen = false
     model.ClearTempExcludes()
+    model.ClearTempIncludes()
+    -- The manifest is this visit's decisions, not a durable record: leaving it
+    -- in place let a temporary include re-sell an item on a later visit after
+    -- its one-visit-only inclusion had already been cleared above, and let a
+    -- blacklist entry added between visits go unnoticed by that first Sell.
+    model.SetManifest({})
     view.merchantPanel.Hide()
+end
+
+--- Whether the merchant window is open right now. The item tooltip's
+--- player-facing verdict reads this live to decide whether to render at all --
+--- gating on the module's own tracked state rather than MerchantFrame:IsShown(),
+--- since MerchantFrame does not exist in the test harness.
+function control.IsMerchantOpen()
+    return merchantOpen
 end
 
 local function onBagUpdateDelayed()
@@ -292,6 +435,11 @@ local function onSkillLinesChanged()
 end
 
 local function startModule()
+    -- The tooltip hook goes in first, deliberately: it is what explains a
+    -- module whose later startup misbehaves, so it must not be downstream of
+    -- anything that can fail.
+    view.itemTooltip.Init()
+
     local classFilename = UnitClassBase("player")
     model.SetPlayerClass(classFilename)
     buildEquipmentSetCache()
@@ -306,6 +454,25 @@ local function onPlayerReady()
             -- Data written before this module was versioned already matches the
             -- version-1 shape, so adopting the version is the whole migration.
             [1] = function() end,
+            -- The classification rework retired four settings. Nothing reads
+            -- them afterwards, and the logout prune only visits keys present in
+            -- DB_DEFAULTS, so one left behind would sit in the saved variables
+            -- forever. Assigning nil unconditionally is idempotent, which
+            -- matters because a step that throws is re-invoked from the top.
+            --
+            -- Values are not carried forward. keepEquippable's two states map
+            -- onto ilvlThreshold and marginOnSameQuality, whose defaults
+            -- reproduce its on-state; the other three have no successor. This
+            -- step is char-scoped, so it reaches only the character logging in
+            -- when the account-wide version is stamped -- every other character
+            -- keeps its stale entries, which is why nothing is migrated rather
+            -- than migrated partially.
+            [2] = function(moduleDB)
+                moduleDB.char.keepEquippable = nil
+                moduleDB.char.qualityThreshold = nil
+                moduleDB.char.sellPastExpansion = nil
+                moduleDB.char.expansionThreshold = nil
+            end,
         },
     }, startModule)
 end

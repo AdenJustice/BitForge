@@ -1,5 +1,42 @@
 # Changelog
 
+## [v12.1.0.3] — 2026-08-21
+
+### Added
+
+- **BatchSell** — your blacklist and whitelist are now readable from the merchant window.
+  The sell list gained tabs, so you can see everything on each list, remove entries one at
+  a time, and watch the sell list re-decide immediately. Previously the lists were
+  write-only: you could add an item but the only way back was resetting a whole list.
+- **BatchSell** — drag an item from your bags onto the sell list to sell it on this visit
+  only. It is forgotten when you close the merchant, and it never overrides your
+  blacklist, an equipment set, a locked item, or something no vendor will buy — if you drag
+  one of those, it tells you why in chat. Dragging in something you had temporarily
+  excluded simply changes your mind back.
+- **BatchSell** — item tooltips at a vendor now tell you whether the item will be sold or
+  kept, and which rule decided it.
+
+### Changed
+
+- **BatchSell** — a substantial rework of what gets sold. Nothing is vendored now unless a
+  rule specifically selects it, where previously anything no rule protected was fair game.
+  Gear is judged against what you are actually wearing in that slot rather than against
+  typed-in numbers: the item level margin and the quality thresholds are gone, replaced by
+  a margin you can apply separately to gear of higher, equal, or lower quality than your
+  own. Crafting materials and consumables each gained their own setting — keep everything,
+  keep the current expansion, keep from an expansion you choose, or sell it all.
+  **Please review your settings before your next vendor trip.** The old "Keep Equippable"
+  option, the quality threshold, and the past-expansion toggles no longer exist, and your
+  saved values for them are cleared automatically.
+- **BatchSell** — the settings panel is grouped into collapsible sections — General,
+  Equipment, Crafting Materials, Consumables & Other, and Lists — instead of one long list.
+
+### Fixed
+
+- **BitForge** — the minimap button reacts to being pressed again. Holding it down was
+  meant to zoom the icon in slightly as an acknowledgement, but the effect never appeared
+  and raised an error every time instead.
+
 ## [v12.1.0.2] — 2026-08-18
 
 ### Added

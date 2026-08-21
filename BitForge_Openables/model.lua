@@ -40,12 +40,19 @@ end)
 --- Whether this module's diagnostics are switched on for this profile.
 ---
 --- Set by hand in the saved variables -- BitForgeDB.modules.Openables.debug --
---- rather than from a setting, and read live, so it is nil for every player who
---- has not gone looking for it. Control and view reach it through here for the
---- same reason they reach every other stored value through here: db is private
---- to this file.
----@return boolean|nil
-function model.IsDebug() return db.debug end
+--- rather than from a setting, and read live, so it is false for every player
+--- who has not gone looking for it. Control and view reach it through here for
+--- the same reason they reach every other stored value through here: db is
+--- private to this file.
+---
+--- db.debug is the container core normalized, so the flag is .enabled inside it
+--- and not the container itself -- one left behind with diagnostics switched
+--- off is still a table, and returning it raw would read as permanently on.
+---@return boolean
+function model.IsDebug()
+    local diagnostics = db.debug
+    return (diagnostics and diagnostics.enabled) and true or false
+end
 
 function model.IsEnabled() return db.global.enabled end
 

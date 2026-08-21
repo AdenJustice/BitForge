@@ -238,7 +238,7 @@ function model.WantedByAlt(subClassID, itemID)
     -- at a remembered moment: if this ID is the recipe's own then it turns up in
     -- some character's knownRecipes once they have been scanned, and if it is a
     -- separate teaching spell it never will. Once per item per session.
-    if db.debug and not reportedSpells[itemID] then
+    if db.debug and db.debug.enabled and not reportedSpells[itemID] then
         reportedSpells[itemID] = true
         BitForge:Print(format("UPS debug: recipe item %d casts spell %d", itemID, spellID))
     end

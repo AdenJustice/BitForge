@@ -30,7 +30,7 @@ Automatically deposits and withdraws gold between your bags and the Warband Bank
 
 ### BitForge BatchSell
 
-Automates selling items at vendors. Filters by quality threshold, item level, expansion, equippability, bind type, and disenchantability. Per-item overrides via right-click blacklist / whitelist. Shows a sell manifest with a live total before confirming.
+Automates selling items at vendors. Nothing is sold unless a rule selects it. Gear is judged against what you have equipped in that slot, with a margin you can apply separately to higher, equal, and lower quality than your own; crafting materials and consumables each get their own keep-or-sell mode based on expansion age; bind type and disenchantability are respected throughout. Per-item overrides via right-click blacklist / whitelist, both readable and editable from the merchant window. Drag an item in from your bags to sell it on that visit only. Item tooltips say what will happen and why, and a sell manifest shows a live total before confirming.
 
 ### BitForge Openables
 
