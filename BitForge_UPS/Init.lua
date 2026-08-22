@@ -67,7 +67,7 @@ local enum = {
     -- Bumped whenever the stored shape changes incompatibly. Every version
     -- needs a migration step registered in control.lua; core refuses to start
     -- the module against a shape nothing converted.
-    SCHEMA_VERSION = 1,
+    SCHEMA_VERSION = 2,
 }
 ns.enum = enum
 

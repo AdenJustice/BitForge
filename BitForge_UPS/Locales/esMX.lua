@@ -8,6 +8,8 @@ L["settings:enabled"] = "Activar UPS"
 L["settings:enabledTooltip"] = "Guardar materiales de artesanía en el Banco de tropa de guerra al visitar un banco"
 L["settings:previewMoves"] = "Previsualizar antes de guardar"
 L["settings:previewMovesTooltip"] = "Mostrar una ventana de confirmación con todos los movimientos antes de guardar nada"
+L["settings:onlyWantedReagents"] = "Depositar solo reactivos que puedas usar"
+L["settings:onlyWantedReagentsTooltip"] = "Depositar solo reactivos con los que pueda trabajar una profesión de esta cuenta. Desactivado deposita todos, para la Casa de subastas"
 
 L["btn:deposit"] = "Guardar"
 L["btn:depositing"] = "Guardando… %d"

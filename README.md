@@ -24,13 +24,15 @@ A modular World of Warcraft addon suite for WoW 12.0+ (Midnight). Each module is
 
 Shared infrastructure: event bus, account/character database, settings panel integration, minimap button, and the BitForge UI widget library.
 
+It also ships a catalogue of which professions use an item as a crafting reagent, which other modules build on. The catalogue covers every profession, including ones none of your characters have, but it is not exhaustive: some reagents — the optional ones especially, and the higher quality tiers — are missing until you actually open a profession window. Opening each of your professions once fills in the rest for that profession for good. Anything still missing counts as unknown rather than unwanted, so nothing is ever acted on because of a gap.
+
 ### BitForge AutoBalance
 
 Automatically deposits and withdraws gold between your bags and the Warband Bank when you visit it, keeping each character at a configurable target balance. Supports a designated collector character that pulls all gold from the warband bank.
 
 ### BitForge BatchSell
 
-Automates selling items at vendors. Nothing is sold unless a rule selects it. Gear is judged against what you have equipped in that slot, with a margin you can apply separately to higher, equal, and lower quality than your own; crafting materials and consumables each get their own keep-or-sell mode based on expansion age; bind type and disenchantability are respected throughout. Per-item overrides via right-click blacklist / whitelist, both readable and editable from the merchant window. Drag an item in from your bags to sell it on that visit only. Item tooltips say what will happen and why, and a sell manifest shows a live total before confirming.
+Automates selling items at vendors. Nothing is sold unless a rule selects it. Gear is judged against what you have equipped in that slot, with a margin you can apply separately to higher, equal, and lower quality than your own; crafting materials and consumables each get their own keep-or-sell mode based on expansion age; reagents your professions actually use are kept regardless; bind type and disenchantability are respected throughout. Per-item overrides via right-click blacklist / whitelist, both readable and editable from the merchant window. Drag an item in from your bags to sell it on that visit only. Item tooltips say what will happen and why, and a sell manifest shows a live total before confirming.
 
 ### BitForge Openables
 
@@ -59,7 +61,9 @@ in as them.
 ### BitForge UPS _(Undermine Parcel Service)_
 
 Deposits your bags into the Warband Bank when you visit a bank — crafting reagents,
-recipes an alt still needs, and anything you have curated by hand. A confirmation window
+recipes an alt still needs, and anything you have curated by hand. By default only
+reagents one of your professions can actually craft with are sent; turn that off to
+deposit everything, for the auction house. A confirmation window
 lists every move before anything is sent, and a curation window lets you set a
 destination per item, including keeping something in your own bank instead.
 

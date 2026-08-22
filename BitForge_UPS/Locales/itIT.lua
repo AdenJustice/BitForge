@@ -8,6 +8,8 @@ L["settings:enabled"] = "Attiva UPS"
 L["settings:enabledTooltip"] = "Deposita i materiali d'artigianato nella Banca della Compagnia quando visiti una banca"
 L["settings:previewMoves"] = "Anteprima prima del deposito"
 L["settings:previewMovesTooltip"] = "Mostra una finestra di conferma con tutti gli spostamenti prima di depositare qualsiasi cosa"
+L["settings:onlyWantedReagents"] = "Deposita solo componenti utilizzabili"
+L["settings:onlyWantedReagentsTooltip"] = "Deposita solo componenti che un mestiere di questo account può lavorare. Disattivato deposita tutto, per la casa d'aste"
 
 L["btn:deposit"] = "Deposita"
 L["btn:depositing"] = "Deposito in corso… %d"

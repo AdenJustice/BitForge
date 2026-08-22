@@ -10,7 +10,11 @@ local enum = {
         -- angle. The radius is no longer hardcoded -- it now tracks the
         -- minimap's real size -- so the button itself moves outward, from
         -- inside the map onto the ring, even though the angle is unchanged.
-        global = { knownCharacters = {}, minimapPos = 45 },
+        -- professions is [charKey] = { Enum.Profession, ... }, rewritten at every
+        -- login rather than merged: dropping a profession has to be able to
+        -- remove it, or the account would go on believing someone can use a
+        -- reagent nobody can.
+        global = { knownCharacters = {}, minimapPos = 45, professions = {} },
         modules = {},
     },
     PLAYER_NAME = UnitName("player"),

@@ -5,6 +5,7 @@ local ipairs = ipairs
 local next = next
 local huge = math.huge
 
+local band = bit.band
 local sort = table.sort
 local wipe = table.wipe
 
@@ -33,6 +34,11 @@ local DB_DEFAULTS = {
         keepBindOnAccount = true,
         keepBindOnAccountPastExpac = false,
         keepDisenchantables = false,
+
+        -- Defaults on. The catalogue only ever reports a profession somebody on
+        -- this account actually has, so the items it protects are ones the
+        -- player has a use for -- and selling a reagent is not undoable.
+        keepUsedReagents = true,
         keepDisenchantablesPastExpac = false,
         -- Character-specific list: itemID → enum.LIST_STATUS value
         list = {},
@@ -81,6 +87,8 @@ function model.SetIlvlThreshold(v) db.char.ilvlThreshold = v end
 function model.GetKeepDisenchantables() return db.char.keepDisenchantables end
 
 function model.SetKeepDisenchantables(v) db.char.keepDisenchantables = v end
+function model.GetKeepUsedReagents() return db.char.keepUsedReagents end
+function model.SetKeepUsedReagents(v) db.char.keepUsedReagents = v end
 
 function model.GetLimitBatchTo12() return db.char.limitBatchTo12 end
 
@@ -508,7 +516,7 @@ function model.IsDisenchantable(facts, isEnchanter)
     if facts.classID ~= Enum.ItemClass.Armor and facts.classID ~= Enum.ItemClass.Weapon then
         return false
     end
-    if enum.NON_DISENCHANTABLE_IDS[tostring(facts.itemID)] then return false end
+    if enum.NON_DISENCHANTABLE_IDS[facts.itemID] then return false end
 
     local bindType = facts.bindType
     if isEnchanter then
@@ -642,6 +650,24 @@ function model.Decide(facts, settings)
         end
     end
 
+    -- 6b. A reagent some profession on this account uses. Below the category
+    -- gate, so an item its category already declined is not reconsidered, and
+    -- above step 9, which is what would otherwise sell it.
+    --
+    -- No expansion companion, unlike the two rules above. Their value decays
+    -- with age; a reagent's does not -- an Alchemy recipe that wants a Classic
+    -- herb wants it exactly as much now as it did then.
+    --
+    -- facts.reagentProfessions is nil for an item the catalogue does not know,
+    -- and nil means NOT KNOWN rather than "nobody wants this". The rule simply
+    -- does not fire and the item falls through to the sell mode the player
+    -- configured -- so a gap never causes a sale, it only fails to prevent one.
+    if settings.keepUsedReagents
+        and facts.reagentProfessions
+        and band(facts.reagentProfessions, settings.accountProfessions) ~= 0 then
+        return DECISION.KEEP, RULE.REAGENT_WANTED
+    end
+
     -- 7-8. Equipment terminates here. The slot comparison is the only way gear
     -- survives; anything it declines is outclassed. Gear with no reference --
     -- off-class, or a slot holding nothing -- reaches the terminal too.
@@ -688,6 +714,8 @@ function model.GetSettingsSnapshot()
         keepBindOnAccount            = db.char.keepBindOnAccount,
         keepBindOnAccountPastExpac   = db.char.keepBindOnAccountPastExpac,
         keepDisenchantables          = db.char.keepDisenchantables,
+        keepUsedReagents             = db.char.keepUsedReagents,
+        accountProfessions           = BitForge:GetAccountProfessions(),
         keepDisenchantablesPastExpac = db.char.keepDisenchantablesPastExpac,
         isEnchanter                  = isEnchanter,
         playerClass                  = playerClass,

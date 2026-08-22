@@ -1,5 +1,20 @@
 # Changelog
 
+## [v12.1.0.4] — 2026-08-22
+
+### Added
+
+- **BatchSell** now keeps crafting reagents that a profession on one of your characters actually uses, instead of judging them on expansion age alone. On by default — turn off "Keep Reagents Your Professions Use" for the old behaviour.
+- **UPS** now deposits only the reagents your professions can craft with. Turn off "Only deposit reagents you can use" to send everything to the Warband Bank for the auction house, as before.
+
+### Changed
+
+- Your characters' professions are remembered by BitForge itself now rather than by UPS, so BatchSell can use them too. Nothing to do — whatever UPS already recorded is carried over.
+
+### Fixed
+
+- **BatchSell:** the list of items that cannot be disenchanted was badly incomplete — about 2,000 entries where the real figure is over 15,000. Shirts, tabards, rings, trinkets, cloaks and every cosmetic item were missing entirely, so BatchSell treated them as disenchantable and offered them for sale on that basis. All of them are now recognised.
+
 ## [v12.1.0.3] — 2026-08-21
 
 ### Added

@@ -8,6 +8,8 @@ L["settings:enabled"] = "Activer UPS"
 L["settings:enabledTooltip"] = "Déposer les composants d'artisanat à la banque de bataillon lors d'une visite à la banque"
 L["settings:previewMoves"] = "Aperçu avant dépôt"
 L["settings:previewMovesTooltip"] = "Afficher une fenêtre de confirmation listant chaque déplacement avant tout dépôt"
+L["settings:onlyWantedReagents"] = "Ne déposer que les composants utilisables"
+L["settings:onlyWantedReagentsTooltip"] = "Ne déposer que les composants qu'un métier de ce compte peut travailler. Désactivé, tout est déposé, pour l'hôtel des ventes"
 
 L["btn:deposit"] = "Déposer"
 L["btn:depositing"] = "Dépôt en cours… %d"

@@ -133,6 +133,10 @@ function scanner.Gather(bagIndex, slotIndex)
         bindType       = bindType,
         expacID        = expacID or 0,
         isCraftingReagent = isCraftingReagent == true,
+        -- Which professions want this as a reagent, or nil for an item the
+        -- catalogue has no entry for. Gathered here because model.Decide is
+        -- pure and cannot ask core itself.
+        reagentProfessions = BitForge:GetReagentProfessions(slotInfo.itemID),
 
         isLocked       = slotInfo.isLocked == true,
         inEquipmentSet = model.IsInEquipmentSet(format("%d:%d", bagIndex, slotIndex)),

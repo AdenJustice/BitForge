@@ -2,7 +2,7 @@
 local ns = select(2, ...)
 
 ---@class BitForge.BatchSell.Enum
----@field NON_DISENCHANTABLE_IDS table<string, boolean>  Populated by ItemData.lua
+---@field NON_DISENCHANTABLE_IDS table<number, boolean>  Populated by ItemData.lua
 ---@field CLASS_PREFS table<string, table>  Populated by ItemData.lua
 ---@field SLOT_LOOKUP table<string, number[]>  Populated by ItemData.lua
 local enum = {
@@ -27,6 +27,7 @@ local enum = {
         CURRENT_EXPANSION = "CURRENT_EXPANSION",
         BIND_ON_ACCOUNT   = "BIND_ON_ACCOUNT",
         DISENCHANTABLE    = "DISENCHANTABLE",
+        REAGENT_WANTED    = "REAGENT_WANTED",
         EQUIPPABLE        = "EQUIPPABLE",
         OUTCLASSED        = "OUTCLASSED",
         SELL_MODE         = "SELL_MODE",

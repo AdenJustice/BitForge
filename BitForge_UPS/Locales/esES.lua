@@ -8,6 +8,8 @@ L["settings:enabled"] = "Activar UPS"
 L["settings:enabledTooltip"] = "Depositar materiales de artesanía en el Banco de tropa de guerra al visitar un banco"
 L["settings:previewMoves"] = "Previsualizar antes de depositar"
 L["settings:previewMovesTooltip"] = "Mostrar una ventana de confirmación con todos los movimientos antes de depositar nada"
+L["settings:onlyWantedReagents"] = "Depositar solo reagentes que puedas usar"
+L["settings:onlyWantedReagentsTooltip"] = "Depositar solo reagentes con los que pueda trabajar una profesión de esta cuenta. Desactivado deposita todos, para la Casa de subastas"
 
 L["btn:deposit"] = "Depositar"
 L["btn:depositing"] = "Depositando… %d"

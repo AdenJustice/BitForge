@@ -8,6 +8,8 @@ L["settings:enabled"] = "UPS 활성화"
 L["settings:enabledTooltip"] = "은행을 방문하면 제작 재료를 전쟁부대 은행에 보관합니다"
 L["settings:previewMoves"] = "보관 전 미리 보기"
 L["settings:previewMovesTooltip"] = "아이템을 옮기기 전에 모든 이동 목록을 확인 창으로 표시합니다"
+L["settings:onlyWantedReagents"] = "사용할 수 있는 재료만 입고"
+L["settings:onlyWantedReagentsTooltip"] = "이 계정의 전문기술로 제작할 수 있는 재료만 입고합니다. 끄면 경매장용으로 모든 재료를 입고합니다"
 
 L["btn:deposit"] = "보관"
 L["btn:depositing"] = "보관 중… %d"

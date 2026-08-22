@@ -220,21 +220,6 @@ function recipes.ReadProfessions()
     return found
 end
 
---- Writes the current character's professions into the DB, replacing whatever
---- was there. Replacement rather than merge: dropping a profession has to be
---- able to remove it, or an alt would go on wanting recipes for a profession
---- they no longer have.
-function recipes.RecordProfessions()
-    local charKey = BitForge:GetCurrentCharacter()
-    local list = {}
-
-    for _, entry in ipairs(recipes.ReadProfessions()) do
-        list[#list + 1] = entry.profession
-    end
-
-    model.SetProfessions(charKey, list)
-end
-
 --- Records which recipes of one skill line the current character has learned.
 ---
 --- Adds what the walk reports learned and retracts what it reports unlearned,
@@ -639,10 +624,10 @@ local function startModule()
         onToggle = view.curationWindow.Toggle,
     })
 
-    -- Free and passive: professions are available the moment the player is in
-    -- the world. Recipes are not -- UPS cannot open a profession window itself,
-    -- so PromptForScans asks the player to open theirs.
-    recipes.RecordProfessions()
+    -- Professions are core's now, recorded there at login and again whenever
+    -- SKILL_LINES_CHANGED fires. Recipes are not free the same way -- UPS cannot
+    -- open a profession window itself, so PromptForScans asks the player to open
+    -- theirs.
     recipes.PromptForScans()
 end
 
@@ -653,6 +638,28 @@ local function onPlayerReady()
             -- Data written before this module was versioned already matches the
             -- version-1 shape, so adopting the version is the whole migration.
             [1] = function() end,
+
+            -- The profession registry moved to core, where BatchSell can reach
+            -- it too. Carrying the stored one over rather than letting core
+            -- re-accumulate matters: core only learns a character's professions
+            -- when that character logs in, so without this every alt would stop
+            -- counting until visited, and WantedByAlt would quietly stop
+            -- wanting their recipes.
+            [2] = function(moduleDB)
+                local stored = moduleDB.global.professions
+                if type(stored) ~= "table" then return end
+
+                for charKey, professions in pairs(stored) do
+                    -- Core records the character logging in right now, and that
+                    -- reading is fresher than anything stored here. Only the
+                    -- others are carried over.
+                    if not BitForge:GetCharacterProfessions(charKey) then
+                        BitForge:RecordCharacterProfessions(charKey, professions)
+                    end
+                end
+
+                moduleDB.global.professions = nil
+            end,
         },
     }, startModule)
 end
@@ -663,14 +670,6 @@ end)
 
 ns:Subscribe(events.NEW_RECIPE_LEARNED, function(recipeID, recipeLevel, baseRecipeID)
     recipes.OnNewRecipeLearned(recipeID, recipeLevel, baseRecipeID)
-end)
-
--- Losing or gaining a profession invalidates what was recorded for this
--- character, so the profession list is rebuilt. Learned recipes are left alone:
--- they are re-harvested on the next window open, and discarding them here would
--- make every recipe look wanted in the meantime.
-ns:Subscribe(events.SKILL_LINES_CHANGED, function()
-    recipes.RecordProfessions()
 end)
 
 ns:Subscribe(events.BANKFRAME_OPENED, onBankOpened)

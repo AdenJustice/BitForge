@@ -621,3 +621,214 @@ function BitForge:RegisterCharacter()
     end
     known[#known + 1] = key
 end
+
+-- ================================================================================
+-- Reagent catalogue
+-- ================================================================================
+--
+-- enum.REAGENT_PROFESSIONS maps an item ID to a bitmask of the professions that
+-- consume it, generated into ReagentData.lua by Scripts/scrape_reagents.py. It
+-- answers one question -- does anyone want this item as a crafting reagent? --
+-- so a consumer can decline to vendor something an alt needs.
+--
+-- The shipped table is not complete and cannot be. It carries one item ID per
+-- reagent slot, so the other quality tiers of a reagent are absent, and no
+-- optional or finishing reagents at all, because Wowhead exposes those only as
+-- modified-crafting category IDs. What an open profession window shows is
+-- exact, so control.lua records the difference and this folds it back on top.
+--
+-- ABSENCE MEANS "NOT KNOWN", NEVER "NOBODY WANTS THIS". A consumer that reads
+-- nil as a no would sell the very items this exists to protect, and would do it
+-- silently. Fall through to your own rules instead.
+
+local band, bor, lshift = bit.band, bit.bor, bit.lshift
+
+-- db.global.reagentScan once the merge has run, nil before it. Held here so the
+-- recording path cannot write into a store that was never reconciled with the
+-- shipped table's version.
+local reagentScan
+
+--- Folds previously recorded scan results into the shipped catalogue in memory.
+---
+--- One-way and in-memory on purpose: the shipped table is a Lua literal rebuilt
+--- from source every session, so nothing accumulates across logins except the
+--- scan store itself.
+function model.MergeReagentScan()
+    local catalogue = ns.enum.REAGENT_PROFESSIONS
+    if not (db and catalogue) then return end
+
+    local stored = db.global.reagentScan
+
+    -- A newly shipped catalogue supersedes everything recorded against the old
+    -- one: either it now holds those reagents outright, or the game changed
+    -- under them. Reset rather than prune entry by entry, which cannot tell
+    -- those two apart and would keep stale credits alive forever.
+    if not stored or stored.interface ~= ns.enum.REAGENT_DATA_INTERFACE then
+        stored = {
+            interface = ns.enum.REAGENT_DATA_INTERFACE,
+            professions = {},
+            reagents = {},
+        }
+        db.global.reagentScan = stored
+    end
+
+    for itemID, mask in pairs(stored.reagents) do
+        catalogue[itemID] = bor(catalogue[itemID] or 0, mask)
+    end
+
+    reagentScan = stored
+end
+
+--- Whether a profession has already been scanned against the shipped catalogue.
+---
+--- Recorded account-wide rather than per session: a profession's recipe list
+--- only gains entries when the game patches, and a patch moves the interface
+--- the catalogue is stamped with, which resets this along with everything else.
+---@param profession number  Enum.Profession
+---@return boolean
+function model.HasScannedProfession(profession)
+    return reagentScan ~= nil and reagentScan.professions[profession] == true
+end
+
+--- Records the reagents a profession window showed that the catalogue lacked.
+---
+--- Only the difference is stored. After a good scrape most professions add
+--- nothing, and storing the whole window would put tens of thousands of entries
+--- in every player's saved variables to restate what is already shipped.
+---@param profession number    Enum.Profession
+---@param itemIDs    number[]  every reagent the window's recipes consume
+---@return number added  reagents newly credited to this profession
+function model.RecordReagentScan(profession, itemIDs)
+    local catalogue = ns.enum.REAGENT_PROFESSIONS
+    if not (reagentScan and catalogue) then return 0 end
+
+    reagentScan.professions[profession] = true
+
+    local professionBit = lshift(1, profession)
+    local added = 0
+
+    for _, itemID in ipairs(itemIDs) do
+        local known = catalogue[itemID] or 0
+        if band(known, professionBit) == 0 then
+            catalogue[itemID] = bor(known, professionBit)
+            reagentScan.reagents[itemID] =
+                bor(reagentScan.reagents[itemID] or 0, professionBit)
+            added = added + 1
+        end
+    end
+
+    return added
+end
+
+--- Whether core's own diagnostics are switched on.
+---
+--- Hand-written into the saved variables -- `/run BitForgeDB.debug = true` --
+--- and read live, so it takes effect on the next check without a reload. Core's
+--- flag is a plain boolean rather than the { enabled, dump } container a module
+--- gets: nothing in core writes diagnostics out to be shared.
+---@return boolean
+function model.IsDebug()
+    return db ~= nil and db.debug ~= nil and db.debug ~= false
+end
+
+--- Whether the shipped catalogue predates the running client.
+---
+--- Recipes added by a patch are missing until a profession window is opened on
+--- them, so this is a prompt to re-run the update_wowhead skill, not a fault.
+---@return boolean
+function model.IsReagentDataStale()
+    local stamped = ns.enum.REAGENT_DATA_INTERFACE
+    if not stamped then return false end
+    return (select(4, GetBuildInfo()) or 0) > stamped
+end
+
+--- The professions that use an item as a crafting reagent, as a bitmask.
+---
+--- Returns nil when the item is not in the catalogue, which means NOT KNOWN --
+--- see the note at the top of this section before treating it as a no.
+---@param itemID number
+---@return number|nil mask  test against enum.REAGENT_PROFESSION_BIT
+function BitForge:GetReagentProfessions(itemID)
+    local catalogue = ns.enum.REAGENT_PROFESSIONS
+    return catalogue and catalogue[itemID]
+end
+
+-- ================================================================================
+-- Profession registry
+-- ================================================================================
+--
+-- GetProfessions() only ever answers for the character who is logged in, so the
+-- account-wide picture has to be accumulated one login at a time. It lives in
+-- core because two modules ask the same question of it -- BatchSell to decide
+-- whether a reagent is worth keeping, UPS to decide whether it is worth
+-- depositing -- and a second copy refreshed by a second code path would
+-- eventually disagree with the first.
+--
+-- Stored per character rather than as a bare account mask, because UPS asks a
+-- per-character question: whether one named alt has a profession AND has not
+-- learned a given recipe. The mask is derived from it.
+
+-- Rebuilt on demand and dropped whenever the registry changes, rather than
+-- recomputed per item: BatchSell asks this once per bag slot at a merchant.
+local accountProfessionMask
+
+--- The professions recorded for a character, or nil if none ever were.
+---@param charKey string  as returned by BitForge:GetCurrentCharacter()
+---@return table|nil  array of Enum.Profession
+function BitForge:GetCharacterProfessions(charKey)
+    return db and db.global.professions[charKey]
+end
+
+--- Whether a character holds a profession.
+---
+--- Compared by equality rather than truthiness: Enum.Profession.FirstAid is 0,
+--- and a guard that treated 0 as absent would silently drop it.
+---@param charKey string
+---@param profession number  an Enum.Profession
+---@return boolean
+function BitForge:HasProfession(charKey, profession)
+    local recorded = db and db.global.professions[charKey]
+    if not recorded then return false end
+
+    for _, entry in ipairs(recorded) do
+        if entry == profession then return true end
+    end
+
+    return false
+end
+
+--- Replaces the professions recorded for a character.
+---
+--- Replacement rather than merge, and that is the whole reason this is not
+--- append-only: a character who abandons a profession must stop counting for it,
+--- or the account keeps reagents for a trade nobody has.
+---@param charKey    string
+---@param professions table  array of Enum.Profession
+function BitForge:RecordCharacterProfessions(charKey, professions)
+    if not db then return end
+    db.global.professions[charKey] = professions
+    accountProfessionMask = nil
+end
+
+--- Every profession any known character has, as a bitmask.
+---
+--- Only characters that have logged in since the registry existed are in it, so
+--- a bank alt nobody has visited is missing. That is a floor, not a fault: the
+--- mask under-reports, and both consumers treat a profession they do not know
+--- about as one that does not want the item -- the same direction as an item
+--- missing from the catalogue.
+---@return number  test against enum.REAGENT_PROFESSION_BIT
+function BitForge:GetAccountProfessions()
+    if accountProfessionMask then return accountProfessionMask end
+    if not db then return 0 end
+
+    local mask = 0
+    for _, professions in pairs(db.global.professions) do
+        for _, profession in ipairs(professions) do
+            mask = bor(mask, lshift(1, profession))
+        end
+    end
+
+    accountProfessionMask = mask
+    return mask
+end

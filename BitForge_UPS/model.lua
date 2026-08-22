@@ -10,6 +10,7 @@ local C_Item = C_Item
 local format = string.format
 local find = string.find
 local lower = string.lower
+local band = bit.band
 local sort = table.sort
 
 local DB_DEFAULTS = {
@@ -22,11 +23,6 @@ local DB_DEFAULTS = {
         -- character they thought owned it. An empty set means "any character,
         -- first come".
         overrides = {},
-
-        -- [charKey] = { Enum.Profession, ... }. Refilled from GetProfessions()
-        -- at every login, so a character whose professions changed while UPS
-        -- was disabled corrects itself on their next one.
-        professions = {},
 
         -- [charKey] = { [recipeSpellID] = true }. Absent means "never scanned",
         -- which reads as "knows nothing" and biases toward depositing --
@@ -41,6 +37,11 @@ local DB_DEFAULTS = {
     char = {
         enabled      = true,
         previewMoves = true,
+
+        -- Defaults on. Depositing a reagent nobody can craft with only moves it
+        -- from one container to another, but the warband bank is finite, and a
+        -- player who wants everything there for the auction house can say so.
+        onlyWantedReagents = true,
     },
 }
 local db
@@ -90,6 +91,10 @@ function model.GetPreviewMoves() return db.char.previewMoves end
 
 function model.SetPreviewMoves(value) db.char.previewMoves = value end
 
+function model.GetOnlyWantedReagents() return db.char.onlyWantedReagents end
+
+function model.SetOnlyWantedReagents(value) db.char.onlyWantedReagents = value end
+
 -- =========================================================
 -- overrides
 -- =========================================================
@@ -109,37 +114,6 @@ end
 -- =========================================================
 -- recipe knowledge
 -- =========================================================
-
---- The professions recorded for a character, or nil if none ever were.
----@param charKey string
----@return table|nil  array of Enum.Profession
-function model.GetProfessions(charKey)
-    return db.global.professions[charKey]
-end
-
----@param charKey string
----@param professions table  array of Enum.Profession
-function model.SetProfessions(charKey, professions)
-    db.global.professions[charKey] = professions
-end
-
---- Whether a character holds a profession.
----
---- Compared by equality rather than truthiness: Enum.Profession.FirstAid is 0,
---- and a guard that treated 0 as absent would silently drop it.
----@param charKey string
----@param profession number  an Enum.Profession
----@return boolean
-function model.HasProfession(charKey, profession)
-    local recorded = db.global.professions[charKey]
-    if not recorded then return false end
-
-    for _, entry in ipairs(recorded) do
-        if entry == profession then return true end
-    end
-
-    return false
-end
 
 ---@param charKey string
 ---@param spellID number
@@ -247,7 +221,7 @@ function model.WantedByAlt(subClassID, itemID)
 
     for _, charKey in ipairs(BitForge:GetKnownCharacters()) do
         if charKey ~= current
-            and model.HasProfession(charKey, profession)
+            and BitForge:HasProfession(charKey, profession)
             and not model.IsRecipeKnown(charKey, spellID) then
             return true
         end
@@ -274,7 +248,19 @@ function model.ResolveByRule(itemID)
 
     if classID then
         if enum.REAGENT_CLASSES[classID] then
-            return enum.DESTINATION.WARBAND
+            -- The class says "this is a reagent"; the catalogue says whether
+            -- anyone on the account can craft with it. nil is NOT KNOWN, and an
+            -- unknown reagent is deposited rather than left behind -- the same
+            -- outcome as before the catalogue existed.
+            if not db.char.onlyWantedReagents then
+                return enum.DESTINATION.WARBAND
+            end
+
+            local professions = BitForge:GetReagentProfessions(itemID)
+            if not professions
+                or band(professions, BitForge:GetAccountProfessions()) ~= 0 then
+                return enum.DESTINATION.WARBAND
+            end
         end
 
         if classID == Enum.ItemClass.Recipe and model.WantedByAlt(subClassID, itemID) then
@@ -665,7 +651,7 @@ function model.GetUnscannedCharacters()
     local unscanned = {}
 
     for _, charKey in ipairs(BitForge:GetKnownCharacters()) do
-        local professions = db.global.professions[charKey]
+        local professions = BitForge:GetCharacterProfessions(charKey)
 
         if professions and #professions > 0 and not model.HasAnyRecipeScan(charKey) then
             unscanned[#unscanned + 1] = charKey

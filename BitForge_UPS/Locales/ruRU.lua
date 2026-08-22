@@ -8,6 +8,8 @@ L["settings:enabled"] = "Включить UPS"
 L["settings:enabledTooltip"] = "Складывать реагенты профессий в банк отряда при посещении банка"
 L["settings:previewMoves"] = "Предпросмотр перед отправкой"
 L["settings:previewMovesTooltip"] = "Показывать окно подтверждения со списком всех перемещений до того, как что-либо будет отправлено"
+L["settings:onlyWantedReagents"] = "Складывать только нужные реагенты"
+L["settings:onlyWantedReagentsTooltip"] = "Складывать только реагенты, с которыми может работать профессия этой учётной записи. Выключено — складываются все, для аукциона"
 
 L["btn:deposit"] = "Отправить"
 L["btn:depositing"] = "Отправка… %d"

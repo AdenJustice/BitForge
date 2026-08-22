@@ -868,6 +868,7 @@ function settingsPanel.Init()
         bankButton.SetIdle()
     end)
     category:AddCheckbox("previewMoves", model.GetPreviewMoves, model.SetPreviewMoves)
+    category:AddCheckbox("onlyWantedReagents", model.GetOnlyWantedReagents, model.SetOnlyWantedReagents)
 
     -- The settings panel is where a user looks for "what does this addon let me
     -- change", and curation is the answer for every item no rule can classify.

@@ -8,6 +8,8 @@ L["settings:enabled"] = "Enable UPS"
 L["settings:enabledTooltip"] = "Deposit crafting reagents to the Warband Bank when you visit a bank"
 L["settings:previewMoves"] = "Preview before depositing"
 L["settings:previewMovesTooltip"] = "Show a confirmation window listing every move before anything is deposited"
+L["settings:onlyWantedReagents"] = "Only deposit reagents you can use"
+L["settings:onlyWantedReagentsTooltip"] = "Deposit only reagents a profession on this account can craft with. Off deposits every reagent, for the auction house"
 
 -- Bank button
 L["btn:deposit"] = "Deposit"

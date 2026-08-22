@@ -510,6 +510,7 @@ do
         cat:AddCheckbox("keepBindOnAccountPastExpac", model.GetKeepBindOnAccountPastExpac,
             model.SetKeepBindOnAccountPastExpac)
         cat:AddCheckbox("keepDisenchantables", model.GetKeepDisenchantables, model.SetKeepDisenchantables)
+        cat:AddCheckbox("keepUsedReagents", model.GetKeepUsedReagents, model.SetKeepUsedReagents)
         cat:AddCheckbox("keepDisenchantablesPastExpac", model.GetKeepDisenchantablesPastExpac,
             model.SetKeepDisenchantablesPastExpac)
 

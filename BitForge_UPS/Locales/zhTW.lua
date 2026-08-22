@@ -8,6 +8,8 @@ L["settings:enabled"] = "啟用 UPS"
 L["settings:enabledTooltip"] = "造訪銀行時將專業材料存入戰隊銀行"
 L["settings:previewMoves"] = "存入前預覽"
 L["settings:previewMovesTooltip"] = "在存入任何物品之前，顯示列出所有移動操作的確認視窗"
+L["settings:onlyWantedReagents"] = "僅存入可使用的材料"
+L["settings:onlyWantedReagentsTooltip"] = "僅存入此帳號任一專業能用於製作的材料。關閉則存入全部材料，供拍賣場使用"
 
 L["btn:deposit"] = "存入"
 L["btn:depositing"] = "正在存入… %d"

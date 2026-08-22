@@ -8,6 +8,8 @@ L["settings:enabled"] = "UPS aktivieren"
 L["settings:enabledTooltip"] = "Handwerksreagenzien bei einem Bankbesuch in der Kriegsmeutebank verstauen"
 L["settings:previewMoves"] = "Vor dem Verstauen anzeigen"
 L["settings:previewMovesTooltip"] = "Ein Bestätigungsfenster mit allen Bewegungen anzeigen, bevor etwas verstaut wird"
+L["settings:onlyWantedReagents"] = "Nur verwendbare Reagenzien einlagern"
+L["settings:onlyWantedReagentsTooltip"] = "Nur Reagenzien einlagern, mit denen ein Beruf auf diesem Konto arbeiten kann. Aus lagert alle Reagenzien ein, für das Auktionshaus"
 
 L["btn:deposit"] = "Verstauen"
 L["btn:depositing"] = "Verstaue… %d"

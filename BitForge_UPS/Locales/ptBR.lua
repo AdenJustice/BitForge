@@ -8,6 +8,8 @@ L["settings:enabled"] = "Ativar UPS"
 L["settings:enabledTooltip"] = "Depositar reagentes de profissão no Banco do Bando de Guerra ao visitar um banco"
 L["settings:previewMoves"] = "Pré-visualizar antes de depositar"
 L["settings:previewMovesTooltip"] = "Mostrar uma janela de confirmação listando cada movimentação antes de depositar qualquer coisa"
+L["settings:onlyWantedReagents"] = "Depositar apenas reagentes utilizáveis"
+L["settings:onlyWantedReagentsTooltip"] = "Depositar apenas reagentes com que uma profissão desta conta possa trabalhar. Desligado deposita todos, para a casa de leilões"
 
 L["btn:deposit"] = "Depositar"
 L["btn:depositing"] = "Depositando… %d"

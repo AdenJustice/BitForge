@@ -22,6 +22,7 @@
 ## AddonCompartmentFuncOnLeave: BitForge_OnAddonCompartmentLeave
 
 Init.lua
+ReagentData.lua
 Locales\enUS.lua
 Locales\koKR.lua
 Locales\deDE.lua
