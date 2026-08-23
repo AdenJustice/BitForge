@@ -45,18 +45,12 @@ L["settings:limitBatchTooltip"] = "Vendi al massimo 12 oggetti per clic per evit
 L["settings:sellEquipment"] = "Vendi equipaggiamento"
 L["settings:sellEquipmentTooltip"] =
 "Consenti la vendita di armature e armi. Se disattivato, l'equipaggiamento non viene mai venduto"
-L["settings:ilvlThreshold"] = "Margine livello oggetto"
-L["settings:ilvlThresholdTooltip"] =
-"Di quanti livelli oggetto un pezzo può essere inferiore a quello indossato in quello slot e venire comunque mantenuto"
-L["settings:marginOnHigherQuality"] = "  Applica margine a qualità superiore"
-L["settings:marginOnHigherQualityTooltip"] =
-"Applica il margine all'equipaggiamento di qualità superiore a quello indossato. Se disattivato, qualsiasi miglioramento di qualità viene mantenuto indipendentemente dal suo livello oggetto"
-L["settings:marginOnSameQuality"] = "  Applica margine a qualità uguale"
-L["settings:marginOnSameQualityTooltip"] =
-"Applica il margine all'equipaggiamento della stessa qualità di quello indossato. Se disattivato, viene mantenuto solo l'equipaggiamento pari o superiore al tuo livello oggetto indossato"
-L["settings:marginOnLowerQuality"] = "  Applica margine a qualità inferiore"
-L["settings:marginOnLowerQualityTooltip"] =
-"Applica il margine all'equipaggiamento di qualità inferiore a quello indossato. Se disattivato, qualsiasi peggioramento di qualità viene venduto indipendentemente dal suo livello oggetto. L'equipaggiamento di due o più qualità inferiori non riceve mai il margine"
+L["settings:ilvlMargin"] = "Margine livello oggetto"
+L["settings:ilvlMarginTooltip"] =
+"Quanto vale un grado di qualità in livelli oggetto. Con 10, un pezzo un grado sotto quello che indossi deve superarlo di 10 per essere tenuto, e uno un grado sopra sopravvive 10 sotto. Alla tua stessa qualità un pezzo deve semplicemente battere lo slot. Con 0 la qualità smette di contare e decide solo il livello dell'oggetto"
+L["settings:emphasizeQuality"] = "  Enfatizza la qualità"
+L["settings:emphasizeQualityTooltip"] =
+"Conta un grado di qualità per il doppio del margine e consente a un pezzo di pari qualità di restare quel margine sotto lo slot. La qualità superiore a quella che indossi diventa più economica da tenere, e quella inferiore più cara da giustificare"
 L["settings:keepBindOnAccount"] = "Mantieni legati all'account"
 L["settings:keepBindOnAccountTooltip"] = "Mantieni gli oggetti legati all'account (eredità)"
 L["settings:keepBindOnAccountPastExpac"] = "  Includi espansioni passate"
@@ -102,11 +96,13 @@ L["reason:NO_SELL_PRICE"] = "Nessun venditore lo acquisterà"
 L["reason:REFUNDABLE"] = "Ancora entro il periodo di rimborso"
 L["reason:WHITELISTED"] = "Nella tua lista bianca"
 L["reason:TEMP_INCLUDED"] = "Aggiunto per questa visita al venditore"
+L["reason:JUNK"] = "«Vendi spazzatura» è disattivato, la spazzatura non viene toccata"
 L["reason:CATEGORY"] = "Questo tipo di oggetto è impostato per essere mantenuto"
 L["reason:CURRENT_EXPANSION"] = "Proviene da un'espansione che stai mantenendo"
 L["reason:BIND_ON_ACCOUNT"] = "L'equipaggiamento legato all'account viene mantenuto"
 L["reason:DISENCHANTABLE"] = "Vale la pena mantenerlo per disincantarlo o rivenderlo"
 L["reason:REAGENT_WANTED"] = "Un mestiere di questo account usa questo"
+L["reason:NOT_EQUIPPABLE"] = "Non equipaggiabile o non consigliato per la tua classe"
 L["reason:EQUIPPABLE"] = "Abbastanza buono rispetto al tuo equipaggiamento indossato"
 L["reason:OUTCLASSED"] = "Superato dal tuo equipaggiamento indossato"
 L["reason:SELL_MODE"] = "Questo tipo di oggetto è impostato per essere venduto"

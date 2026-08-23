@@ -5,8 +5,6 @@ local L = ns.locale
 
 -- Widget
 L["status:widgetTitle"] = "Tome des tâches"
-L["btn:lockWidget"] = "Verrouiller"
-L["btn:unlockWidget"] = "Déverrouiller"
 
 -- Config Frame
 L["settings:configTitle"] = "Tome des tâches — Configuration"
@@ -48,6 +46,9 @@ L["tooltip:scopeMe"] = "Affiche ce personnage. Cliquez pour afficher tous les pe
 L["tooltip:scopeAll"] = "Affiche tous les personnages. Cliquez pour afficher uniquement ce personnage."
 L["tooltip:orientByChar"] = "Regroupé par personnage. Cliquez pour regrouper par tâche."
 L["tooltip:orientByTask"] = "Regroupé par tâche. Cliquez pour regrouper par personnage."
+L["tooltip:openConfig"] = "Ouvre la fenêtre de configuration du Tome des tâches."
+L["tooltip:widgetLocked"] = "La fenêtre est verrouillée. Cliquez pour la déverrouiller afin de la déplacer et la redimensionner."
+L["tooltip:widgetUnlocked"] = "La fenêtre est déverrouillée. Cliquez pour verrouiller sa position et sa taille."
 
 -- Config
 L["settings:editingFor"] = "Modification pour"

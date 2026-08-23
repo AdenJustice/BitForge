@@ -14,7 +14,19 @@ local enum = {
         -- login rather than merged: dropping a profession has to be able to
         -- remove it, or the account would go on believing someone can use a
         -- reagent nobody can.
-        global = { knownCharacters = {}, minimapPos = 45, professions = {} },
+        --
+        -- characterClasses is [charKey] = ClassFile ("MAGE"), a store that runs
+        -- parallel to knownCharacters rather than inside it. That list is an
+        -- array of plain strings walked with ipairs by every module that asks
+        -- who the account has, so giving it a second shape would break all of
+        -- them at once. Purely additive, so an existing profile is seeded with
+        -- an empty table and fills in one character at a time as each logs in.
+        global = {
+            knownCharacters  = {},
+            characterClasses = {},
+            minimapPos       = 45,
+            professions      = {},
+        },
         modules = {},
     },
     PLAYER_NAME = UnitName("player"),
@@ -73,10 +85,25 @@ BitForge.Events = {
     MERCHANT_SHOW   = "MERCHANT_SHOW",
     MERCHANT_CLOSED = "MERCHANT_CLOSED",
 
+    -- Spells. Fires when the spell awaiting a target changes -- the player
+    -- putting one like Disenchant on the cursor, or taking it off again. No
+    -- payload says which: what is pending has to be read back from
+    -- SpellIsTargeting and the item's own tooltip.
+    --
+    -- UPDATE_SPELL_TARGET_ITEM_CONTEXT was relayed alongside this for a while,
+    -- because it was unclear which of the two a raised Disenchant announces. It
+    -- is neither: that event arrives when the cursor is cleared and not when
+    -- the spell goes up, so it never once woke the probe and is gone.
+    CURRENT_SPELL_CAST_CHANGED = "CURRENT_SPELL_CAST_CHANGED",
+
     -- Professions
     SKILL_LINES_CHANGED     = "SKILL_LINES_CHANGED",
     TRADE_SKILL_LIST_UPDATE = "TRADE_SKILL_LIST_UPDATE",
     NEW_RECIPE_LEARNED      = "NEW_RECIPE_LEARNED",
+
+    -- Reputation
+    UPDATE_FACTION                     = "UPDATE_FACTION",
+    MAJOR_FACTION_RENOWN_LEVEL_CHANGED = "MAJOR_FACTION_RENOWN_LEVEL_CHANGED",
 
     -- Quests
     QUEST_ACCEPTED  = "QUEST_ACCEPTED",

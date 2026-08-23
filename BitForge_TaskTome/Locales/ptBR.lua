@@ -5,8 +5,6 @@ local L = ns.locale
 
 -- Widget
 L["status:widgetTitle"] = "Livro de Tarefas"
-L["btn:lockWidget"] = "Travar"
-L["btn:unlockWidget"] = "Destravar"
 
 -- Config Frame
 L["settings:configTitle"] = "Livro de Tarefas — Configuração"
@@ -48,6 +46,9 @@ L["tooltip:scopeMe"] = "Mostrando este personagem. Clique para mostrar todos os 
 L["tooltip:scopeAll"] = "Mostrando todos os personagens. Clique para mostrar apenas este personagem."
 L["tooltip:orientByChar"] = "Agrupado por personagem. Clique para agrupar por tarefa."
 L["tooltip:orientByTask"] = "Agrupado por tarefa. Clique para agrupar por personagem."
+L["tooltip:openConfig"] = "Abre a janela de configuração do Livro de Tarefas."
+L["tooltip:widgetLocked"] = "A janela está travada. Clique para destravá-la e poder movê-la e redimensioná-la."
+L["tooltip:widgetUnlocked"] = "A janela está destravada. Clique para travar sua posição e tamanho."
 
 -- Config
 L["settings:editingFor"] = "Editando Para"

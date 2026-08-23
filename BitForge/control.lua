@@ -150,6 +150,20 @@ EventRegistry:RegisterFrameEventAndCallback("PLAYER_LOGIN", function()
     control.TriggerEvent(E.PLAYER_READY)
 end)
 
+-- The debug dumps are per-play-session scratch tables. PLAYER_ENTERING_WORLD is
+-- the only event that tells a fresh login from a /reload, and the distinction is
+-- the whole point: a reload is how a dump is flushed to disk to be read, so
+-- clearing on one would empty every dump on the way to looking at it.
+--
+-- Registered directly rather than subscribed through the bus. PLAYER_ENTERING_WORLD
+-- is a relay, and a relay registers its frame event only once a module subscribes
+-- -- core taking one out for its own housekeeping would pin it for every profile.
+EventRegistry:RegisterFrameEventAndCallback("PLAYER_ENTERING_WORLD",
+    function(_, isInitialLogin)
+        if not isInitialLogin then return end
+        model.WipeDebugDumps()
+    end)
+
 -- No module observes logout, so this stays a private core registration rather
 -- than an entry in BitForge.Events.
 EventRegistry:RegisterFrameEventAndCallback("PLAYER_LOGOUT", function()

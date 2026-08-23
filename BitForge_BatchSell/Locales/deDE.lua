@@ -45,18 +45,12 @@ L["settings:limitBatchTooltip"] = "Pro Klick höchstens 12 Gegenstände verkaufe
 L["settings:sellEquipment"] = "Ausrüstung verkaufen"
 L["settings:sellEquipmentTooltip"] =
 "Rüstung und Waffen dürfen verkauft werden. Ist dies aus, wird niemals Ausrüstung beim Händler verkauft"
-L["settings:ilvlThreshold"] = "Gegenstandsstufen-Toleranz"
-L["settings:ilvlThresholdTooltip"] =
-"Wie viele Gegenstandsstufen unter dem in diesem Slot angelegten Gegenstand ein Teil liegen darf, um trotzdem behalten zu werden"
-L["settings:marginOnHigherQuality"] = "  Toleranz auf höhere Qualität anwenden"
-L["settings:marginOnHigherQualityTooltip"] =
-"Wendet die Toleranz auf Ausrüstung an, deren Qualität höher ist als die deiner angelegten. Ist dies aus, wird jede Qualitätsverbesserung unabhängig von ihrer Gegenstandsstufe behalten"
-L["settings:marginOnSameQuality"] = "  Toleranz auf gleiche Qualität anwenden"
-L["settings:marginOnSameQualityTooltip"] =
-"Wendet die Toleranz auf Ausrüstung derselben Qualität wie deine angelegte an. Ist dies aus, wird nur Ausrüstung auf oder über deiner angelegten Gegenstandsstufe behalten"
-L["settings:marginOnLowerQuality"] = "  Toleranz auf niedrigere Qualität anwenden"
-L["settings:marginOnLowerQualityTooltip"] =
-"Wendet die Toleranz auf Ausrüstung an, deren Qualität niedriger ist als die deiner angelegten. Ist dies aus, wird jede Qualitätsverschlechterung unabhängig von ihrer Gegenstandsstufe verkauft. Ausrüstung, die zwei oder mehr Qualitätsstufen niedriger ist, erhält nie die Toleranz"
+L["settings:ilvlMargin"] = "Gegenstandsstufen-Toleranz"
+L["settings:ilvlMarginTooltip"] =
+"Wie viele Gegenstandsstufen eine Qualitätsstufe wert ist. Bei 10 muss Ausrüstung eine Stufe unter Eurer angelegten sie um 10 übertreffen, um behalten zu werden, und eine Stufe darüber überlebt 10 darunter. Bei gleicher Qualität muss ein Teil den Platz schlicht übertreffen. Bei 0 zählt Qualität nicht mehr und allein die Gegenstandsstufe entscheidet"
+L["settings:emphasizeQuality"] = "  Qualität betonen"
+L["settings:emphasizeQualityTooltip"] =
+"Zählt eine Qualitätsstufe doppelt so hoch wie die Toleranz und erlaubt einem Teil gleicher Qualität, diese Toleranz unter dem Platz zu liegen. Qualität über Eurer angelegten wird billiger zu behalten, Qualität darunter teurer zu entschuldigen"
 L["settings:keepBindOnAccount"] = "Kontogebundene Gegenstände behalten"
 L["settings:keepBindOnAccountTooltip"] = "Kontogebundene (Erbstück-) Ausrüstung behalten"
 L["settings:keepBindOnAccountPastExpac"] = "  Vergangene Erweiterungen einschließen"
@@ -102,11 +96,13 @@ L["reason:NO_SELL_PRICE"] = "Kein Händler kauft ihn"
 L["reason:REFUNDABLE"] = "Noch innerhalb der Rückerstattungsfrist"
 L["reason:WHITELISTED"] = "Auf deiner Erlaubnisliste"
 L["reason:TEMP_INCLUDED"] = "Für diesen Händlerbesuch hinzugefügt"
+L["reason:JUNK"] = "„Schrott verkaufen“ ist aus, Schrott bleibt unangetastet"
 L["reason:CATEGORY"] = "Diese Art von Gegenstand ist zum Behalten eingestellt"
 L["reason:CURRENT_EXPANSION"] = "Aus einer Erweiterung, die du behältst"
 L["reason:BIND_ON_ACCOUNT"] = "Kontogebundene Ausrüstung wird behalten"
 L["reason:DISENCHANTABLE"] = "Lohnt sich zum Entzaubern oder Weiterverkaufen"
 L["reason:REAGENT_WANTED"] = "Ein Beruf auf diesem Konto verwendet dies"
+L["reason:NOT_EQUIPPABLE"] = "Für deine Klasse nicht anlegbar oder nicht empfohlen"
 L["reason:EQUIPPABLE"] = "Gut genug im Vergleich zu deiner angelegten Ausrüstung"
 L["reason:OUTCLASSED"] = "Deiner angelegten Ausrüstung unterlegen"
 L["reason:SELL_MODE"] = "Diese Art von Gegenstand ist zum Verkaufen eingestellt"

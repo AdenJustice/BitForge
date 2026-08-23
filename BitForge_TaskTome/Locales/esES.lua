@@ -5,8 +5,6 @@ local L = ns.locale
 
 -- Widget
 L["status:widgetTitle"] = "Tomo de tareas"
-L["btn:lockWidget"] = "Bloquear"
-L["btn:unlockWidget"] = "Desbloquear"
 
 -- Config Frame
 L["settings:configTitle"] = "Tomo de tareas — Configuración"
@@ -48,6 +46,9 @@ L["tooltip:scopeMe"] = "Mostrando este personaje. Haz clic para mostrar todos lo
 L["tooltip:scopeAll"] = "Mostrando todos los personajes. Haz clic para mostrar solo este personaje."
 L["tooltip:orientByChar"] = "Agrupado por personaje. Haz clic para agrupar por tarea."
 L["tooltip:orientByTask"] = "Agrupado por tarea. Haz clic para agrupar por personaje."
+L["tooltip:openConfig"] = "Abre la ventana de configuración del Tomo de tareas."
+L["tooltip:widgetLocked"] = "La ventana está bloqueada. Haz clic para desbloquearla y poder moverla y redimensionarla."
+L["tooltip:widgetUnlocked"] = "La ventana está desbloqueada. Haz clic para bloquear su posición y tamaño."
 
 -- Config
 L["settings:editingFor"] = "Editando para"

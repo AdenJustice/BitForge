@@ -1,5 +1,41 @@
 # Changelog
 
+## [v12.1.0.5] — 2026-08-23
+
+### Added
+
+- **RepRank**, a new module: it records each character's reputations as you play them and
+  shows who is furthest along with every faction, warband-wide reputations listed apart
+  from the ones that differ per character. It also tells you when any character has a
+  paragon reward waiting — in chat and as a pop-up when one becomes claimable, and again
+  at each login while it is still unclaimed.
+- BitForge windows are painted in **EllesmereUI**'s theme when you have it installed, following your accent colour and style settings. Nothing to configure; EllesmereUI's own per-addon skinning toggle controls it. The BatchSell merchant window is the first to use it.
+
+### Changed
+
+- **BatchSell** now asks three questions about a piece of gear, in order: is it good for me, is it good for one of my alts, is it worth disenchanting? Only gear that fails all three is sold. Previously the comparison against your equipped item had the last word, so a piece it rejected was vendored before the heirloom and disenchanting rules were consulted at all. Off-class gear goes through the same three questions now — a weapon your class cannot use but that binds to the account is kept for the character who can.
+- **BatchSell:** the three "apply margin to higher / equal / lower quality" checkboxes are replaced by one margin that covers every case. It is now what a quality tier is worth in item levels: at the default of 10, gear a tier below what you have equipped has to beat it by 10 to be kept, and a tier above survives 10 under it. At your own quality a piece has to beat the slot outright. Set it to 0 to ignore quality altogether. The slider runs 0 to 30 in steps of 2 and reads as a plain count of item levels rather than the negative number it used to be. The old checkboxes could contradict each other, so an uncommon could outlive the rare sitting next to it at the same item level; gear is judged consistently now, and more item level or more quality can only ever help a piece survive. The trade-off is that a large quality drop is no longer excused by a small item level gain — a 139 uncommon no longer survives an equipped 134 epic, because two tiers down has to beat it by 20 at the default margin. It is still offered to the heirloom and disenchanting rules before anything sells it. **Your existing margin is reset to the new default.**
+- **BatchSell** has a new "Emphasize Quality" option, off by default. It counts a quality tier for twice the margin and lets a piece of your own quality sit that margin below the slot — so quality above what you wear gets cheaper to keep, and quality below it dearer to excuse.
+- **BatchSell** no longer sells gear for a slot you have nothing equipped in. There is nothing for it to be worse than, so it is kept — levelling gear for an empty slot is not junk.
+- **BatchSell:** with "Sell Equipment" turned off, gear tooltips now say what the piece is actually worth — "good enough against what you have equipped", "kept for the character who can use it", "worth disenchanting" — instead of the same "this kind of item is set to be kept" on everything. Gear that would have been vendored still names the setting as what saved it. Nothing is sold that was not sold before.
+- **Openables** now surfaces profession knowledge items — the ones that read "Study to increase your <Profession> Knowledge" — for the professions your character actually has. They are ordinary Miscellaneous items with a plain Use: line, indistinguishable by class from the junk the button deliberately ignores, so they were being skipped. What tells them apart is that they are gated on a trade skill, which nothing you would want ignored ever is.
+- **Openables** shows what you can learn from first — recipes, toys, appearances, profession knowledge — then tokens, then caches and lockboxes, then quest items, and last of all anything that is merely usable. The order used to run the other way. A recipe is permanent and easy to forget you are carrying, while a cache keeps until you open it and a quest item is already held on the button by its own gate. An item whose tooltip only says it does something — with nothing to learn from it — now sits below all of them; it used to share the top place with recipes, and could take the button from a cache, a token or a quest item.
+- **BatchSell** learns which items can really be disenchanted, instead of trusting only its built-in list. Whenever you put Disenchant on the cursor, the game marks every item in your bags as disenchantable or not; BatchSell reads those marks and remembers them warband-wide. An item the built-in list had wrong stops being judged on it, in either direction — gear that turns out not to be disenchantable is no longer kept for that reason, and gear that turns out to be is no longer sold for the lack of it. Nothing to switch on, no extra clicks, and it only ever reads what the game has already said. Non-enchanters are unaffected.
+- **BatchSell:** the sell window now matches the merchant window's width, and its three tabs sit below it rather than above.
+- **BatchSell:** "Your class cannot equip this" now reads "Not equippable or not recommended for your class" — the rule also covers armor your class can technically wear but is not meant to.
+- **TaskTome:** the buttons along the top of the tracker window explain themselves. Hovering the gear or the padlock now describes what a click will do, and both light up under the pointer like the two beside them — the gear is how you open the configuration window from the tracker, and there was nothing to suggest it. Opening it from the Settings panel still works.
+- **TaskTome:** character names in the tracker are shown in class colours, so a roster of alts is readable at a glance. A character is coloured from the next time you log in on it; until then it looks exactly as it does today.
+
+### Fixed
+
+- **Openables:** Aqir Relic Fragment is held back until you are carrying six of them. Its tooltip offers a use at any stack size, but the effect combines six, so a click below that did nothing.
+- **Openables:** the click instructions on the button's tooltip no longer go missing on the first hover after a login or reload. The tooltip rebuilds itself once the item's data finishes loading, and the instructions were being dropped in that rebuild — which is why moving the mouse away and back brought them back.
+- **BatchSell:** gear your class cannot wear is no longer described as outclassed by what you have equipped. A hunter's tooltip on a one-handed mace said the mace was worse than the weapon in hand, when the real reason was simply that a hunter cannot hold one. It still sells; the tooltip now says why.
+- **BatchSell:** turning "Sell Junk" off now leaves poor quality items alone completely. It only ever stopped BatchSell from using the vendor's own Sell All Junk button — the greys were still judged by the usual rules and sold anyway, which defeated the point of handing them to another addon.
+- **BatchSell:** the sell list is no longer empty when you reopen a vendor. Closing and immediately reopening showed nothing until you pressed Refresh, on every visit after the first had cleared your junk.
+- **TaskTome:** the tracker window can be moved. Unlocking it with the padlock did nothing at all — the window never took mouse input, so the drag it was listening for could never begin. Locking it still pins it in place.
+- **TaskTome:** the tracker window has a close button. Until now the only way to put it away was the minimap icon.
+
 ## [v12.1.0.4] — 2026-08-22
 
 ### Added

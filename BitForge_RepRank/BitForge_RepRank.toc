@@ -1,0 +1,33 @@
+## Interface: 120100
+## Title: |cFFFFD700Bit|cFFB87333Forge|r – RepRank
+## Notes: Warband reputation ranking and paragon alerts
+## Notes-koKR: 전투부대 평판 순위 및 정예 알림
+## Notes-deDE: Kriegsband-Rufrangliste und Paragon-Hinweise
+## Notes-esES: Clasificación de reputación de la tropa de guerra y avisos de paragón
+## Notes-esMX: Clasificación de reputación de la tropa de guerra y avisos de paragón
+## Notes-frFR: Classement de réputation de la Troupe et alertes de parangon
+## Notes-itIT: Classifica reputazione della Banda di Guerra e avvisi paragon
+## Notes-ptBR: Classificação de reputação do Bando de Guerra e alertas de paragão
+## Notes-ruRU: Рейтинг репутации Военного Отряда и оповещения о парагоне
+## Notes-zhCN: 战团声望排行与巅峰奖励提醒
+## Notes-zhTW: 戰團聲望排行與巔峰獎勵提醒
+## Author: AdenJustice
+## Version: @project-version@
+## Dependencies: BitForge
+
+Init.lua
+Locales\enUS.lua
+Locales\koKR.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+model.lua
+Templates.xml
+view.lua
+control.lua

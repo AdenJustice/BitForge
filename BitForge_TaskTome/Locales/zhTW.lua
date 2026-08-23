@@ -5,8 +5,6 @@ local L = ns.locale
 
 -- Widget
 L["status:widgetTitle"] = "任務冊"
-L["btn:lockWidget"] = "鎖定"
-L["btn:unlockWidget"] = "解鎖"
 
 -- Config Frame
 L["settings:configTitle"] = "任務冊 — 設定"
@@ -48,6 +46,9 @@ L["tooltip:scopeMe"] = "正在顯示此角色。點擊以顯示所有角色。"
 L["tooltip:scopeAll"] = "正在顯示所有角色。點擊以僅顯示此角色。"
 L["tooltip:orientByChar"] = "依角色分組。點擊以依任務分組。"
 L["tooltip:orientByTask"] = "依任務分組。點擊以依角色分組。"
+L["tooltip:openConfig"] = "開啟任務冊設定視窗。"
+L["tooltip:widgetLocked"] = "視窗已鎖定。點擊以解鎖，即可移動並調整大小。"
+L["tooltip:widgetUnlocked"] = "視窗已解鎖。點擊以鎖定其位置與大小。"
 
 -- Config
 L["settings:editingFor"] = "正在編輯"

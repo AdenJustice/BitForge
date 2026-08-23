@@ -286,6 +286,34 @@ local function PruneMatchingDefaults(realTbl, src)
     end
 end
 
+
+--- Empties every module's debug dump, in place.
+---
+--- A dump is a within-session scratch table: it holds what a developer captured
+--- while chasing one problem, and carrying last session's records into this one
+--- makes it harder to read, not easier.
+---
+--- Cleared at the start of a play session rather than at logout, because a
+--- /reload runs the same logout path -- and a reload is precisely how a dump
+--- reaches disk to be read at all. Clearing it there would empty every dump on
+--- the way to looking at it.
+---
+--- Emptied in place rather than replaced, so a module holding the table from
+--- earlier in the session goes on writing into the one that is stored.
+---
+--- Reaches the raw containers rather than DebugContainer, so a module whose
+--- diagnostics have not been read yet this session is swept too, without
+--- normalizing a container into existence for one that has none.
+function model.WipeDebugDumps()
+    if not db then return end
+    for _, module in pairs(db.modules) do
+        local diagnostics = module.debug
+        if type(diagnostics) == "table" and type(diagnostics.dump) == "table" then
+            wipe(diagnostics.dump)
+        end
+    end
+end
+
 --- Strips saved values identical to their registered defaults from BitForgeDB.
 --- Called on PLAYER_LOGOUT, which core registers privately: no module observes
 --- logout, so there is nothing to run ahead of this.
@@ -611,10 +639,36 @@ function BitForge:GetKnownCharacters()
     return db and db.global.knownCharacters or {}
 end
 
---- Registers the current character in the account-wide known characters list if not already present.
+--- The class file name recorded for a character, or nil if none ever was.
+---
+--- nil is the ordinary answer, not an error: the registry only learns a class
+--- when that character logs in, so every alt on an existing account reads nil
+--- until it is next played. A caller must render the unadorned character rather
+--- than treat the absence as a fault.
+---@param charKey string  as returned by BitForge:GetCurrentCharacter()
+---@return string|nil  a ClassFile, e.g. "MAGE"
+function BitForge:GetCharacterClass(charKey)
+    return db and db.global.characterClasses[charKey]
+end
+
+--- Registers the current character in the account-wide known characters list if
+--- not already present, and records the class it plays.
+---
+--- The class is written on every login rather than only alongside a first-time
+--- insertion. A profile that predates the registry already holds every character
+--- in knownCharacters, so a first-time-only write would leave all of them
+--- classless forever.
 function BitForge:RegisterCharacter()
     if not db then return end
     local key = self:GetCurrentCharacter()
+
+    -- UnitClassBase MayReturnNothing. Nothing back leaves whatever was recorded
+    -- before in place rather than erasing a good answer with a missing one.
+    local classFile = UnitClassBase("player")
+    if classFile then
+        db.global.characterClasses[key] = classFile
+    end
+
     local known = db.global.knownCharacters
     for _, existing in ipairs(known) do
         if existing == key then return end

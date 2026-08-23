@@ -17,6 +17,7 @@
 ## IconTexture: Interface/AddOns/BitForge/icon
 ## X-Curse-Project-ID: 1475089
 ## X-Wago-ID: bGoyJB60
+## OptionalDeps: EllesmereUI
 ## AddonCompartmentFunc: BitForge_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: BitForge_OnAddonCompartmentEnter
 ## AddonCompartmentFuncOnLeave: BitForge_OnAddonCompartmentLeave

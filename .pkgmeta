@@ -7,6 +7,7 @@ move-folders:
   BitForge/BitForge_TaskTome: BitForge_TaskTome
   BitForge/BitForge_UPS: BitForge_UPS
   BitForge/BitForge_Openables: BitForge_Openables
+  BitForge/BitForge_RepRank: BitForge_RepRank
 
 enable-nolib-creation: no
 

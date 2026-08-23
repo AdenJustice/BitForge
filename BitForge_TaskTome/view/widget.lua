@@ -30,6 +30,19 @@ do
     frame:SetResizeBounds(200, 160)
     frame:SetResizable(true)
     frame:SetFrameStrata("MEDIUM")
+
+    -- Not optional, and not something UI.CreateFrame does for its callers: a
+    -- frame that takes no mouse input never sees the button press, so the drag
+    -- registered below would arm a gesture OnDragStart is never told about.
+    -- Without this the widget could not be moved at all, locked or not.
+    frame:EnableMouse(true)
+
+    -- Registered once, for the life of the frame. The lock is expressed by
+    -- SetMovable and read back from IsMovable; registering the drag only in the
+    -- unlocked branch left it armed for good, since the locked branch had no
+    -- matching release.
+    frame:RegisterForDrag("LeftButton")
+
     frame:Hide()
 
     local resizeGrip = CreateFrame("Button", nil, frame)
@@ -57,10 +70,48 @@ do
     titleText:SetPoint("LEFT", header, "LEFT", 4, 0)
     titleText:SetText(locale["status:widgetTitle"])
 
+    -- Close button. Anchored first and the header buttons chained leftwards off
+    -- each other from here, so adding or removing one does not mean recomputing
+    -- an absolute offset for every button to its left.
+    --
+    -- NoScripts rather than the UIPanelCloseButton every other window in the
+    -- suite uses: that template's own OnClick hides its parent, which here is
+    -- the header rather than the widget. The atlas textures scale, so the
+    -- shared close art still sizes down to match the 16px icon buttons beside
+    -- it.
+    local closeBtn = CreateFrame("Button", nil, header, "UIPanelCloseButtonNoScripts")
+    closeBtn:SetSize(16, 16)
+    closeBtn:SetPoint("RIGHT", header, "RIGHT", -2, 0)
+
+    -- Through widget.Hide, not frame:Hide: closing records the widget as hidden
+    -- so it stays down across a reload, exactly as the minimap toggle does.
+    local function OnCloseClick() widget.Hide() end
+    closeBtn:SetScript("OnClick", OnCloseClick)
+
+    --- The hover affordance shared by the header's icon buttons.
+    ---
+    --- The close button brings its own from its template; the rest are a bare
+    --- texture on a plain Button, and a 16px icon that does not react to the
+    --- pointer does not read as something to click. That is how the gear -- the
+    --- one way to the configuration window from here -- went unfound.
+    ---@param button Button
+    local function AddIconHighlight(button)
+        button:SetHighlightTexture("Interface/Buttons/UI-Common-MouseHilight", "ADD")
+    end
+
+    -- Lock button
+    local lockBtn = CreateFrame("Button", nil, header)
+    lockBtn:SetSize(16, 16)
+    lockBtn:SetPoint("RIGHT", closeBtn, "LEFT", -2, 0)
+    AddIconHighlight(lockBtn)
+    local lockIcon = lockBtn:CreateTexture(nil, "ARTWORK")
+    lockIcon:SetAllPoints()
+
     -- Gear button (opens Config)
     local gearBtn = CreateFrame("Button", nil, header)
     gearBtn:SetSize(16, 16)
-    gearBtn:SetPoint("RIGHT", header, "RIGHT", -20, 0)
+    gearBtn:SetPoint("RIGHT", lockBtn, "LEFT", -2, 0)
+    AddIconHighlight(gearBtn)
     local gearIcon = gearBtn:CreateTexture(nil, "ARTWORK")
     gearIcon:SetAllPoints()
     gearIcon:SetTexture("Interface/Buttons/UI-OptionsButton")
@@ -68,22 +119,15 @@ do
     local function OnGearClick() view.configFrame.Toggle() end
     gearBtn:SetScript("OnClick", OnGearClick)
 
-    -- Lock button
-    local lockBtn = CreateFrame("Button", nil, header)
-    lockBtn:SetSize(16, 16)
-    lockBtn:SetPoint("RIGHT", header, "RIGHT", -2, 0)
-    local lockIcon = lockBtn:CreateTexture(nil, "ARTWORK")
-    lockIcon:SetAllPoints()
-
     local function UpdateLockVisual()
-        if model.IsWidgetLocked() then
-            lockIcon:SetTexture("Interface/Buttons/LockButton-Locked-Up")
-            frame:SetMovable(false)
-        else
-            lockIcon:SetTexture("Interface/Buttons/LockButton-Unlocked-Up")
-            frame:SetMovable(true)
-            frame:RegisterForDrag("LeftButton")
-        end
+        local locked = model.IsWidgetLocked()
+        lockIcon:SetTexture(locked
+            and "Interface/Buttons/LockButton-Locked-Up"
+            or "Interface/Buttons/LockButton-Unlocked-Up")
+        -- The whole of the lock, in one call. The drag stays registered either
+        -- way and the handlers read this back, so there is a single place the
+        -- locked state lives.
+        frame:SetMovable(not locked)
     end
 
     local function OnLockClick()
@@ -97,12 +141,14 @@ do
     local scopeBtn = CreateFrame("Button", nil, header)
     scopeBtn:SetSize(16, 16)
     scopeBtn:SetPoint("RIGHT", gearBtn, "LEFT", -2, 0)
+    AddIconHighlight(scopeBtn)
     local scopeIcon = scopeBtn:CreateTexture(nil, "ARTWORK")
     scopeIcon:SetAllPoints()
 
     local orientBtn = CreateFrame("Button", nil, header)
     orientBtn:SetSize(16, 16)
     orientBtn:SetPoint("RIGHT", scopeBtn, "LEFT", -2, 0)
+    AddIconHighlight(orientBtn)
     local orientIcon = orientBtn:CreateTexture(nil, "ARTWORK")
     orientIcon:SetAllPoints()
 
@@ -137,6 +183,19 @@ do
     -- Tooltips describe what a click will do from the current state, not what
     -- the icon currently shows, so the hint stays actionable rather than
     -- merely descriptive.
+    local function OnGearEnter(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(locale["tooltip:openConfig"], 1, 1, 1, 1, true)
+        GameTooltip:Show()
+    end
+
+    local function OnLockEnter(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText(model.IsWidgetLocked()
+            and locale["tooltip:widgetLocked"] or locale["tooltip:widgetUnlocked"], 1, 1, 1, 1, true)
+        GameTooltip:Show()
+    end
+
     local function OnScopeEnter(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetText(model.GetWidgetScope() == enum.SCOPE_ALL
@@ -151,17 +210,28 @@ do
         GameTooltip:Show()
     end
 
-    local function OnModeButtonLeave()
+    local function OnHeaderButtonLeave()
         GameTooltip:Hide()
     end
 
+    gearBtn:SetScript("OnEnter", OnGearEnter)
+    gearBtn:SetScript("OnLeave", OnHeaderButtonLeave)
+    lockBtn:SetScript("OnEnter", OnLockEnter)
+    lockBtn:SetScript("OnLeave", OnHeaderButtonLeave)
     scopeBtn:SetScript("OnEnter", OnScopeEnter)
-    scopeBtn:SetScript("OnLeave", OnModeButtonLeave)
+    scopeBtn:SetScript("OnLeave", OnHeaderButtonLeave)
     orientBtn:SetScript("OnEnter", OnOrientEnter)
-    orientBtn:SetScript("OnLeave", OnModeButtonLeave)
+    orientBtn:SetScript("OnLeave", OnHeaderButtonLeave)
 
-    local function OnDragStart(self) self:StartMoving() end
+    -- IsMovable is the lock, read back rather than tracked a second time. The
+    -- drag registration is permanent, so a locked widget still gets these; the
+    -- sizing grip guards itself the same way.
+    local function OnDragStart(self)
+        if not self:IsMovable() then return end
+        self:StartMoving()
+    end
     local function OnDragStop(self)
+        if not self:IsMovable() then return end
         self:StopMovingOrSizing()
         local x, y = self:GetCenter()
         model.SetWidgetPos(x, y)
@@ -210,6 +280,12 @@ do
 
     local treeView = CreateScrollBoxListTreeListView(20, 2, 2, 2, 2, 1)
     treeView:SetElementExtent(22)
+
+    -- How far a finished row's name is dimmed. Read by the row renderer and by
+    -- the class-colour label alike: colour markup wins over SetTextColor, so a
+    -- coloured name has to carry the same dim itself or it would read as
+    -- brightly finished as outstanding.
+    local COMPLETED_DIM = 0.5
 
     local function OnCheckboxClick(self)
         if model.GetWidgetScope() ~= enum.SCOPE_ME then return end
@@ -305,6 +381,10 @@ do
                 -- roster-wide count.
                 rowFrame.taskId = nil
                 rowFrame.nameText:SetText(data.label)
+                -- Restated rather than assumed: row frames are recycled, so a
+                -- header landing on a frame that last drew a finished task
+                -- would otherwise inherit that row's dim.
+                rowFrame.nameText:SetTextColor(1, 1, 1)
                 rowFrame.checkbox:Hide()
                 rowFrame.countText:SetText(data.doneCount .. "/" .. data.totalCount)
                 rowFrame.countText:Show()
@@ -321,8 +401,8 @@ do
                 -- one question that orientation exists to ask with the same
                 -- string on every row.
                 rowFrame.nameText:SetText(data.label or task.name)
-                rowFrame.nameText:SetTextColor(completed and 0.5 or 1,
-                    completed and 0.5 or 1, completed and 0.5 or 1)
+                local shade = completed and COMPLETED_DIM or 1
+                rowFrame.nameText:SetTextColor(shade, shade, shade)
 
                 rowFrame.checkbox:SetChecked(completed)
                 rowFrame.checkbox:SetEnabled(editable)
@@ -355,6 +435,37 @@ do
         return node
     end
 
+    --- A character key, in that character's class colour.
+    ---
+    --- Core learns a class only when the character in question logs in, so on
+    --- an account that has been played for years every alt reads as classless
+    --- until it is next played. That is the ordinary case rather than a fault,
+    --- and so is a class file the client has no colour for, so both fall through
+    --- to the bare key and render exactly as they always did.
+    ---
+    --- Only the label is coloured. charKey stays the plain string everywhere it
+    --- is used as an identity -- completion lookups, collapse keys -- because
+    --- markup in a key would match nothing.
+    ---@param charKey    string
+    ---@param completed? boolean  dim the colour, as a finished row's name is
+    ---@return string
+    local function CharacterLabel(charKey, completed)
+        local classFile = BitForge:GetCharacterClass(charKey)
+        if not classFile then return charKey end
+
+        -- GetClassColor MayReturnNothing for a name it does not recognise.
+        local color = C_ClassColor.GetClassColor(classFile)
+        if not color then return charKey end
+
+        if completed then
+            local red, green, blue = color:GetRGB()
+            color = CreateColor(red * COMPLETED_DIM, green * COMPLETED_DIM,
+                blue * COMPLETED_DIM)
+        end
+
+        return color:WrapTextInColorCode(charKey)
+    end
+
     -- Note: must not be called from within the ScrollBox frame factory or
     -- initializer -- SetDataProvider is not re-entrant. Safe from user input
     -- handlers (OnClick/OnMouseDown).
@@ -384,7 +495,7 @@ do
                 local header = insertNode(dataProvider, {
                     isHeader   = true,
                     label      = group.isAccountWide
-                        and locale["group:accountWide"] or group.charKey,
+                        and locale["group:accountWide"] or CharacterLabel(group.charKey),
                     doneCount  = group.doneCount,
                     totalCount = group.totalCount,
                 }, key)
@@ -418,7 +529,7 @@ do
                         insertNode(header, {
                             charKey = child.charKey,
                             task    = group.task,
-                            label   = child.charKey,
+                            label   = CharacterLabel(child.charKey, child.completed),
                         }, key .. "/char:" .. child.charKey)
                     end
                 end

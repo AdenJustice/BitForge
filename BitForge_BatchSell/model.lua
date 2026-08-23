@@ -3,7 +3,6 @@ local ADDON_NAME, ns = ...
 
 local ipairs = ipairs
 local next = next
-local huge = math.huge
 
 local band = bit.band
 local sort = table.sort
@@ -13,6 +12,13 @@ local DB_DEFAULTS = {
     global = {
         -- Warband-wide list: itemID → enum.LIST_STATUS value
         list = {},
+        -- What the client itself answered about an item's disenchantability:
+        -- itemID → boolean, harvested by control.disenchantProbe. Warband-wide
+        -- because the answer is a property of the item, not of the character
+        -- who happened to be holding it. Absent for anything never observed
+        -- with a disenchant pending, which is most of the game -- so it
+        -- supplements the crawled table rather than replacing it.
+        disenchantTruth = {},
     },
     char = {
         -- Sell behaviour
@@ -24,12 +30,14 @@ local DB_DEFAULTS = {
         materialsMode = "KEEP_ALL",
         materialsExpansion = 11, -- LE_EXPANSION_MIDNIGHT; read only in KEEP_FROM
         otherMode = "KEEP_ALL",
-        -- Equipment: the slot comparison. Each toggle off means "let quality
-        -- decide" for that direction; see model.CompareToEquipped.
-        ilvlThreshold = -20,
-        marginOnHigherQuality = false,
-        marginOnSameQuality = true,
-        marginOnLowerQuality = false,
+        -- Equipment: the slot comparison. One bar, moved by quality rather
+        -- than switched by it -- see model.CompareToEquipped. The margin is a
+        -- flat number of item levels, and one quality tier is worth exactly one
+        -- more of them.
+        ilvlMargin = 10,
+        -- Issue #7's "usemargin". Off by default: emphasis is the opt-in
+        -- amplifier, and the plain rule is one margin per quality tier.
+        emphasizeQuality = false,
         -- Keep rules
         keepBindOnAccount = true,
         keepBindOnAccountPastExpac = false,
@@ -72,6 +80,22 @@ function model.IsDebug()
     return (diagnostics and diagnostics.enabled) and true or false
 end
 
+--- The debug container's scratch table, or nil while diagnostics are off.
+---
+--- Handed out rather than written through: a caller assembles its whole record
+--- and drops it in. The container a module holds is the stored one, so anything
+--- filed here reaches the saved variables and survives the session that
+--- produced it -- which is the entire reason the dump exists.
+---
+--- Deliberately outside the schema, like the flag beside it: never seeded, never
+--- migrated, and left alone by the logout prune.
+---@return table|nil
+function model.GetDebugDump()
+    local diagnostics = db.debug
+    if not (diagnostics and diagnostics.enabled) then return nil end
+    return diagnostics.dump
+end
+
 -- =========================================================
 -- Settings getters / setters
 -- =========================================================
@@ -80,9 +104,13 @@ function model.GetSellJunk() return db.char.sellJunk end
 
 function model.SetSellJunk(v) db.char.sellJunk = v end
 
-function model.GetIlvlThreshold() return db.char.ilvlThreshold end
+function model.GetIlvlMargin() return db.char.ilvlMargin end
 
-function model.SetIlvlThreshold(v) db.char.ilvlThreshold = v end
+function model.SetIlvlMargin(v) db.char.ilvlMargin = v end
+
+function model.GetEmphasizeQuality() return db.char.emphasizeQuality end
+
+function model.SetEmphasizeQuality(v) db.char.emphasizeQuality = v end
 
 function model.GetKeepDisenchantables() return db.char.keepDisenchantables end
 
@@ -121,18 +149,6 @@ function model.SetMaterialsExpansion(value) db.char.materialsExpansion = value e
 function model.GetOtherMode() return db.char.otherMode end
 
 function model.SetOtherMode(value) db.char.otherMode = value end
-
-function model.GetMarginOnHigherQuality() return db.char.marginOnHigherQuality end
-
-function model.SetMarginOnHigherQuality(value) db.char.marginOnHigherQuality = value end
-
-function model.GetMarginOnSameQuality() return db.char.marginOnSameQuality end
-
-function model.SetMarginOnSameQuality(value) db.char.marginOnSameQuality = value end
-
-function model.GetMarginOnLowerQuality() return db.char.marginOnLowerQuality end
-
-function model.SetMarginOnLowerQuality(value) db.char.marginOnLowerQuality = value end
 
 -- =========================================================
 -- List management
@@ -256,6 +272,11 @@ local isEnchanter = false
 --- @param value boolean
 function model.SetIsEnchanter(value)
     isEnchanter = value
+end
+
+---@return boolean
+function model.GetIsEnchanter()
+    return isEnchanter
 end
 
 -- =========================================================
@@ -446,77 +467,165 @@ function model.IsPastExpansion(facts, expansionThreshold)
     return facts.expacID < expansionThreshold
 end
 
---- The item level slack granted when comparing a candidate against one equipped
---- item, derived from the quality gap between them.
+--- One equipped item's answer about one candidate: DECISION.KEEP,
+--- DECISION.SELL, or nil.
 ---
---- The tolerance is added to the equipped level, so -huge drops the bar to
---- negative infinity and keeps everything while huge raises it beyond reach and
---- keeps nothing. ilvlThreshold is negative.
+--- The three are not two outcomes plus a fallback. Gear is put to three
+--- questions in order -- good for me, good for an alt, worth disenchanting --
+--- and this is only the first:
 ---
---- Each toggle off means "let quality decide": a higher-quality item is kept, a
---- lower-quality one sold, and a quality tie leaves item level as the only
---- discriminator, so the tolerance drops to zero rather than to a blanket
---- verdict -- otherwise turning it off would sell a same-quality upgrade.
+---   KEEP  settles it, and nothing below is asked.
+---   SELL  is the spec's PASS. It does not vendor anything by itself; it hands
+---         the piece to the two questions below, and only gear none of the
+---         three claims reaches the vendor.
+---   nil   is not a PASS. It means there was nothing to compare against, which
+---         only an unreadable slot or an empty one produces. The questions
+---         presuppose something in the slot, and with nothing there the first
+---         of them -- is this good for me? -- is answered by the slot being
+---         empty. It reaches the default, which keeps.
 ---
---- Two or more steps behind is a tightening rule and never a loosening one: an
---- Uncommon against an equipped Epic gets no slack whatever the margin says.
-local function toleranceFor(candidateQuality, equippedQuality, settings)
-    local gap = candidateQuality - equippedQuality
-    if gap >= 1 then
-        return settings.marginOnHigherQuality and settings.ilvlThreshold or -huge
+--- The bar moves a whole margin per quality tier, and the tiers are not
+--- symmetric about it:
+---
+---   a tier up or more    KEEP at  equipped - margin
+---   same quality         KEEP at  above equipped
+---   a tier down or more  KEEP at  above equipped + margin * tiers
+---
+--- So the margin is what one quality tier is worth, not a tolerance at your own
+--- tier: at equal quality a piece has to be a strict item level upgrade, and
+--- every tier given up is bought back a whole margin at a time. The discount
+--- is capped at one margin however far up the ladder the candidate is, while
+--- the debt keeps stacking downwards -- quality above what you wear is worth
+--- having, but not worth an unbounded item level discount.
+---
+--- Whole item levels throughout. Margin, level and quality gap are integers, so
+--- every bar is exact and there is nothing to round.
+---
+--- Monotonic by construction: the bar never rises as the candidate's quality
+--- rises, so improving either axis can only move a piece towards being kept.
+local function compareToSlot(facts, equipped, settings)
+    -- Something occupies the slot but its level or quality could not be read.
+    -- Unknown is not evidence, and must never pass an item towards the vendor.
+    if equipped.unreadable then return nil end
+
+    local qualityGap = facts.quality - equipped.quality
+
+    -- Emphasis does two things at once, and both are needed to keep the rungs
+    -- evenly spaced: it doubles what a tier costs, and it grants a tolerance at
+    -- the candidate's own tier. Without the second the doubling would leave the
+    -- gap between "same quality" and "one tier down" three times the gap below
+    -- it. Without the first the tolerance alone would only ever be leniency,
+    -- and the point of emphasis is that quality below yours gets dearer too.
+    local step = settings.ilvlMargin * (settings.emphasizeQuality and 2 or 1)
+    local tolerance = settings.emphasizeQuality and settings.ilvlMargin or 0
+    local level = equipped.level - tolerance
+
+    if qualityGap > 0 then
+        -- Capped at one tier's discount however far up the ladder it is.
+        -- Quality above the slot is worth having; it is not worth an unbounded
+        -- item level rebate.
+        if facts.level >= level - step then return enum.DECISION.KEEP end
+        return enum.DECISION.SELL
     end
-    if gap == 0 then
-        return settings.marginOnSameQuality and settings.ilvlThreshold or 0
+
+    if qualityGap == 0 then
+        if facts.level > level then return enum.DECISION.KEEP end
+        return enum.DECISION.SELL
     end
-    if gap == -1 then
-        return settings.marginOnLowerQuality and settings.ilvlThreshold or huge
+
+    -- qualityGap is negative here, so negating it is the number of tiers given
+    -- up, and each one is a whole step the candidate has to make back.
+    if facts.level > level + step * -qualityGap then
+        return enum.DECISION.KEEP
     end
-    return settings.marginOnLowerQuality and 0 or huge
+    return enum.DECISION.SELL
 end
 
---- True when the item is worth keeping against what occupies a slot it could
---- fill.
+--- What the slots this item could fill make of it.
 ---
---- Existential over slots, as IsCloseToEquipped was: for the dual slots (rings
---- 11/12, trinkets 13/14) an item only has to satisfy the test against one of
---- the two. Each slot carries its own equipped level and quality, so the two
---- rings are compared independently rather than reduced to a single number
---- first.
+--- Existential over slots, as before: for the dual slots (rings 11/12, trinkets
+--- 13/14) one satisfied slot is enough, and each carries its own level and
+--- quality rather than being reduced to a single number first.
 ---
---- Answers false when there is no reference -- off-class gear never reaches
---- here, and a slot holding nothing yields an empty list. Both fall through to
---- the equipment terminal and sell.
+--- With three answers the combination has to say what a split decision means. A
+--- slot that keeps wins outright. Condemnation has to be unanimous: a slot with
+--- no opinion spares the item from a sibling that would have sold it, which is
+--- the same "only has to satisfy one of the two" rule read from the other end.
 ---
---- An entry marked unreadable is different from an empty list: it means a slot
---- holds something whose level or quality the scanner could not read, rather
---- than a slot holding nothing at all. That is not evidence the candidate
---- outclasses it -- it is simply unknown, and unknown must not authorise a
---- sale -- so it short-circuits the whole comparison to true (worth keeping)
---- rather than being skipped as if it were not there.
+--- An empty list -- a slot holding nothing, or an item whose equip location maps
+--- to no slot -- yields no opinion rather than a sale. There is nothing to be
+--- worse than, and levelling gear for a slot you have not filled is not junk.
 ---@param facts    table
 ---@param settings table
----@return boolean
+---@return string|nil  enum.DECISION.KEEP, enum.DECISION.SELL, or nil
 function model.CompareToEquipped(facts, settings)
     local equippedItems = facts.equippedItems
-    if not equippedItems then return false end
+    if not equippedItems then return nil end
+
+    local condemned, undecided = false, false
     for _, equipped in ipairs(equippedItems) do
-        if equipped.unreadable then return true end
-        local tolerance = toleranceFor(facts.quality, equipped.quality, settings)
-        if facts.level >= equipped.level + tolerance then
-            return true
+        local verdict = compareToSlot(facts, equipped, settings)
+        if verdict == enum.DECISION.KEEP then return enum.DECISION.KEEP end
+        if verdict == enum.DECISION.SELL then
+            condemned = true
+        else
+            undecided = true
         end
     end
-    return false
+
+    if condemned and not undecided then return enum.DECISION.SELL end
+    return nil
+end
+
+--- What the crawled table predicts about disenchantability, with no bind rules
+--- folded in: uncommon or better, armour or a weapon, and absent from the list
+--- of exceptions the crawl found. Pure client-side inference -- the same three
+--- questions the tooltip's line answers authoritatively, guessed from item data
+--- because the authoritative answer is only readable with a spell pending.
+---@param facts table
+---@return boolean
+function model.PredictDisenchantable(facts)
+    if facts.quality < Enum.ItemQuality.Uncommon then return false end
+    if facts.classID ~= Enum.ItemClass.Armor and facts.classID ~= Enum.ItemClass.Weapon then
+        return false
+    end
+    return not enum.NON_DISENCHANTABLE_IDS[facts.itemID]
+end
+
+--- Whether the item can be disenchanted at all.
+---
+--- The client's own answer wins where one has been harvested, in both
+--- directions: it is the same value the game paints the bag slot with, so an
+--- item the crawl missed stops being kept and one the crawl wrongly listed
+--- starts being kept. Everything unobserved falls back to the prediction.
+---@param facts table
+---@return boolean
+function model.CanDisenchant(facts)
+    local learned = db.global.disenchantTruth[facts.itemID]
+    if learned ~= nil then return learned end
+    return model.PredictDisenchantable(facts)
+end
+
+--- The harvested answer for an item, or nil when the client has never been
+--- asked about it while a disenchant was pending.
+---@param itemID number
+---@return boolean|nil
+function model.GetLearnedDisenchantable(itemID)
+    return db.global.disenchantTruth[itemID]
+end
+
+--- Files one observation. Called only from the probe, which has already
+--- established that a disenchant is the spell awaiting a target.
+---@param itemID number
+---@param canDisenchant boolean
+function model.LearnDisenchantable(itemID, canDisenchant)
+    db.global.disenchantTruth[itemID] = canDisenchant
 end
 
 --- True when the item is worth keeping to disenchant or resell:
 --- enchanters get value from BoP as well; everyone else only from BoE and BoA.
 function model.IsDisenchantable(facts, isEnchanter)
-    if facts.quality < Enum.ItemQuality.Uncommon then return false end
-    if facts.classID ~= Enum.ItemClass.Armor and facts.classID ~= Enum.ItemClass.Weapon then
-        return false
-    end
-    if enum.NON_DISENCHANTABLE_IDS[facts.itemID] then return false end
+    if not model.CanDisenchant(facts) then return false end
 
     local bindType = facts.bindType
     if isEnchanter then
@@ -613,14 +722,37 @@ function model.Decide(facts, settings)
     -- something the player protected or something the client cannot sell.
     if facts.isTempIncluded then return DECISION.SELL, RULE.TEMP_INCLUDED end
 
+    -- 3c. Junk, when the player has not asked this module to handle it. Sell
+    -- Junk off means the vendoring of poor-quality items is delegated -- to
+    -- Blizzard's own button, or to another addon -- so judging them anyway put
+    -- them straight back into the manifest and sold them, which is the one
+    -- outcome the setting exists to prevent.
+    --
+    -- A declination, not a protection, so it sits below the whitelist and the
+    -- drag: both are the player naming this item, and neither should be
+    -- overruled by a blanket rule that merely did not select it. Below the hard
+    -- gates for the same reason those precede everything -- an item the client
+    -- cannot sell reports why rather than being written off as junk.
+    --
+    -- Nothing here when the setting is on: the merchant sweep only runs where
+    -- C_MerchantFrame.IsSellAllJunkEnabled agrees, and at every other vendor
+    -- this module is what sells the junk.
+    if not settings.sellJunk and facts.quality == Enum.ItemQuality.Poor then
+        return DECISION.KEEP, RULE.JUNK
+    end
+
     -- 4. Category gate. An item its category declines never reaches a rule that
     -- can sell it.
     local category = model.GetCategory(facts)
     if not category then return DECISION.KEEP, RULE.CATEGORY end
 
-    if category == CATEGORY.EQUIPMENT then
-        if not settings.sellEquipment then return DECISION.KEEP, RULE.CATEGORY end
-    else
+    -- sellEquipment is deliberately absent here. It is permission to sell, not
+    -- permission to judge: the three questions below run either way, so a
+    -- tooltip can say what a piece is actually worth instead of flattening
+    -- every answer into "this kind of item is kept". The flag is applied at
+    -- step 7, where the sale it governs would happen. Nothing is gathered for
+    -- their sake that a scan does not already gather.
+    if category ~= CATEGORY.EQUIPMENT then
         local mode, pinnedExpansion = categoryRule(category, settings)
         if mode == MODE.KEEP_ALL then
             return DECISION.KEEP, RULE.CATEGORY
@@ -631,9 +763,30 @@ function model.Decide(facts, settings)
         end
     end
 
-    -- 5. Bind on Account. Expansion age is measured against the live current
-    -- expansion, so "Include Past Expansions" means what its label says without
-    -- a second control being set to make it true.
+    -- 4b. "Is it good for me?" -- the first of the three questions a piece of
+    -- gear is put to. It does not terminate: a piece this rejects is condemned
+    -- provisionally, and the two questions below get their turn at it. Only a
+    -- keep settles the matter here, and clearing the slot's bar is what
+    -- produces one, whatever tier the piece is.
+    --
+    -- Off-class gear is condemned the same provisional way. "My class cannot
+    -- use it" is the plainest possible answer to the question, and it is the
+    -- gear most likely to suit an alt -- so it is offered to the alt rather
+    -- than vendored before the alt is asked.
+    local condemnedRule
+    if category == CATEGORY.EQUIPMENT then
+        if not model.IsEquippableBy(facts, settings.playerClass) then
+            condemnedRule = RULE.NOT_EQUIPPABLE
+        else
+            local verdict = model.CompareToEquipped(facts, settings)
+            if verdict == DECISION.KEEP then return DECISION.KEEP, RULE.EQUIPPABLE end
+            if verdict == DECISION.SELL then condemnedRule = RULE.OUTCLASSED end
+        end
+    end
+
+    -- 5. "Is it good for my alts?" Expansion age is measured against the live
+    -- current expansion, so "Include Past Expansions" means what its label says
+    -- without a second control being set to make it true.
     if settings.keepBindOnAccount and facts.bindType == enum.BIND_TYPE.ON_ACCOUNT then
         if settings.keepBindOnAccountPastExpac
             or not model.IsPastExpansion(facts, settings.currentExpansion) then
@@ -641,8 +794,9 @@ function model.Decide(facts, settings)
         end
     end
 
-    -- 6. Disenchantable, equippable or not. Above the equipment terminal so an
-    -- outclassed green is still kept for the enchanter.
+    -- 6. "Is it worth disenchanting?" Third of the three, so it answers only for
+    -- gear the first two declined -- which is what keeps an outclassed green
+    -- with the enchanter rather than the vendor.
     if settings.keepDisenchantables and model.IsDisenchantable(facts, settings.isEnchanter) then
         if settings.keepDisenchantablesPastExpac
             or not model.IsPastExpansion(facts, settings.currentExpansion) then
@@ -668,25 +822,29 @@ function model.Decide(facts, settings)
         return DECISION.KEEP, RULE.REAGENT_WANTED
     end
 
-    -- 7-8. Equipment terminates here. The slot comparison is the only way gear
-    -- survives; anything it declines is outclassed. Gear with no reference --
-    -- off-class, or a slot holding nothing -- reaches the terminal too.
-    if category == CATEGORY.EQUIPMENT then
-        if model.IsEquippableBy(facts, settings.playerClass)
-            and model.CompareToEquipped(facts, settings) then
-            return DECISION.KEEP, RULE.EQUIPPABLE
-        end
-        return DECISION.SELL, RULE.OUTCLASSED
+    -- 7. Gear all three questions declined. The rule carried down from 4b says
+    -- which way it was declined, and the distinction is worth keeping: "worse
+    -- than what you have equipped" is a lie about a mace a hunter was never
+    -- able to hold.
+    --
+    -- This is the only place sellEquipment can change an outcome, so it is the
+    -- only place it is read. Withheld, the category is what saved the piece and
+    -- is reported as such -- a gear tooltip that said the default had claimed it
+    -- would be untrue, since a rule did claim it and the flag overruled.
+    if condemnedRule then
+        if not settings.sellEquipment then return DECISION.KEEP, RULE.CATEGORY end
+        return DECISION.SELL, condemnedRule
     end
 
-    -- 9. Everything else its mode declared eligible.
+    -- 8. Everything else its mode declared eligible.
     if category == CATEGORY.MATERIALS or category == CATEGORY.OTHER then
         return DECISION.SELL, RULE.SELL_MODE
     end
 
-    -- 10. The defensive tail. Unreachable: GetCategory returns one of the three
-    -- keys or nil, and nil was kept at step 4. It is here so a category added
-    -- without a branch above keeps the item rather than selling it.
+    -- 9. Nothing decided, so the item is kept. Reached in earnest now rather
+    -- than defensively: gear that no question condemned and none kept outright
+    -- -- an item level upgrade at the same quality, or a piece for a slot
+    -- holding nothing -- arrives here, and keeping it is the answer.
     return DECISION.KEEP, RULE.DEFAULT
 end
 
@@ -695,22 +853,23 @@ end
 -- ================================================================================
 
 --- Reads the settings the cascade consults, once per scan rather than per item.
---- sellJunk and limitBatchTo12 are deliberately absent: they govern the merchant
---- visit and the sell loop, not the per-item decision.
+--- limitBatchTo12 is deliberately absent: it governs the sell loop, not the
+--- per-item decision. sellJunk governs both -- which vendor sweep runs on
+--- MERCHANT_SHOW, and whether poor-quality items are this module's to judge at
+--- all.
 ---
 --- currentExpansion is read live rather than stored, so KEEP_CURRENT tracks a
 --- new expansion launching without the player touching a setting.
 ---@return table
 function model.GetSettingsSnapshot()
     return {
+        sellJunk                     = db.char.sellJunk,
         sellEquipment                = db.char.sellEquipment,
         materialsMode                = db.char.materialsMode,
         materialsExpansion           = db.char.materialsExpansion,
         otherMode                    = db.char.otherMode,
-        ilvlThreshold                = db.char.ilvlThreshold,
-        marginOnHigherQuality        = db.char.marginOnHigherQuality,
-        marginOnSameQuality          = db.char.marginOnSameQuality,
-        marginOnLowerQuality         = db.char.marginOnLowerQuality,
+        ilvlMargin                   = db.char.ilvlMargin,
+        emphasizeQuality             = db.char.emphasizeQuality,
         keepBindOnAccount            = db.char.keepBindOnAccount,
         keepBindOnAccountPastExpac   = db.char.keepBindOnAccountPastExpac,
         keepDisenchantables          = db.char.keepDisenchantables,

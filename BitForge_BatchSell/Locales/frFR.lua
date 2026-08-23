@@ -45,18 +45,12 @@ L["settings:limitBatchTooltip"] = "Vendre au maximum 12 objets par clic pour év
 L["settings:sellEquipment"] = "Vendre l'équipement"
 L["settings:sellEquipmentTooltip"] =
 "Autoriser la vente des armures et des armes. Si cette option est désactivée, aucun équipement n'est jamais vendu"
-L["settings:ilvlThreshold"] = "Marge de niveau d'objet"
-L["settings:ilvlThresholdTooltip"] =
-"De combien de niveaux d'objet un objet peut être inférieur à celui équipé dans cet emplacement tout en étant gardé"
-L["settings:marginOnHigherQuality"] = "  Appliquer la marge à une qualité supérieure"
-L["settings:marginOnHigherQualityTooltip"] =
-"Appliquer la marge à l'équipement d'une qualité supérieure à celle de votre équipement actuel. Si cette option est désactivée, toute amélioration de qualité est gardée quel que soit son niveau d'objet"
-L["settings:marginOnSameQuality"] = "  Appliquer la marge à la même qualité"
-L["settings:marginOnSameQualityTooltip"] =
-"Appliquer la marge à l'équipement de la même qualité que celle de votre équipement actuel. Si cette option est désactivée, seul l'équipement au niveau d'objet équipé ou au-dessus est gardé"
-L["settings:marginOnLowerQuality"] = "  Appliquer la marge à une qualité inférieure"
-L["settings:marginOnLowerQualityTooltip"] =
-"Appliquer la marge à l'équipement d'une qualité inférieure à celle de votre équipement actuel. Si cette option est désactivée, toute régression de qualité est vendue quel que soit son niveau d'objet. L'équipement de deux qualités ou plus en dessous ne reçoit jamais la marge"
+L["settings:ilvlMargin"] = "Marge de niveau d'objet"
+L["settings:ilvlMarginTooltip"] =
+"Ce que vaut un palier de qualité en niveaux d'objet. À 10, une pièce un palier sous celle que vous portez doit la dépasser de 10 pour être conservée, et un palier au-dessus survit 10 en dessous. À votre propre qualité, une pièce doit simplement dépasser l'emplacement. À 0, la qualité cesse de compter et seul le niveau d'objet décide"
+L["settings:emphasizeQuality"] = "  Accentuer la qualité"
+L["settings:emphasizeQualityTooltip"] =
+"Compte un palier de qualité pour le double de la marge et autorise une pièce de votre propre qualité à rester cette marge sous l'emplacement. La qualité supérieure à celle que vous portez devient moins chère à conserver, et la qualité inférieure plus chère à excuser"
 L["settings:keepBindOnAccount"] = "Garder les liaisons au compte"
 L["settings:keepBindOnAccountTooltip"] = "Garder l'équipement lié au compte (héritage)"
 L["settings:keepBindOnAccountPastExpac"] = "  Inclure les extensions passées"
@@ -102,11 +96,13 @@ L["reason:NO_SELL_PRICE"] = "Aucun marchand ne l'achètera"
 L["reason:REFUNDABLE"] = "Encore dans son délai de remboursement"
 L["reason:WHITELISTED"] = "Sur votre liste blanche"
 L["reason:TEMP_INCLUDED"] = "Ajouté pour cette visite chez le marchand"
+L["reason:JUNK"] = "« Vendre les déchets » est désactivé, les déchets ne sont pas touchés"
 L["reason:CATEGORY"] = "Ce type d'objet est réglé pour être gardé"
 L["reason:CURRENT_EXPANSION"] = "Provient d'une extension que vous gardez"
 L["reason:BIND_ON_ACCOUNT"] = "L'équipement lié au compte est gardé"
 L["reason:DISENCHANTABLE"] = "Vaut la peine d'être désenchanté ou revendu"
 L["reason:REAGENT_WANTED"] = "Un métier de ce compte utilise ceci"
+L["reason:NOT_EQUIPPABLE"] = "Non équipable ou non recommandé pour votre classe"
 L["reason:EQUIPPABLE"] = "Suffisant par rapport à votre équipement actuel"
 L["reason:OUTCLASSED"] = "Surpassé par votre équipement actuel"
 L["reason:SELL_MODE"] = "Ce type d'objet est réglé pour être vendu"

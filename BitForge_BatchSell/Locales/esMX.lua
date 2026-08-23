@@ -45,18 +45,12 @@ L["settings:limitBatchTooltip"] = "Vende como máximo 12 objetos por clic para e
 L["settings:sellEquipment"] = "Vender equipo"
 L["settings:sellEquipmentTooltip"] =
 "Permite la venta de armaduras y armas. Con esto desactivado, nunca se vende ningún equipo"
-L["settings:ilvlThreshold"] = "Margen de nivel de objeto"
-L["settings:ilvlThresholdTooltip"] =
-"Cuántos niveles de objeto por debajo del objeto equipado en esa ranura puede estar una pieza y que aun así se conserve"
-L["settings:marginOnHigherQuality"] = "  Aplicar margen a calidad superior"
-L["settings:marginOnHigherQualityTooltip"] =
-"Aplica el margen al equipo de calidad superior a la que tienes equipada. Con esto desactivado, cualquier mejora de calidad se conserva sin importar su nivel de objeto"
-L["settings:marginOnSameQuality"] = "  Aplicar margen a la misma calidad"
-L["settings:marginOnSameQualityTooltip"] =
-"Aplica el margen al equipo de la misma calidad que el que tienes equipado. Con esto desactivado, solo se conserva el equipo igual o superior a tu nivel de objeto equipado"
-L["settings:marginOnLowerQuality"] = "  Aplicar margen a calidad inferior"
-L["settings:marginOnLowerQualityTooltip"] =
-"Aplica el margen al equipo de calidad inferior a la que tienes equipada. Con esto desactivado, cualquier reducción de calidad se vende sin importar su nivel de objeto. El equipo con dos o más calidades por debajo nunca recibe el margen"
+L["settings:ilvlMargin"] = "Margen de nivel de objeto"
+L["settings:ilvlMarginTooltip"] =
+"Cuántos niveles de objeto vale un grado de calidad. Con 10, una pieza un grado por debajo de la que traes puesta debe superarla por 10 para conservarse, y una un grado por encima sobrevive 10 por debajo. A tu misma calidad, una pieza debe superar la ranura sin más. Con 0 la calidad deja de contar y solo decide el nivel de objeto"
+L["settings:emphasizeQuality"] = "  Enfatizar calidad"
+L["settings:emphasizeQualityTooltip"] =
+"Cuenta un grado de calidad por el doble del margen y permite que una pieza de tu misma calidad quede ese margen por debajo de la ranura. La calidad por encima de la que traes puesta resulta más barata de conservar, y la inferior más cara de disculpar"
 L["settings:keepBindOnAccount"] = "Conservar vinculados a la cuenta"
 L["settings:keepBindOnAccountTooltip"] = "Conserva el equipo vinculado a la cuenta (herencia)"
 L["settings:keepBindOnAccountPastExpac"] = "  Incluir expansiones anteriores"
@@ -102,11 +96,13 @@ L["reason:NO_SELL_PRICE"] = "Ningún vendedor lo comprará"
 L["reason:REFUNDABLE"] = "Aún dentro de su plazo de reembolso"
 L["reason:WHITELISTED"] = "En tu lista blanca"
 L["reason:TEMP_INCLUDED"] = "Agregado para esta visita al vendedor"
+L["reason:JUNK"] = "«Vender chatarra» está desactivado, la chatarra no se toca"
 L["reason:CATEGORY"] = "Este tipo de objeto está configurado para conservarse"
 L["reason:CURRENT_EXPANSION"] = "Proviene de una expansión que estás conservando"
 L["reason:BIND_ON_ACCOUNT"] = "El equipo vinculado a la cuenta se conserva"
 L["reason:DISENCHANTABLE"] = "Vale la pena conservarlo para desencantar o revender"
 L["reason:REAGENT_WANTED"] = "Una profesión de esta cuenta usa esto"
+L["reason:NOT_EQUIPPABLE"] = "No equipable o no recomendado para tu clase"
 L["reason:EQUIPPABLE"] = "Suficientemente bueno frente a tu equipo actual"
 L["reason:OUTCLASSED"] = "Superado por tu equipo actual"
 L["reason:SELL_MODE"] = "Este tipo de objeto está configurado para venderse"

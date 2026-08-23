@@ -3,12 +3,30 @@ local ns = select(2, ...)
 
 ---@class BitForge.Openables.Enum
 local enum = {
-    -- Ranking priorities, highest first. Carried over from upstream's PRI_* constants.
+    -- Ranking priorities, highest first. Reversed from upstream's PRI_* order:
+    -- what the player can learn from is permanent and easy to forget, while a
+    -- quest item is already held on the button by its own gate and a container
+    -- keeps until it is opened. Surfacing the perishable knowledge first is what
+    -- the button is for.
+    --
+    -- USE is last, below even QUEST, for a second reason. Every other tier is
+    -- something the player would want reminding of; a merely usable item is
+    -- only "the client says this does something", which is what the weakest
+    -- two accept branches produce -- a plain Use: line, and the fallback that
+    -- matched no typed line at all. That makes it the tier a misclassification
+    -- lands in, and the button shows one item, so the tier most likely to be
+    -- wrong is the one everything else has to outrank.
+    --
+    -- The four original values stay where they are rather than being spread to
+    -- make room: model.RecordCurationReview has already written them into
+    -- players' saved variables as text, and renumbering would silently change
+    -- what those reports say.
     PRIORITY = {
-        QUEST = 40, -- quest-gated items, while the gate still permits them
-        OPEN  = 30, -- containers, caches, lockboxes
-        TOKEN = 20, -- reputation and currency tokens
-        LEARN = 10, -- recipes, toys, transmog, other learnables
+        LEARN = 40, -- recipes, toys, transmog, other learnables
+        TOKEN = 30, -- reputation and currency tokens
+        OPEN  = 20, -- containers, caches, lockboxes
+        QUEST = 10, -- quest-gated items, while the gate still permits them
+        USE   = 5,  -- merely usable: a Use: effect that teaches nothing
     },
 
     -- Why detector.Classify surfaced an item. Carried on the candidate purely

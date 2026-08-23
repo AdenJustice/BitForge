@@ -206,9 +206,10 @@ enum.DENY_LIST = {
 -- from the upstream New Openables addon's count_to_use field
 -- (github.com/cont1nuity/new-openables-continued, MIT), which it applies the
 -- same way -- nop-item.lua:500 gates its own button on
--- GetItemCount(itemID) >= count. The three entries carrying comments were
--- observed in play first; two of them turned out to match upstream exactly,
--- which is the reason the rest were trusted wholesale.
+-- GetItemCount(itemID) >= count. Three thresholds were observed in play before
+-- that import; two of them turned out to match upstream exactly, which is the
+-- reason the rest were trusted wholesale. Anything observed in play since says
+-- so in its comment, upstream having no entry to check it against.
 --
 -- The count is a carried total across bags, not a single stack.
 enum.STACK_GATED = {
@@ -341,6 +342,7 @@ enum.STACK_GATED = {
     [146757] = 10,  -- Prepared Ingredients
     [151653] = 10,  -- Broken Isles Recipe Scrap
     [174657] = 6,   -- unknown to wowhead; observed in play
+    [174756] = 6,   -- Aqir Relic Fragment
     [190198] = 5,   -- Sandworn Chest Key Fragment
     [190315] = 10,  -- Rousing Earth
     [190320] = 10,  -- Rousing Fire

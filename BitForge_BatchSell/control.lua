@@ -7,11 +7,16 @@ local format = string.format
 
 local ClearCursor = ClearCursor
 local GetCursorInfo = GetCursorInfo
+local SpellCanTargetItem = SpellCanTargetItem
+local SpellCanTargetItemID = SpellCanTargetItemID
+local SpellIsTargeting = SpellIsTargeting
 
 local C_Container = C_Container
 local C_EquipmentSet = C_EquipmentSet
 local C_Item = C_Item
 local C_MerchantFrame = C_MerchantFrame
+local C_SpellBook = C_SpellBook
+local C_TooltipInfo = C_TooltipInfo
 local C_TradeSkillUI = C_TradeSkillUI
 
 local enum = ns.enum
@@ -209,6 +214,63 @@ function scanner.Scan()
     view.merchantPanel.Refresh()
 end
 
+--- One item's facts from its ID alone, with no bag slot behind it, or nil when
+--- the client has not cached the item yet.
+---
+--- Everything the decision actually reads is answerable from an ID, including
+--- the equipped items in the slots this one could fill -- which is the half of
+--- the comparison a bag-only gather loses the moment the item leaves the bags,
+--- and the half a report after the fact needs most.
+---
+--- The bag-slot fields have no answer here: whether this copy is locked, in an
+--- equipment set, or inside its refund window are all questions about a
+--- particular copy, and an ID names a kind of item rather than a copy. Each is
+--- reported false rather than guessed, which is the same answer the gates would
+--- reach for an unencumbered item, so a verdict from here matches the one a bag
+--- slot would produce for anything the player has not locked or bought back.
+---@param itemID number
+---@return table|nil facts
+function scanner.GatherByID(itemID)
+    if not C_Item.IsItemDataCachedByID(itemID) then
+        C_Item.RequestLoadItemDataByID(itemID)
+        return nil
+    end
+
+    local name, itemLink, quality, _, _, _, _, _, equipLoc, _, sellPrice,
+    classID, subclassID, bindType, expacID, _, isCraftingReagent = C_Item.GetItemInfo(itemID)
+    if not name then return nil end
+
+    local listStatus = model.GetEffectiveStatus(itemID)
+
+    return {
+        itemID         = itemID,
+        itemLink       = itemLink,
+        name           = name,
+        quality        = quality,
+        sellPrice      = sellPrice or 0,
+        stackCount     = 1,
+        level          = C_Item.GetDetailedItemLevelInfo(itemLink) or 0,
+        equipLoc       = equipLoc,
+        classID        = classID,
+        subclassID     = subclassID,
+        bindType       = bindType,
+        expacID        = expacID or 0,
+        isCraftingReagent = isCraftingReagent == true,
+        reagentProfessions = BitForge:GetReagentProfessions(itemID),
+
+        isLocked       = false,
+        inEquipmentSet = false,
+        isRefundable   = false,
+        equippedItems  = equippedItems(equipLoc),
+
+        isProhibited   = listStatus == enum.LIST_STATUS.BLACKLIST,
+        isEnforced     = listStatus == enum.LIST_STATUS.WHITELIST,
+        isTempExcluded = model.IsTempExcluded(itemLink),
+        isTempIncluded = model.IsTempIncluded(itemLink),
+        isCharOverride = model.HasCharOverride(itemID),
+    }
+end
+
 --- The full decision one slot would receive: the facts, the settings they were
 --- judged against, the verdict, and the rule that produced it.
 ---
@@ -225,8 +287,7 @@ end
 --- bag item a player hovers away from a vendor.
 ---@return table|nil report  { facts, settings, verdict, rule }, or nil when the
 ---                          slot is empty or its item data has not arrived
-function scanner.Explain(bagIndex, slotIndex)
-    local facts = scanner.Gather(bagIndex, slotIndex)
+local function explain(facts)
     if not facts then return nil end
 
     local settings = model.GetSettingsSnapshot()
@@ -237,6 +298,17 @@ function scanner.Explain(bagIndex, slotIndex)
         verdict  = verdict,
         rule     = rule,
     }
+end
+
+function scanner.Explain(bagIndex, slotIndex)
+    return explain(scanner.Gather(bagIndex, slotIndex))
+end
+
+--- The same report for an item that need not be in the bags at all.
+---@param itemID number
+---@return table|nil
+function scanner.ExplainByID(itemID)
+    return explain(scanner.GatherByID(itemID))
 end
 
 control.scanner = scanner
@@ -346,6 +418,146 @@ function control.AcceptManifestDrop()
 end
 
 -- ================================================================================
+-- Disenchant probe
+-- ================================================================================
+--
+-- Disenchantability is inferred everywhere else in this module -- uncommon or
+-- better, armour or a weapon, absent from a crawled table of exceptions. The
+-- client knows the real answer and will say so, but only about the item under
+-- the cursor while a spell that targets items is pending: that is the tooltip
+-- line, and the grey wash over bag slots that cannot take the spell.
+--
+-- No addon can create that state. Casting is protected, so the probe cannot ask
+-- the question on its own; it can only be in the room when the player asks it.
+-- So it listens, and when the player puts Disenchant on the cursor it reads the
+-- answer for every item they are carrying at that instant and files it. The
+-- cost to the player is nothing, and coverage grows over the items they
+-- actually handle -- which are the ones a wrong verdict would have cost them.
+--
+-- The pending spell is never identified, and does not need to be. The line only
+-- appears while a disenchant is what waits for a target, so it identifies
+-- itself: a pending Prospecting produces no such line on anything. The screen on
+-- quality and class that remains is there to keep the cost down -- a tooltip
+-- read per bag slot per raise -- and cannot change an answer, because nothing
+-- outside uncommon-or-better armour and weapons is disenchantable anyway.
+--
+-- The first attempt at this read C_Item.DoesItemMatchSpellItemCondition, the
+-- call the greyed-out bag slots go through. It answers about a pending spell
+-- carrying an item condition, and a Disenchant is not one:
+-- C_Spell.TargetSpellChecksItemCondition is false throughout, so the probe
+-- refused every item and learned nothing. The legacy SpellIsTargeting, which
+-- the C_Spell predicates read as superseding, is what reports the state.
+
+local disenchantProbe = {}
+
+--- Whether a spell is waiting for an item target and this character could have
+--- put a disenchant there.
+---
+--- The spell check is an early-out rather than a correctness fence -- the
+--- tooltip line does the identifying -- but it spares every non-enchanter a bag
+--- walk each time they raise anything at all. ContainsAnyDisenchantSpell asks
+--- exactly the right question, where the profession scan behind
+--- model.GetIsEnchanter only approaches it.
+---@return boolean
+local function disenchantPending()
+    if not SpellIsTargeting() then return false end
+    return C_SpellBook.ContainsAnyDisenchantSpell()
+end
+
+--- Reads the client's answer for one occupied bag slot.
+---
+--- Returns nil rather than false for a slot the probe declines to judge, so a
+--- caller can tell "the client says no" from "the probe did not ask".
+---@param bagIndex number
+---@param slotIndex number
+---@return table|nil facts
+---@return boolean|nil canDisenchant
+local function readSlot(bagIndex, slotIndex)
+    local facts = scanner.Gather(bagIndex, slotIndex)
+    if not facts then return nil, nil end
+
+    -- The second fence. Quality and class are the part of the prediction that
+    -- is not in doubt -- the crawled table is the doubtful part -- so screening
+    -- on them costs no truth and keeps a pending Prospecting out of the data.
+    if facts.quality < Enum.ItemQuality.Uncommon then return nil, nil end
+    if facts.classID ~= Enum.ItemClass.Armor and facts.classID ~= Enum.ItemClass.Weapon then
+        return nil, nil
+    end
+
+    local data = C_TooltipInfo.GetBagItem(bagIndex, slotIndex)
+    if not data or not data.lines then return nil, nil end
+
+    -- Matched against the constants rather than their text, so one comparison
+    -- covers all eleven locales and survives Blizzard rewording the line. The
+    -- line type is deliberately not part of the test: the two answers arrive on
+    -- different types -- 0 for the affirmative, an error line for the refusal --
+    -- and neither type is exclusive to this question.
+    --
+    -- ITEM_DISENCHANT_MIN_SKILL is a format string, so it cannot be compared
+    -- this way and is left alone. An item carrying it is simply not learned
+    -- about, and the crawled prediction stands, which is where it started.
+    for _, line in ipairs(data.lines) do
+        local text = line.leftText
+        if text == ITEM_DISENCHANT_ANY_SKILL then return facts, true end
+        if text == ITEM_DISENCHANT_NOT_DISENCHANTABLE then return facts, false end
+    end
+
+    -- Neither line present. Absence is not evidence: a tooltip that has not
+    -- finished loading looks exactly like an item the server declined to
+    -- comment on, and reading it as "cannot be disenchanted" would sell gear
+    -- the player was keeping. Learning requires one of the two lines.
+    return nil, nil
+end
+
+--- Harvests every bag slot into the learned table, and reports what the crawled
+--- table got wrong into the debug dump.
+function disenchantProbe.Harvest()
+    if not disenchantPending() then return end
+
+    local dump = model.GetDebugDump()
+    local mismatches = dump and {}
+    local scanned = 0
+
+    for bagIndex = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
+        local numSlots = C_Container.GetContainerNumSlots(bagIndex)
+        for slotIndex = 1, numSlots do
+            local facts, canDisenchant = readSlot(bagIndex, slotIndex)
+            if facts then
+                scanned = scanned + 1
+
+                local predicted = model.PredictDisenchantable(facts)
+                if mismatches and predicted ~= canDisenchant then
+                    -- Flattened, like every other record filed here: item data
+                    -- can carry secret values in 12.0, and the record has to
+                    -- survive a SavedVariable and be pastable verbatim.
+                    mismatches[#mismatches + 1] = format(
+                        "%s %s q=%s cls=%s/%s predicted=%s client=%s",
+                        tostring(facts.itemID), tostring(facts.name),
+                        tostring(facts.quality), tostring(facts.classID),
+                        tostring(facts.subclassID),
+                        tostring(predicted), tostring(canDisenchant))
+                end
+
+                model.LearnDisenchantable(facts.itemID, canDisenchant)
+            end
+        end
+    end
+
+    -- Filed even when nothing disagreed, and even when nothing was eligible.
+    -- A dump that is simply absent cannot distinguish a crawled table that was
+    -- right from a probe that never ran -- which is the first thing to rule out
+    -- if Disenchant turns out not to reach the item-condition system at all.
+    if dump then
+        dump.disenchantProbe = {
+            scanned    = tostring(scanned),
+            mismatches = mismatches,
+        }
+    end
+end
+
+control.disenchantProbe = disenchantProbe
+
+-- ================================================================================
 -- Caches
 -- ================================================================================
 
@@ -381,10 +593,20 @@ local function onMerchantShow()
     merchantOpen = true
     if model.GetSellJunk() and C_MerchantFrame.IsSellAllJunkEnabled() then
         C_MerchantFrame.SellAllJunkItems()
-        -- BAG_UPDATE_DELAYED fires once the junk leaves the bags and rescans.
-    else
-        scanner.Scan()
     end
+    -- Unconditional, and not an alternative to the sweep above. Leaving the
+    -- scan to the BAG_UPDATE_DELAYED the sweep provokes assumed the sweep
+    -- always moves something: it does not when the bags hold no junk, which is
+    -- every visit after the first has cleared them. No bag update, no scan, and
+    -- onMerchantClosed had already emptied the manifest -- so the panel opened
+    -- blank until the player pressed Refresh.
+    --
+    -- When the sweep does sell something the scan simply runs twice: this one
+    -- against bags that still hold the junk, then the bag update's against bags
+    -- that do not. The second is the one the player sees, and seller.SellBatch
+    -- re-reads every slot before acting, so a manifest entry outlived by its
+    -- item cannot mis-sell in between.
+    scanner.Scan()
     view.merchantPanel.Show()
 end
 
@@ -429,6 +651,13 @@ local function onItemDataLoaded(itemID, success)
     end
 end
 
+-- The player put a spell on the cursor, or took it off. Harvest declines the
+-- latter, and declines a raise that is not a disenchant, so nothing here needs
+-- to know which of the two just happened.
+local function onCurrentSpellCastChanged()
+    disenchantProbe.Harvest()
+end
+
 -- Learning or unlearning Enchanting changes what counts as disenchantable.
 -- Detection previously ran once at login and never again.
 local function onSkillLinesChanged()
@@ -465,8 +694,8 @@ local function onPlayerReady()
             -- matters because a step that throws is re-invoked from the top.
             --
             -- Values are not carried forward. keepEquippable's two states map
-            -- onto ilvlThreshold and marginOnSameQuality, whose defaults
-            -- reproduce its on-state; the other three have no successor. This
+            -- onto the item level margin, whose default reproduces its
+            -- on-state; the other three have no successor. This
             -- step is char-scoped, so it reaches only the character logging in
             -- when the account-wide version is stamped -- every other character
             -- keeps its stale entries, which is why nothing is migrated rather
@@ -476,6 +705,50 @@ local function onPlayerReady()
                 moduleDB.char.qualityThreshold = nil
                 moduleDB.char.sellPastExpansion = nil
                 moduleDB.char.expansionThreshold = nil
+            end,
+            -- The item level margin became a proportion of the equipped item
+            -- rather than a flat number of levels, and changed sign with it: the
+            -- old -20 meant "twenty levels below", the new 0.9 means "nine
+            -- tenths of the slot". A stored -20 read as the new setting is not
+            -- merely wrong, it is off the slider entirely, so the old key is
+            -- dropped and the new default seeded rather than converted -- twenty
+            -- levels is 3% of a 620 slot and 33% of a 60 one, so there is no one
+            -- proportion the old number translates to.
+            --
+            -- Detects the OLD key rather than the absence of the new one: the
+            -- defaults have already been seeded by the time a step runs, so
+            -- ilvlMarginRatio is always present here. Assigning nil is
+            -- idempotent, which matters because a step that throws is re-invoked
+            -- from the top.
+            [3] = function(moduleDB)
+                moduleDB.char.ilvlThreshold = nil
+            end,
+            -- The three per-direction margin toggles are retired. The margin
+            -- now reaches every quality gap through a single exponent, and
+            -- granting it to one direction while withholding it from another
+            -- is precisely what made the comparison non-monotonic: with the
+            -- margin on same quality and off below it, an Uncommon outlived
+            -- the Rare beside it at the same item level.
+            --
+            -- Nothing carries forward, because nothing succeeds them -- there
+            -- is no setting left for an off-state to mean. The margin they
+            -- governed is untouched, so a player who had tuned it keeps it.
+            [4] = function(moduleDB)
+                moduleDB.char.marginOnHigherQuality = nil
+                moduleDB.char.marginOnSameQuality = nil
+                moduleDB.char.marginOnLowerQuality = nil
+            end,
+            -- The margin went back to a flat number of item levels. Midnight
+            -- squished the scale, so the span one number has to cover is narrow
+            -- enough for a flat margin to mean something across it -- which is
+            -- what a proportion was introduced to solve and no longer needs to.
+            --
+            -- Not carried across, for the same reason step 3 could not carry the
+            -- other direction: 0.9 is 29 levels against an equipped 290 and 6
+            -- against an equipped 60, so there is no single number it becomes.
+            -- The old key is dropped and the seeded default stands.
+            [5] = function(moduleDB)
+                moduleDB.char.ilvlMarginRatio = nil
             end,
         },
     }, startModule)
@@ -487,4 +760,247 @@ ns:Subscribe(E.BAG_UPDATE_DELAYED, onBagUpdateDelayed)
 ns:Subscribe(E.EQUIPMENT_SETS_CHANGED, onEquipmentSetsChanged)
 ns:Subscribe(E.ITEM_DATA_LOAD_RESULT, onItemDataLoaded)
 ns:Subscribe(E.SKILL_LINES_CHANGED, onSkillLinesChanged)
+ns:Subscribe(E.CURRENT_SPELL_CAST_CHANGED, onCurrentSpellCastChanged)
 ns:Subscribe(E.PLAYER_READY, onPlayerReady)
+
+
+-- ================================================================================
+-- Debug dump
+-- ================================================================================
+--
+-- /bfsdump <itemID> captures a whole verdict -- the item, what is equipped in
+-- the slot it would fill, the settings that judged the pair, and the rule that
+-- decided -- into the module's debug container, where it survives the session.
+--
+-- It takes an ID rather than a bag slot on purpose. The tooltip could already
+-- explain anything you were holding, live, and nothing else: a verdict reported
+-- after the fact was uninvestigable, because both operands had gone. An ID
+-- resolves the candidate from the client's cache and the equipped side from the
+-- slots its equip location maps to, so neither has to still be in your bags.
+--
+-- Guarded at file scope, as Openables' is, so a profile with diagnostics off
+-- defines none of this. model.lua runs before this file and core before either,
+-- so the flag is readable here; toggling it mid-session needs a reload to reach
+-- this command, though the live checks elsewhere pick it up immediately.
+if model.IsDebug() then
+    -- Every field is flattened with tostring. Item data can carry secret values
+    -- in 12.0, the record has to survive being written to a SavedVariable, and
+    -- it is meant to be pasted into an issue verbatim.
+    local function Flatten(value)
+        return tostring(value)
+    end
+
+    -- The paired half. equippedItems feeds the pure comparison and carries only
+    -- what that reads, so the slot and link are gathered again here -- a record
+    -- naming neither cannot be checked against the character it came from.
+    --
+    -- The two gaps are computed rather than left implicit: they are what the
+    -- comparison actually branches on, and a reader should not have to subtract
+    -- to find out why a verdict landed.
+    local function EquippedPairs(facts)
+        local slots = enum.SLOT_LOOKUP[facts.equipLoc]
+        if not slots then return nil end
+
+        local paired = {}
+        for _, slotID in ipairs(slots) do
+            local link = GetInventoryItemLink("player", slotID)
+            if link then
+                local level = C_Item.GetDetailedItemLevelInfo(link)
+                local quality = select(3, C_Item.GetItemInfo(link))
+                paired[#paired + 1] = {
+                    slot       = Flatten(slotID),
+                    link       = Flatten(link),
+                    level      = Flatten(level),
+                    quality    = Flatten(quality),
+                    qualityGap = level and quality
+                        and Flatten(facts.quality - quality) or "unreadable",
+                    itemGap    = level and quality
+                        and Flatten(facts.level - level) or "unreadable",
+                }
+            end
+        end
+        return paired
+    end
+
+    -- Only the settings the gear comparison consults. The whole snapshot would
+    -- bury them, and these are the ones that explain a surprising verdict.
+    local function DecidingSettings(settings)
+        return {
+            ilvlMargin            = Flatten(settings.ilvlMargin),
+            emphasizeQuality      = Flatten(settings.emphasizeQuality),
+            sellEquipment         = Flatten(settings.sellEquipment),
+            keepBindOnAccount     = Flatten(settings.keepBindOnAccount),
+            keepDisenchantables   = Flatten(settings.keepDisenchantables),
+            playerClass           = Flatten(settings.playerClass),
+            isEnchanter           = Flatten(settings.isEnchanter),
+        }
+    end
+
+    local function BuildDump(report)
+        local facts = report.facts
+        return {
+            itemID     = Flatten(facts.itemID),
+            name       = Flatten(facts.name),
+            link       = Flatten(facts.itemLink),
+            quality    = Flatten(facts.quality),
+            level      = Flatten(facts.level),
+            equipLoc   = Flatten(facts.equipLoc),
+            class      = ("%s/%s"):format(Flatten(facts.classID), Flatten(facts.subclassID)),
+            bindType   = Flatten(facts.bindType),
+            expacID    = Flatten(facts.expacID),
+            sellPrice  = Flatten(facts.sellPrice),
+            listStatus = ("blacklisted=%s whitelisted=%s"):format(
+                Flatten(facts.isProhibited), Flatten(facts.isEnforced)),
+            equipped   = EquippedPairs(facts),
+            verdict    = Flatten(report.verdict),
+            rule       = Flatten(report.rule),
+            settings   = DecidingSettings(report.settings),
+        }
+    end
+
+    --- Capture one item's verdict into the debug container.
+    ---@param itemID number|nil
+    function control.DumpItem(itemID)
+        if not itemID then
+            BitForge:Print("BatchSell: /bfsdump <itemID>")
+            return
+        end
+
+        local report = scanner.ExplainByID(itemID)
+        if not report then
+            BitForge:Print(("BatchSell: item %d is not cached yet -- try again in a moment")
+                :format(itemID))
+            return
+        end
+
+        local dump = model.GetDebugDump()
+        if not dump then
+            BitForge:Print("BatchSell: diagnostics are off for this module")
+            return
+        end
+
+        dump[tostring(itemID)] = BuildDump(report)
+        BitForge:Print(("BatchSell: dumped item %d (%s / %s). /reload, then read"
+            .. " BitForgeDB.modules.BatchSell.debug.dump"):format(
+            itemID, tostring(report.verdict), tostring(report.rule)))
+    end
+
+    SLASH_BITFORGEBATCHSELLDUMP1 = "/bfsdump"
+    SlashCmdList["BITFORGEBATCHSELLDUMP"] = function(input)
+        control.DumpItem(tonumber(input and input:match("%d+")))
+    end
+
+    -- ----------------------------------------------------------------------
+    -- /bfsde -- what the client says about disenchanting, in one shot
+    -- ----------------------------------------------------------------------
+    --
+    -- Scaffolding for one open question: which signal actually distinguishes an
+    -- item the player can disenchant from one they cannot. The obvious
+    -- candidate was wrong -- C_Spell.TargetSpellChecksItemCondition is false
+    -- with a disenchant pending, so the item-condition system the bag slots use
+    -- does not cover it -- and the answer turns out to be an ordinary tooltip
+    -- line the server adds while the spell waits for a target.
+    --
+    -- Everything needed to pin that down is captured in a single command
+    -- deliberately. The state under investigation is destroyed by the act of
+    -- investigating it any other way: a pending spell does not survive being
+    -- studied one pasted line at a time, and a bag does not hold still between
+    -- them. Run it once with the spell up and once with it down; each run is
+    -- filed under its own key, so a /reload afterwards leaves both on disk to
+    -- be compared.
+
+    local SCAN_ITEM_LIMIT = 8
+
+    -- Every string in _G, indexed by its value, so a captured tooltip line can
+    -- be traced back to the global constant it was built from. A line matched
+    -- by constant is matched in all eleven locales; a line matched by its text
+    -- is matched in one, and only until the text is reworded.
+    --
+    -- First key wins. Several constants share a value -- the duplicates are
+    -- aliases of each other and naming either one answers the question.
+    local function GlobalStringIndex()
+        local index = {}
+        for key, value in pairs(_G) do
+            if type(value) == "string" and value ~= "" and index[value] == nil then
+                index[value] = key
+            end
+        end
+        return index
+    end
+
+    -- One slot's whole tooltip, flattened. Every line is kept rather than only
+    -- the error lines: the line that marks an item as disenchantable has not
+    -- been seen yet, and filtering to the type the *negative* line uses would
+    -- be assuming the answer.
+    local function CaptureTooltip(bagIndex, slotIndex, names)
+        local data = C_TooltipInfo.GetBagItem(bagIndex, slotIndex)
+        if not data or not data.lines then return { "no tooltip data" } end
+
+        local captured = {}
+        for index, line in ipairs(data.lines) do
+            local text = tostring(line.leftText)
+            captured[#captured + 1] = ("%s type=%s global=%s | %s"):format(
+                tostring(index), tostring(line.type),
+                tostring(names[text] or "-"), text)
+        end
+        return captured
+    end
+
+    --- Files the client's whole answer about disenchanting into the dump.
+    function control.ScanDisenchant()
+        local dump = model.GetDebugDump()
+        if not dump then
+            BitForge:Print("BatchSell: diagnostics are off for this module")
+            return
+        end
+
+        local names = GlobalStringIndex()
+        local targeting = SpellIsTargeting() and true or false
+
+        local items = {}
+        local seen = 0
+        for bagIndex = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
+            local numSlots = C_Container.GetContainerNumSlots(bagIndex)
+            for slotIndex = 1, numSlots do
+                if seen < SCAN_ITEM_LIMIT then
+                    local facts = scanner.Gather(bagIndex, slotIndex)
+                    -- The same coarse shape the real rule screens on, so the
+                    -- capture is of the items the question is actually about.
+                    if facts and facts.quality >= Enum.ItemQuality.Uncommon
+                        and (facts.classID == Enum.ItemClass.Armor
+                            or facts.classID == Enum.ItemClass.Weapon) then
+                        seen = seen + 1
+                        local key = ("%s:%s %s %s q=%s cls=%s/%s predicted=%s"):format(
+                            tostring(bagIndex), tostring(slotIndex),
+                            tostring(facts.itemID), tostring(facts.name),
+                            tostring(facts.quality), tostring(facts.classID),
+                            tostring(facts.subclassID),
+                            tostring(model.PredictDisenchantable(facts)))
+                        items[key] = CaptureTooltip(bagIndex, slotIndex, names)
+                    end
+                end
+            end
+        end
+
+        -- Keyed by the state it was taken in, so the second run cannot overwrite
+        -- the first -- the two together are the finding, not either alone.
+        dump[("disenchantScan targeting=%s"):format(tostring(targeting))] = {
+            state = ("targeting=%s canTargetItem=%s canTargetItemID=%s"
+                .. " hasDisenchantSpell=%s isEnchanter=%s"):format(
+                tostring(SpellIsTargeting()),
+                tostring(SpellCanTargetItem()),
+                tostring(SpellCanTargetItemID()),
+                tostring(C_SpellBook.ContainsAnyDisenchantSpell()),
+                tostring(model.GetIsEnchanter())),
+            items = items,
+        }
+
+        BitForge:Print(("BatchSell: captured %d item(s) with targeting=%s."
+            .. " Run again in the other state, then /reload"):format(seen, tostring(targeting)))
+    end
+
+    SLASH_BITFORGEBATCHSELLDE1 = "/bfsde"
+    SlashCmdList["BITFORGEBATCHSELLDE"] = function()
+        control.ScanDisenchant()
+    end
+end

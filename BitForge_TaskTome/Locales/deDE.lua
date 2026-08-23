@@ -5,8 +5,6 @@ local L = ns.locale
 
 -- Widget
 L["status:widgetTitle"] = "Aufgabenbuch"
-L["btn:lockWidget"] = "Sperren"
-L["btn:unlockWidget"] = "Entsperren"
 
 -- Config Frame
 L["settings:configTitle"] = "Aufgabenbuch — Konfiguration"
@@ -48,6 +46,9 @@ L["tooltip:scopeMe"] = "Zeigt nur diesen Charakter. Klicken, um alle Charaktere 
 L["tooltip:scopeAll"] = "Zeigt alle Charaktere. Klicken, um nur diesen Charakter anzuzeigen."
 L["tooltip:orientByChar"] = "Nach Charakter gruppiert. Klicken, um nach Aufgabe zu gruppieren."
 L["tooltip:orientByTask"] = "Nach Aufgabe gruppiert. Klicken, um nach Charakter zu gruppieren."
+L["tooltip:openConfig"] = "Öffnet das Konfigurationsfenster des Aufgabenbuchs."
+L["tooltip:widgetLocked"] = "Das Fenster ist gesperrt. Klicken, um es zum Verschieben und Größenändern zu entsperren."
+L["tooltip:widgetUnlocked"] = "Das Fenster ist entsperrt. Klicken, um Position und Größe zu sperren."
 
 -- Config
 L["settings:editingFor"] = "Bearbeiten für"

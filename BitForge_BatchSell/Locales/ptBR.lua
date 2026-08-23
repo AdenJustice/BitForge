@@ -45,18 +45,12 @@ L["settings:limitBatchTooltip"] = "Vende no máximo 12 itens por clique para evi
 L["settings:sellEquipment"] = "Vender equipamento"
 L["settings:sellEquipmentTooltip"] =
 "Permite a venda de armaduras e armas. Com isto desativado, nenhum equipamento é vendido"
-L["settings:ilvlThreshold"] = "Margem de nível do item"
-L["settings:ilvlThresholdTooltip"] =
-"Quantos níveis abaixo do item equipado naquele slot uma peça pode estar e ainda ser mantida"
-L["settings:marginOnHigherQuality"] = "  Aplicar margem a qualidade superior"
-L["settings:marginOnHigherQualityTooltip"] =
-"Aplica a margem a equipamentos de qualidade superior ao que você tem equipado. Com isto desativado, qualquer melhoria de qualidade é mantida independentemente do nível do item"
-L["settings:marginOnSameQuality"] = "  Aplicar margem a qualidade igual"
-L["settings:marginOnSameQualityTooltip"] =
-"Aplica a margem a equipamentos da mesma qualidade do que você tem equipado. Com isto desativado, apenas equipamentos no nível do item equipado ou acima são mantidos"
-L["settings:marginOnLowerQuality"] = "  Aplicar margem a qualidade inferior"
-L["settings:marginOnLowerQualityTooltip"] =
-"Aplica a margem a equipamentos de qualidade inferior ao que você tem equipado. Com isto desativado, qualquer piora de qualidade é vendida independentemente do nível do item. Equipamentos com duas ou mais qualidades abaixo nunca recebem a margem"
+L["settings:ilvlMargin"] = "Margem de nível do item"
+L["settings:ilvlMarginTooltip"] =
+"Quanto vale um grau de qualidade em níveis de item. Com 10, uma peça um grau abaixo da que você usa precisa superá-la por 10 para ser mantida, e uma um grau acima sobrevive 10 abaixo. Na sua própria qualidade, a peça precisa simplesmente superar o espaço. Com 0 a qualidade deixa de contar e só o nível do item decide"
+L["settings:emphasizeQuality"] = "  Enfatizar qualidade"
+L["settings:emphasizeQualityTooltip"] =
+"Conta um grau de qualidade pelo dobro da margem e permite que uma peça da sua própria qualidade fique essa margem abaixo do espaço. A qualidade acima da que você usa fica mais barata de manter, e a abaixo mais cara de desculpar"
 L["settings:keepBindOnAccount"] = "Manter vinculados à conta"
 L["settings:keepBindOnAccountTooltip"] = "Mantém equipamentos vinculados à conta (herança)"
 L["settings:keepBindOnAccountPastExpac"] = "  Incluir expansões anteriores"
@@ -102,11 +96,13 @@ L["reason:NO_SELL_PRICE"] = "Nenhum vendedor vai comprá-lo"
 L["reason:REFUNDABLE"] = "Ainda dentro do prazo de reembolso"
 L["reason:WHITELISTED"] = "Na sua lista branca"
 L["reason:TEMP_INCLUDED"] = "Adicionado para esta visita ao vendedor"
+L["reason:JUNK"] = "“Vender lixo” está desativado, o lixo não é tocado"
 L["reason:CATEGORY"] = "Este tipo de item está configurado para ser mantido"
 L["reason:CURRENT_EXPANSION"] = "De uma expansão que você está mantendo"
 L["reason:BIND_ON_ACCOUNT"] = "Equipamentos vinculados à conta são mantidos"
 L["reason:DISENCHANTABLE"] = "Vale a pena manter para desencantar ou revender"
 L["reason:REAGENT_WANTED"] = "Uma profissão desta conta usa isto"
+L["reason:NOT_EQUIPPABLE"] = "Não equipável ou não recomendado para sua classe"
 L["reason:EQUIPPABLE"] = "Bom o suficiente em comparação ao que você tem equipado"
 L["reason:OUTCLASSED"] = "Superado pelo que você tem equipado"
 L["reason:SELL_MODE"] = "Este tipo de item está configurado para ser vendido"

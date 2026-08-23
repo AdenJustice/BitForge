@@ -5,8 +5,6 @@ local L = ns.locale
 
 -- Widget
 L["status:widgetTitle"] = "할 일 장부"
-L["btn:lockWidget"] = "잠금"
-L["btn:unlockWidget"] = "잠금 해제"
 
 -- Config Frame
 L["settings:configTitle"] = "할 일 장부 — 설정"
@@ -48,6 +46,9 @@ L["tooltip:scopeMe"] = "이 캐릭터만 표시 중입니다. 클릭하면 모�
 L["tooltip:scopeAll"] = "모든 캐릭터를 표시 중입니다. 클릭하면 이 캐릭터만 표시합니다."
 L["tooltip:orientByChar"] = "캐릭터별로 그룹화되어 있습니다. 클릭하면 할 일별로 그룹화합니다."
 L["tooltip:orientByTask"] = "할 일별로 그룹화되어 있습니다. 클릭하면 캐릭터별로 그룹화합니다."
+L["tooltip:openConfig"] = "할 일 장부 설정 창을 엽니다."
+L["tooltip:widgetLocked"] = "창이 잠겨 있습니다. 클릭하면 잠금을 해제하여 이동하고 크기를 조절할 수 있습니다."
+L["tooltip:widgetUnlocked"] = "창의 잠금이 해제되어 있습니다. 클릭하면 위치와 크기를 잠급니다."
 
 -- Config
 L["settings:editingFor"] = "편집 대상"

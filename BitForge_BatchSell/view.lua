@@ -259,11 +259,42 @@ do
         end
     end
 
+    -- Paint the panel in the host UI's theme. Every primitive is idempotent, so
+    -- calling this again on an already-skinned window costs a table lookup.
+    --
+    -- tabSystem.tabs is TabSystemMixin's own array of tab buttons. There is no
+    -- accessor for it, and the host's API expects to be handed each tab, so it
+    -- is read directly -- guarded, since a Blizzard internal is not a contract.
+    local function ApplyHostSkin(hostSkin, f)
+        if not hostSkin or not f then return end
+        hostSkin.Shell(f)
+        hostSkin.Button(f.refreshBtn)
+        hostSkin.Button(f.sellBtn)
+        hostSkin.ScrollBar(f.scrollBar)
+        local tabs = f.tabSystem and f.tabSystem.tabs
+        if tabs then
+            for _, tab in ipairs(tabs) do
+                hostSkin.Tab(tab)
+            end
+        end
+    end
+
+    -- Registered at file-read time, not from BuildFrame: the window may never be
+    -- built during a session that never visits a vendor, and the handler has to
+    -- be on the list before the host dispatches either way. `frame` is nil until
+    -- the first visit, which ApplyHostSkin answers by doing nothing -- BuildFrame
+    -- picks the facade up itself in that case.
+    BitForge.UI.Skin.OnExternalSkin(function(hostSkin)
+        ApplyHostSkin(hostSkin, frame)
+    end)
+
     local function BuildFrame()
         local f = CreateFrame("Frame", "BitForgeBatchSellPanel", UIParent, "BackdropTemplate")
-        f:SetWidth(280)
         f:SetPoint("TOPLEFT", MerchantFrame, "TOPRIGHT", 2, 0)
-        f:SetHeight(MerchantFrame:GetHeight())
+        -- Both dimensions are taken from the merchant window rather than fixed,
+        -- so the panel reads as the second half of it. Re-applied on every open
+        -- in panel.Show, since a UI scale change between visits moves both.
+        f:SetSize(MerchantFrame:GetWidth(), MerchantFrame:GetHeight())
         f:SetBackdrop({
             bgFile = "Interface/DialogFrame/UI-DialogBox-Background",
             edgeFile = "Interface/DialogFrame/UI-DialogBox-Border",
@@ -290,16 +321,19 @@ do
         -- Tabs. SetTabSelectedCallback must be set before the first SetTab:
         -- TabSystemMixin:SetTab calls the callback unconditionally, and only
         -- applies the visual selection itself when the callback returns falsy.
+        --
+        -- Anchored to the frame's bottom edge so the strip hangs below the
+        -- panel, matching where the merchant window carries its own tabs. That
+        -- is TabSystemTemplate's default tabTemplate, the downward-tapering
+        -- art, so nothing needs replacing here -- an upward-tapering strip
+        -- would have to swap the pool outright, since TabSystemMixin:OnLoad
+        -- reads tabTemplate once at CreateFrame time.
         local tabSystem = CreateFrame("Frame", nil, f, "TabSystemTemplate")
-        tabSystem:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -26)
-        -- tabTemplate defaults to the bottom-tapering art and is only read once,
-        -- by TabSystemMixin:OnLoad at CreateFrame time above -- so the pool it
-        -- already built has to be replaced before the first AddTab, not just
-        -- reconfigured, to get the upward-tapering art this top-anchored strip needs.
-        tabSystem.tabPool = CreateFramePool("BUTTON", tabSystem, "TabSystemTopButtonTemplate")
+        tabSystem:SetPoint("TOPLEFT", f, "BOTTOMLEFT", 10, 2)
         -- Unconstrained, each tab sizes to its own text; ruRU and deDE labels
-        -- run wide enough across three tabs to overrun the panel's 280px width.
-        tabSystem.maxTabWidth = 84
+        -- run wide enough across three tabs to overrun the merchant window's
+        -- width. Three at this cap plus spacing still clear it.
+        tabSystem.maxTabWidth = 100
         tabSystem:SetTabSelectedCallback(function(tabID)
             activeTab = tabID
             panel.Refresh()
@@ -311,8 +345,8 @@ do
 
         -- Status bar
         local status = f:CreateFontString(nil, "OVERLAY", "BitForgeFontSmallOutline")
-        status:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -60)
-        status:SetPoint("TOPRIGHT", f, "TOPRIGHT", -8, -60)
+        status:SetPoint("TOPLEFT", f, "TOPLEFT", 8, -30)
+        status:SetPoint("TOPRIGHT", f, "TOPRIGHT", -8, -30)
         status:SetJustifyH("LEFT")
         status:SetText(L["status:noItemsToSell"])
         f.status = status
@@ -328,6 +362,7 @@ do
         refreshBtn:SetPoint("LEFT", btnRow, "LEFT", 0, 0)
         refreshBtn:SetText(L["btn:refresh"])
         refreshBtn:SetScript("OnClick", OnRefreshClick)
+        f.refreshBtn = refreshBtn
 
         local sellBtn = CreateFrame("Button", nil, btnRow, "UIPanelButtonTemplate")
         sellBtn:SetSize(100, 24)
@@ -345,6 +380,7 @@ do
 
         scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 2, 0)
         scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 2, 0)
+        f.scrollBar = scrollBar
 
         local scrollView = CreateScrollBoxListLinearView()
         scrollView:SetElementExtent(24)
@@ -356,12 +392,19 @@ do
         f.dataProvider = CreateDataProvider()
         scrollBox:SetDataProvider(f.dataProvider)
 
+        -- The window is built on the first merchant visit, which is almost
+        -- always after the host handed its facade over -- and the handler
+        -- registered above has therefore already run, against a nil frame. This
+        -- reads the facade directly rather than waiting for a second dispatch
+        -- that is never coming.
+        ApplyHostSkin(BitForge.UI.Skin.GetExternalSkin(), f)
+
         return f
     end
 
     function panel.Show()
         if not frame then frame = BuildFrame() end
-        frame:SetHeight(MerchantFrame:GetHeight())
+        frame:SetSize(MerchantFrame:GetWidth(), MerchantFrame:GetHeight())
         -- Show first: Refresh bails on a hidden frame, so refreshing before this
         -- left the panel displaying the previous visit's manifest.
         frame:Show()
@@ -497,15 +540,14 @@ do
 
         cat:AddExpandableSection(L["section:equipment"], true)
         cat:AddCheckbox("sellEquipment", model.GetSellEquipment, model.SetSellEquipment)
-        -- Directly under the toggle it qualifies, with the three direction
-        -- toggles under it: the margin only means anything through them.
-        cat:AddSlider("ilvlThreshold", model.GetIlvlThreshold, model.SetIlvlThreshold, -50, 0, 1)
-        cat:AddCheckbox("marginOnHigherQuality",
-            model.GetMarginOnHigherQuality, model.SetMarginOnHigherQuality)
-        cat:AddCheckbox("marginOnSameQuality",
-            model.GetMarginOnSameQuality, model.SetMarginOnSameQuality)
-        cat:AddCheckbox("marginOnLowerQuality",
-            model.GetMarginOnLowerQuality, model.SetMarginOnLowerQuality)
+        -- Directly under the toggle it qualifies, and alone: the margin reaches
+        -- every quality gap through one multiple, so there are no directions
+        -- left to switch it on and off for. No formatter -- the number is a
+        -- count of item levels and reads as itself.
+        cat:AddSlider("ilvlMargin", model.GetIlvlMargin, model.SetIlvlMargin,
+            enum.ILVL_MARGIN_MIN, enum.ILVL_MARGIN_MAX, enum.ILVL_MARGIN_STEP)
+        cat:AddCheckbox("emphasizeQuality",
+            model.GetEmphasizeQuality, model.SetEmphasizeQuality)
         cat:AddCheckbox("keepBindOnAccount", model.GetKeepBindOnAccount, model.SetKeepBindOnAccount)
         cat:AddCheckbox("keepBindOnAccountPastExpac", model.GetKeepBindOnAccountPastExpac,
             model.SetKeepBindOnAccountPastExpac)

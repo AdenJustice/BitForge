@@ -5,8 +5,6 @@ local L = ns.locale
 
 -- Widget
 L["status:widgetTitle"] = "Книга заданий"
-L["btn:lockWidget"] = "Закрепить"
-L["btn:unlockWidget"] = "Открепить"
 
 -- Config Frame
 L["settings:configTitle"] = "Книга заданий — Настройки"
@@ -48,6 +46,9 @@ L["tooltip:scopeMe"] = "Показан этот персонаж. Нажмите
 L["tooltip:scopeAll"] = "Показаны все персонажи. Нажмите, чтобы показать только этого персонажа."
 L["tooltip:orientByChar"] = "Группировка по персонажам. Нажмите, чтобы группировать по заданиям."
 L["tooltip:orientByTask"] = "Группировка по заданиям. Нажмите, чтобы группировать по персонажам."
+L["tooltip:openConfig"] = "Открывает окно настроек Книги заданий."
+L["tooltip:widgetLocked"] = "Окно закреплено. Нажмите, чтобы открепить его для перемещения и изменения размера."
+L["tooltip:widgetUnlocked"] = "Окно откреплено. Нажмите, чтобы закрепить его положение и размер."
 
 -- Config
 L["settings:editingFor"] = "Редактирование для"

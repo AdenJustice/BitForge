@@ -44,18 +44,12 @@ L["settings:limitBatchTooltip"] = "Sell at most 12 items per click to avoid serv
 L["settings:sellEquipment"] = "Sell Equipment"
 L["settings:sellEquipmentTooltip"] =
 "Let armor and weapons be sold. With this off, no gear is ever vendored"
-L["settings:ilvlThreshold"] = "Item Level Margin"
-L["settings:ilvlThresholdTooltip"] =
-"How far below the item equipped in that slot a piece may be and still be kept"
-L["settings:marginOnHigherQuality"] = "  Apply Margin to Higher Quality"
-L["settings:marginOnHigherQualityTooltip"] =
-"Apply the margin to gear of a higher quality than what you have equipped. With this off, any quality upgrade is kept whatever its item level"
-L["settings:marginOnSameQuality"] = "  Apply Margin to Same Quality"
-L["settings:marginOnSameQualityTooltip"] =
-"Apply the margin to gear of the same quality as what you have equipped. With this off, only gear at or above your equipped item level is kept"
-L["settings:marginOnLowerQuality"] = "  Apply Margin to Lower Quality"
-L["settings:marginOnLowerQualityTooltip"] =
-"Apply the margin to gear of a lower quality than what you have equipped. With this off, any quality downgrade is sold whatever its item level. Gear two or more qualities below is never given the margin"
+L["settings:ilvlMargin"] = "Item Level Margin"
+L["settings:ilvlMarginTooltip"] =
+"What one quality tier is worth in item levels. At 10, gear a tier below what you have equipped has to beat it by 10 to be kept, and a tier above survives 10 under it. At your own quality a piece has to beat the slot outright. At 0 quality stops counting and item level alone decides"
+L["settings:emphasizeQuality"] = "  Emphasize Quality"
+L["settings:emphasizeQualityTooltip"] =
+"Count a quality tier for twice the margin, and allow a piece of your own quality that margin below the slot. Quality above what you have equipped becomes cheaper to keep, and quality below it dearer to excuse"
 L["settings:keepBindOnAccount"] = "Keep Bind on Account"
 L["settings:keepBindOnAccountTooltip"] = "Keep Bind on Account (heirloom) gear"
 L["settings:keepBindOnAccountPastExpac"] = "  Include Past Expansions"
@@ -101,11 +95,13 @@ L["reason:NO_SELL_PRICE"] = "No vendor will buy it"
 L["reason:REFUNDABLE"] = "Still within its refund window"
 L["reason:WHITELISTED"] = "On your whitelist"
 L["reason:TEMP_INCLUDED"] = "Added for this merchant visit"
+L["reason:JUNK"] = "Sell Junk is off, so junk is left alone"
 L["reason:CATEGORY"] = "This kind of item is set to be kept"
 L["reason:CURRENT_EXPANSION"] = "From an expansion you are keeping"
 L["reason:BIND_ON_ACCOUNT"] = "Bind on Account gear is kept"
 L["reason:DISENCHANTABLE"] = "Worth keeping to disenchant or sell on"
 L["reason:REAGENT_WANTED"] = "A profession on this account uses this"
+L["reason:NOT_EQUIPPABLE"] = "Not equippable or not recommended for your class"
 L["reason:EQUIPPABLE"] = "Good enough against what you have equipped"
 L["reason:OUTCLASSED"] = "Outclassed by what you have equipped"
 L["reason:SELL_MODE"] = "This kind of item is set to be sold"

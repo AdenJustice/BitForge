@@ -5,8 +5,6 @@ local L = ns.locale
 
 -- Widget
 L["status:widgetTitle"] = "Task Tome"
-L["btn:lockWidget"] = "Lock"
-L["btn:unlockWidget"] = "Unlock"
 
 -- Config Frame
 L["settings:configTitle"] = "Task Tome — Configuration"
@@ -48,6 +46,9 @@ L["tooltip:scopeMe"] = "Showing this character. Click to show all characters."
 L["tooltip:scopeAll"] = "Showing all characters. Click to show only this character."
 L["tooltip:orientByChar"] = "Grouped by character. Click to group by task."
 L["tooltip:orientByTask"] = "Grouped by task. Click to group by character."
+L["tooltip:openConfig"] = "Open the Task Tome configuration window."
+L["tooltip:widgetLocked"] = "The window is locked. Click to unlock it for moving and resizing."
+L["tooltip:widgetUnlocked"] = "The window is unlocked. Click to lock its position and size."
 
 -- Config
 L["settings:editingFor"] = "Editing for"

@@ -5,8 +5,6 @@ local L = ns.locale
 
 -- Widget
 L["status:widgetTitle"] = "Tomo dei compiti"
-L["btn:lockWidget"] = "Blocca"
-L["btn:unlockWidget"] = "Sblocca"
 
 -- Config Frame
 L["settings:configTitle"] = "Tomo dei compiti — Configurazione"
@@ -48,6 +46,9 @@ L["tooltip:scopeMe"] = "Mostra questo personaggio. Clicca per mostrare tutti i p
 L["tooltip:scopeAll"] = "Mostra tutti i personaggi. Clicca per mostrare solo questo personaggio."
 L["tooltip:orientByChar"] = "Raggruppato per personaggio. Clicca per raggruppare per compito."
 L["tooltip:orientByTask"] = "Raggruppato per compito. Clicca per raggruppare per personaggio."
+L["tooltip:openConfig"] = "Apre la finestra di configurazione del Tomo dei compiti."
+L["tooltip:widgetLocked"] = "La finestra è bloccata. Clicca per sbloccarla e poterla spostare e ridimensionare."
+L["tooltip:widgetUnlocked"] = "La finestra è sbloccata. Clicca per bloccarne posizione e dimensioni."
 
 -- Config
 L["settings:editingFor"] = "Modifica per"

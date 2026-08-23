@@ -54,6 +54,24 @@ function model.IsDebug()
     return (diagnostics and diagnostics.enabled) and true or false
 end
 
+--- The debug container's scratch table, or nil while diagnostics are off.
+---
+--- Handed out rather than written through: a caller assembles its whole record
+--- and drops it in. The container a module holds is the stored one, so anything
+--- filed here reaches the saved variables and survives the session that
+--- produced it -- which is the entire reason the dump exists.
+---
+--- Deliberately outside the schema, like the flag beside it: never seeded,
+--- never migrated. Core empties it at the start of each play session, so a
+--- dump reads as the record of one diagnostics session rather than of every
+--- session since the flag went on.
+---@return table|nil
+function model.GetDebugDump()
+    local diagnostics = db.debug
+    if not (diagnostics and diagnostics.enabled) then return nil end
+    return diagnostics.dump
+end
+
 function model.IsEnabled() return db.global.enabled end
 
 function model.SetEnabled(value) db.global.enabled = value end

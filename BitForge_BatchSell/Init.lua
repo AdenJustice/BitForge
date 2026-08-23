@@ -23,11 +23,13 @@ local enum = {
         REFUNDABLE        = "REFUNDABLE",
         WHITELISTED       = "WHITELISTED",
         TEMP_INCLUDED     = "TEMP_INCLUDED",
+        JUNK              = "JUNK",
         CATEGORY          = "CATEGORY",
         CURRENT_EXPANSION = "CURRENT_EXPANSION",
         BIND_ON_ACCOUNT   = "BIND_ON_ACCOUNT",
         DISENCHANTABLE    = "DISENCHANTABLE",
         REAGENT_WANTED    = "REAGENT_WANTED",
+        NOT_EQUIPPABLE    = "NOT_EQUIPPABLE",
         EQUIPPABLE        = "EQUIPPABLE",
         OUTCLASSED        = "OUTCLASSED",
         SELL_MODE         = "SELL_MODE",
@@ -93,10 +95,17 @@ local enum = {
     -- explaining it lives in L["tooltip:charOverride"].
     CHAR_OVERRIDE_MARK = "!",
 
+    -- The slot comparison's margin, in item levels. Zero is a real setting --
+    -- every tolerance collapses and quality drops out, leaving item level alone
+    -- to decide -- so the range starts there rather than at the step.
+    ILVL_MARGIN_MIN = 0,
+    ILVL_MARGIN_MAX = 30,
+    ILVL_MARGIN_STEP = 2,
+
     -- Bumped whenever the stored shape changes incompatibly. Every version
     -- needs a migration step registered in control.lua; core refuses to start
     -- the module against a shape nothing converted.
-    SCHEMA_VERSION = 2,
+    SCHEMA_VERSION = 5,
 }
 ns.enum = enum
 

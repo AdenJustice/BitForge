@@ -5,6 +5,7 @@
 local ADDON_NAME, ns = ...
 local C_Item = C_Item
 local InCombatLockdown = InCombatLockdown
+local TooltipDataProcessor = TooltipDataProcessor
 
 local model = ns.model
 local enum = ns.enum
@@ -115,19 +116,52 @@ local function addDebugLines(candidate)
         tostring(candidate.locked), tostring(candidate.onCooldown)), DEBUG_COLOR:GetRGB())
 end
 
-local function showTooltip(candidate)
-    -- SetOwner also clears the accumulated lines, which is what makes this
-    -- safe to call on an already-open tooltip.
-    GameTooltip:SetOwner(view.button, "ANCHOR_RIGHT")
-    GameTooltip:SetBagItem(candidate.bag, candidate.slot)
-    GameTooltip:AddLine(" ")
-    GameTooltip:AddLine(locale["tooltip:use"])
-    GameTooltip:AddLine(locale["tooltip:skip"])
-    GameTooltip:AddLine(locale["tooltip:blacklist"])
+-- What the open tooltip is describing. The post-call below fires for every item
+-- tooltip in the game and is handed no context of its own, so it reads this
+-- rather than trying to re-derive what the button is showing.
+local shownCandidate
+
+-- The lines the player reads on the button: what each click does, and the debug
+-- basis behind the pick.
+--
+-- Added from a post-call rather than appended after SetBagItem. An item the
+-- client has not cached makes SetBagItem start an asynchronous load and rebuild
+-- the tooltip once the data lands, and that rebuild discards everything the
+-- first build accumulated -- so anything appended after SetBagItem is lost
+-- exactly once per item, on the first hover after a login, when nothing is
+-- cached yet. The second hover finds the item cached, SetBagItem completes in
+-- one pass, and the lines survive, which is why it read as intermittent.
+--
+-- A post-call runs on every build including that rebuild, so the lines come
+-- back with it.
+local function OnItemTooltip(tooltip)
+    if tooltip ~= GameTooltip then return end
+    -- Fires for every item tooltip in the game, so it has to keep to its own:
+    -- another frame's tooltip is not ours to write into.
+    if not GameTooltip:IsOwned(view.button) then return end
+
+    local candidate = shownCandidate
+    if not candidate then return end
+
+    tooltip:AddLine(" ")
+    tooltip:AddLine(locale["tooltip:use"])
+    tooltip:AddLine(locale["tooltip:skip"])
+    tooltip:AddLine(locale["tooltip:blacklist"])
     if not model.GetLocked() then
-        GameTooltip:AddLine(locale["tooltip:drag"])
+        tooltip:AddLine(locale["tooltip:drag"])
     end
     addDebugLines(candidate)
+end
+
+TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, OnItemTooltip)
+
+local function showTooltip(candidate)
+    shownCandidate = candidate
+    -- SetOwner also clears the accumulated lines, which is what makes this safe
+    -- to call on an already-open tooltip. SetBagItem builds the item's own
+    -- tooltip and runs the post-call above, which appends the rest.
+    GameTooltip:SetOwner(view.button, "ANCHOR_RIGHT")
+    GameTooltip:SetBagItem(candidate.bag, candidate.slot)
     GameTooltip:Show()
 end
 
@@ -140,6 +174,7 @@ end
 local function refreshTooltip(candidate)
     if not GameTooltip:IsOwned(view.button) then return end
     if not candidate then
+        shownCandidate = nil
         GameTooltip:Hide()
         return
     end
