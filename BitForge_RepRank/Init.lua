@@ -17,6 +17,16 @@ local enum = {
     -- bursts -- one turn-in can emit several -- and the refresh re-reads every
     -- known faction, so it must not run once per event.
     REFRESH_DELAY     = 1,
+    -- Which of the four progress bars a record carries, and so which colour the
+    -- row paints it. Stored rather than re-derived at display time for the same
+    -- reason the standing label is: only a character who can see the faction can
+    -- say what kind it is for them.
+    BAR_KIND          = {
+        PARAGON    = "paragon",
+        MAJOR      = "major",
+        FRIENDSHIP = "friendship",
+        STANDARD   = "standard",
+    },
 }
 ns.enum = enum
 

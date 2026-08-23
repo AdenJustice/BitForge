@@ -7,14 +7,20 @@ local match = string.match
 
 local AlertFrame = AlertFrame
 local AlertFrame_OnClick = AlertFrame_OnClick
+local BreakUpLargeNumbers = BreakUpLargeNumbers
+local CreateColor = CreateColor
 local CreateDataProvider = CreateDataProvider
 local CreateFrame = CreateFrame
 local CreateScrollBoxListLinearView = CreateScrollBoxListLinearView
+local FACTION_BAR_COLORS = FACTION_BAR_COLORS
 local GameTooltip = GameTooltip
 local PixelUtil = PixelUtil
+local REPUTATION_PROGRESS_FORMAT = REPUTATION_PROGRESS_FORMAT
 local ScrollUtil = ScrollUtil
 local UIParent = UIParent
 
+---@type BitForge.RepRank.Enum
+local enum = ns.enum
 ---@type BitForge.RepRank.Locale
 local locale = ns.locale
 ---@type BitForge.RepRank.Model
@@ -24,6 +30,44 @@ local UI = BitForge.UI
 
 ---@class BitForge.RepRank.View
 local view = ns.view
+
+-- =========================================================
+-- Shared
+-- =========================================================
+
+--- The character half of a "Name-Realm" key, painted in that character's class
+--- colour.
+---
+--- Realms are identical across an account, so spelling one out says nothing the
+--- player does not already know. The colour is what the name is actually read
+--- for: every surface that prints one is asking the player to pick a character
+--- to log in to, and the class is the fastest way to tell three alts at Exalted
+--- apart.
+---
+--- Published rather than kept local because the controller's chat lines name the
+--- same characters the window's Best column does. Two functions of one name
+--- meaning two things -- one plain, one marked up -- is how markup ends up
+--- inside a charKey being used as identity, where it matches nothing.
+---
+--- No colour is the ordinary answer rather than a fault, on two independent
+--- paths: core learns a class only when that character logs in, so an alt last
+--- played before the registry existed has none recorded, and the client declines
+--- a colour for a class file it does not recognise. Both fall through to the
+--- bare name, which is what every one of these surfaces printed before there was
+--- a colour to ask for.
+---
+--- Display only. The key stays plain everywhere it is identity -- the record
+--- lookup, the pending list, the sort.
+---@param charKey string
+---@return string
+function view.CharacterLabel(charKey)
+    local shortName = match(charKey, "^([^-]+)") or charKey
+
+    local color = BitForge:GetCharacterClassColor(charKey)
+    if not color then return shortName end
+
+    return color:WrapTextInColorCode(shortName)
+end
 
 -- =========================================================
 -- Toast
@@ -117,7 +161,7 @@ view.toast = toast
 ---@class BitForge.RepRank.View.Window
 local window = {}
 
-local WINDOW_WIDTH = 460
+local WINDOW_WIDTH = 570
 local WINDOW_HEIGHT = 480
 local ROW_HEIGHT = 20
 
@@ -136,9 +180,16 @@ local SCROLLBAR_GUTTER = 20
 -- a header whose labels did not sit over the values they name is worse than no
 -- header, and one shared number is the only way to keep them together.
 local COLUMN_LEADER = 90
+local COLUMN_BAR = 100
 local COLUMN_STANDING = 110
 local ROW_INSET_LEFT = 4
 local ROW_INSET_RIGHT = 24
+
+-- How tall the bar is inside a 20px row. Eight is the shared widget's own
+-- default (APIs/UI/Templates/Bar.lua) and leaves six clear above and below it,
+-- which is what keeps a scrolled column of bars reading as one per row rather
+-- than as a single striped band down the middle of the list.
+local BAR_HEIGHT = 8
 
 -- Distance from the frame's top to each control row.
 local SEARCH_TOP = TITLE_BAR_HEIGHT + PADDING
@@ -152,24 +203,28 @@ local WINDOW_NAME = ADDON_NAME .. "Window"
 -- with, so the row reads as the game's indicator rather than a second one.
 local PARAGON_ATLAS = "ParagonReputation_Bag"
 
+-- Blizzard gives paragon no bar colour of its own -- its reputation panel
+-- leaves paragon out of the bar entirely -- so the module has to pick one, and
+-- picks it well away from the four the client already spends on standings. The
+-- distance is the point: paragon is not more of the standing underneath it, it
+-- is a separate track that empties again every chest.
+local PARAGON_BAR_COLOR = CreateColor(0.64, 0.39, 0.90)
+
+-- ReputationFrame.lua:520 -- `local friendshipColorIndex = 5; -- Always color
+-- friendships green`. A friendship has ranks but no reaction to index the
+-- palette with, so Blizzard hardcodes the first green entry and so does this.
+local FRIENDSHIP_COLOR_INDEX = 5
+
 -- The window, or nil before the first open. Everything it is built from hangs
 -- off it rather than off a second set of file locals, following UPS's curation
 -- window: one handle, and no way for the two to disagree about what exists.
 local frame
 
---- The character half of a "Name-Realm" key. Realms are identical across an
---- account and would fill the column saying nothing.
----@param charKey string
----@return string
-local function shortCharacterName(charKey)
-    return match(charKey, "^([^-]+)") or charKey
-end
-
 --- The three column strings for a row.
 ---@param row table
 ---@return string name, string leader, string label
 function window.RowText(row)
-    local leader = row.leader and shortCharacterName(row.leader) or ""
+    local leader = row.leader and view.CharacterLabel(row.leader) or ""
     return row.name, leader, row.label
 end
 
@@ -217,15 +272,110 @@ function window.PendingTooltipLines(row)
     local lines = {}
 
     for _, charKey in ipairs(row.pending or {}) do
-        lines[#lines + 1] = shortCharacterName(charKey)
+        lines[#lines + 1] = view.CharacterLabel(charKey)
     end
+
+    return lines
+end
+
+-- Which colour each kind of bar is painted, keyed by the kind the record
+-- already carries. One lookup rather than a chain of tests, because the kinds
+-- are a closed set named once in Init.lua -- a table keyed off that set cannot
+-- fall out of step with it the way a fourth branch quietly could.
+--
+-- Every entry is a function rather than a colour, because the standard kind's
+-- colour is not a constant: it is the client's per-standing palette entry, and
+-- only the record knows which standing it is sitting at.
+local BAR_KIND_COLORS = {
+    [enum.BAR_KIND.STANDARD] = function(record)
+        -- Hostile red through exalted green, exactly as the reputation panel
+        -- picks it (ReputationFrame.lua:501).
+        return FACTION_BAR_COLORS[record.tier]
+    end,
+    [enum.BAR_KIND.FRIENDSHIP] = function()
+        return FACTION_BAR_COLORS[FRIENDSHIP_COLOR_INDEX]
+    end,
+    [enum.BAR_KIND.MAJOR] = function()
+        -- Standing in for the panel's BLUE_FONT_COLOR: the addon's own accent
+        -- says "renown track" inside this window without dragging a second blue
+        -- in beside every other flat-design surface it ships.
+        return UI.Colors.point
+    end,
+    [enum.BAR_KIND.PARAGON] = function()
+        return PARAGON_BAR_COLOR
+    end,
+}
+
+--- The colour a row's bar is painted.
+---
+--- Answers the palette's plain grey rather than raising for a record with no
+--- bar, a kind this build does not know, or a standing outside the eight the
+--- client has colours for -- all three are shapes a stored record can arrive
+--- in, and a bar is painted from the same pass as the list around it, so a
+--- lookup that threw here would take the whole window down with it. Grey reads
+--- as progress of a kind the window cannot name, which is what it is.
+---
+--- The colour is returned rather than unpacked because the two sources disagree
+--- about their shape -- FACTION_BAR_COLORS holds ColorMixins the client calls
+--- GetRGB on, while a plain { r, g, b } is what its consumers read off it in
+--- GameTooltip.lua -- and BarMixin:SetBarColor resolves either through the same
+--- primitive every other skin call uses.
+---
+--- colorRGB rather than colorRGBA, which is the narrowest thing all three
+--- sources are. The client's palette entries and the shared tokens both carry an
+--- alpha; PARAGON_BAR_COLOR above is built without one, so promising callers a
+--- number there would be promising them a nil.
+---@param record table|nil
+---@return colorRGB
+function window.BarColor(record)
+    local bar = record and record.bar
+    local resolve = bar and BAR_KIND_COLORS[bar.kind]
+
+    return (resolve and resolve(record)) or UI.Colors.text
+end
+
+--- The progress bar's tooltip body.
+---
+--- A bar with no numbers beside it is half an indicator: it says "some of the
+--- way" and never how far. The row has no space for the figures, so they live
+--- here.
+---
+--- Three bars have no figures to offer and all three answer nothing, so the
+--- hover shows no tooltip at all rather than one that says nothing new.
+---
+--- A capped bar's stored shape is one over one, so its figures would read
+--- `1 / 1` -- true of the placeholder and of nothing the character earned.
+--- Blizzard suppresses the progress text there too (ReputationFrame.lua:497),
+--- and the standing it finished at is already printed in the Standing column six
+--- pixels to the right, so repeating it here would cost a hover and tell the
+--- player nothing.
+---
+--- A bar whose range the client could not measure carries no maximum, because
+--- there was none to measure; inventing one would put a figure in front of the
+--- player that no faction in the game matches.
+---
+--- And a record written before bars existed has no bar at all, which an alt
+--- keeps until it is next played. That row still draws its bar, empty.
+---@param row table
+---@return string[]
+function window.BarTooltipLines(row)
+    local lines = {}
+
+    local bar = row.record and row.record.bar
+    if not bar or bar.capped or not bar.max then return lines end
+
+    lines[#lines + 1] = format(REPUTATION_PROGRESS_FORMAT,
+        BreakUpLargeNumbers(bar.value or 0), BreakUpLargeNumbers(bar.max))
 
     return lines
 end
 
 ---@param marker table
 local function onParagonEnter(marker)
-    local lines = window.PendingTooltipLines(marker:GetParent())
+    local element = marker:GetParent().element
+    if not element then return end
+
+    local lines = window.PendingTooltipLines(element)
     if #lines == 0 then return end
 
     GameTooltip:SetOwner(marker, "ANCHOR_RIGHT")
@@ -238,7 +388,28 @@ local function onParagonEnter(marker)
     GameTooltip:Show()
 end
 
-local function onParagonLeave()
+---@param hitFrame table
+local function onBarEnter(hitFrame)
+    local element = hitFrame:GetParent().element
+    if not element then return end
+
+    local lines = window.BarTooltipLines(element)
+    if #lines == 0 then return end
+
+    -- Titled with the faction rather than with a fixed heading: the bar column
+    -- carries no text of its own, and a tooltip anchored halfway across a
+    -- twenty-pixel row is easy to read against the wrong line.
+    GameTooltip:SetOwner(hitFrame, "ANCHOR_RIGHT")
+    GameTooltip:SetText(element.name)
+
+    for _, line in ipairs(lines) do
+        GameTooltip:AddLine(line, 1, 1, 1)
+    end
+
+    GameTooltip:Show()
+end
+
+local function onTooltipLeave()
     GameTooltip:Hide()
 end
 
@@ -261,8 +432,32 @@ local function initRow(row, element)
         row.standing:SetWidth(COLUMN_STANDING)
         row.standing:SetJustifyH("RIGHT")
 
+        -- Lower-case like every other region parked on a pooled row, and for
+        -- the same reason: the frame comes from a template that owns the
+        -- PascalCase keys, and a clash with one of those would be silent.
+        row.bar = UI.CreateBar(row)
+        PixelUtil.SetSize(row.bar, COLUMN_BAR, BAR_HEIGHT)
+        PixelUtil.SetPoint(row.bar, "RIGHT", row.standing, "LEFT", -GAP, 0)
+
+        -- A bare Frame takes no mouse input, and neither does a StatusBar, so
+        -- without this the bar's tooltip would never fire.
+        --
+        -- The bar's width but the row's height, rather than SetAllPoints: the
+        -- figures behind the bar are the one thing the row does not print, so
+        -- this is a tooltip players go looking for, and an eight-pixel strip
+        -- inside a twenty-pixel row is a target they would have to hunt for.
+        -- Nothing else occupies the bar's column, so the six clear pixels above
+        -- and below it may as well answer the hover.
+        row.barHit = CreateFrame("Frame", nil, row)
+        PixelUtil.SetPoint(row.barHit, "LEFT", row.bar, "LEFT", 0, 0)
+        PixelUtil.SetPoint(row.barHit, "RIGHT", row.bar, "RIGHT", 0, 0)
+        PixelUtil.SetHeight(row.barHit, ROW_HEIGHT)
+        row.barHit:EnableMouse(true)
+        row.barHit:SetScript("OnEnter", onBarEnter)
+        row.barHit:SetScript("OnLeave", onTooltipLeave)
+
         row.leader = row:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
-        PixelUtil.SetPoint(row.leader, "RIGHT", row.standing, "LEFT", -GAP, 0)
+        PixelUtil.SetPoint(row.leader, "RIGHT", row.bar, "LEFT", -GAP, 0)
         row.leader:SetWidth(COLUMN_LEADER)
         row.leader:SetJustifyH("RIGHT")
 
@@ -279,15 +474,20 @@ local function initRow(row, element)
         row.paragonHit:SetAllPoints(row.paragon)
         row.paragonHit:EnableMouse(true)
         row.paragonHit:SetScript("OnEnter", onParagonEnter)
-        row.paragonHit:SetScript("OnLeave", onParagonLeave)
+        row.paragonHit:SetScript("OnLeave", onTooltipLeave)
     end
 
-    row.pending = element.pending
+    -- The whole element rather than a field per tooltip. Both hit frames answer
+    -- from it, and a pooled row is refilled constantly -- one stale half of a
+    -- pair of stashed fields would be a tooltip describing the wrong faction.
+    row.element = element
 
     if element.isHeader then
         row.faction:SetText(element.title)
         row.leader:SetText("")
         row.standing:SetText("")
+        row.bar:Hide()
+        row.barHit:Hide()
         row.paragon:Hide()
         row.paragonHit:Hide()
         return
@@ -297,6 +497,16 @@ local function initRow(row, element)
     row.faction:SetText(name)
     row.leader:SetText(leader)
     row.standing:SetText(label)
+
+    -- Shown for every data row, including one whose record predates bars or
+    -- whose range the client could not measure. Those draw empty: a column that
+    -- came and went as the list scrolled would be harder to read than one that
+    -- is occasionally blank.
+    local bar = element.record and element.record.bar
+    row.bar:SetBarColor(window.BarColor(element.record))
+    row.bar:SetProgress(bar and bar.value, bar and bar.max)
+    row.bar:Show()
+    row.barHit:Show()
 
     local hasPending = #element.pending > 0
     row.paragon:SetShown(hasPending)
@@ -309,9 +519,9 @@ function window.ToggleRankSort()
     window.Refresh()
 end
 
---- Builds the column header: the three labels the rows are read against.
+--- Builds the column header: the four labels the rows are read against.
 ---
---- A frame of its own rather than three regions on the window, so it can share
+--- A frame of its own rather than four regions on the window, so it can share
 --- the scroll box's left and right edges exactly and the labels can be anchored
 --- against each other with the same insets initRow uses.
 ---@param parent table
@@ -333,11 +543,22 @@ local function buildColumnHeader(parent)
     standing:SetScript("OnClick", window.ToggleRankSort)
     columnHeader.standing = standing
 
+    -- Centred rather than right-aligned like its neighbours: the bar fills its
+    -- whole column, so the label belongs over the middle of it and not over one
+    -- end of a run of them.
+    local progress = columnHeader:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
+    progress:SetWidth(COLUMN_BAR)
+    progress:SetJustifyH("CENTER")
+    progress:SetWordWrap(false)
+    progress:SetText(locale["column:progress"])
+    PixelUtil.SetPoint(progress, "RIGHT", standing, "LEFT", -GAP, 0)
+    columnHeader.progress = progress
+
     local leader = columnHeader:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
     leader:SetWidth(COLUMN_LEADER)
     leader:SetJustifyH("RIGHT")
     leader:SetText(locale["column:leader"])
-    PixelUtil.SetPoint(leader, "RIGHT", standing, "LEFT", -GAP, 0)
+    PixelUtil.SetPoint(leader, "RIGHT", progress, "LEFT", -GAP, 0)
     columnHeader.leader = leader
 
     local faction = columnHeader:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")

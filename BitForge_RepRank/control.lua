@@ -2,7 +2,6 @@
 local ADDON_NAME, ns = ...
 
 local format = string.format
-local match = string.match
 local ipairs = ipairs
 local pairs = pairs
 
@@ -11,6 +10,7 @@ local C_MajorFactions = C_MajorFactions
 local C_Reputation = C_Reputation
 local C_Timer = C_Timer
 local GetText = GetText
+local MAX_REPUTATION_REACTION = MAX_REPUTATION_REACTION
 local UnitSex = UnitSex
 
 ---@type BitForge.RepRank.Enum
@@ -79,16 +79,19 @@ end
 --- naming at all -- for a faction it has never encountered, so resolving at
 --- display time would leave blanks on precisely the alt-only factions the
 --- module exists to surface.
----@param factionID   number
+---
+--- The friendship table arrives as an argument rather than being read here:
+--- recordFor asks the client for it once and hands the same answer to this and
+--- to the bar, which are the only two halves of a record that want it.
+---@param friendship  table|nil GetFriendshipReputation's answer, when it was read
 ---@param reaction    number
 ---@param renownLevel number|nil
 ---@return string
-local function resolveLabel(factionID, reaction, renownLevel)
+local function resolveLabel(friendship, reaction, renownLevel)
     if renownLevel then
         return format(locale["standing:renown"], renownLevel)
     end
 
-    local friendship = C_GossipInfo.GetFriendshipReputation(factionID)
     if friendship and friendship.friendshipFactionID > 0 and friendship.reaction then
         return friendship.reaction
     end
@@ -107,12 +110,20 @@ end
 --- A chest the character is too low to claim is stored with pending false: the
 --- state is real and becomes claimable the moment they level past the gate, but
 --- it must not announce or mark a row before then.
+---
+--- The band's width comes back beside the record rather than inside it. The bar
+--- needs it to wrap the accumulated value, but the record is *stored*, and a
+--- width nothing ever reads back would be a column of numbers in the database
+--- for the sake of one arithmetic step here. Returning the pair is also what
+--- makes the record and the bar agree about whether the faction is in paragon at
+--- all: both now come out of the same reading rather than two.
 ---@param factionID number
----@return table|nil
+---@return table|nil paragon
+---@return number|nil threshold
 local function readParagon(factionID)
     if not C_Reputation.IsFactionParagonForCurrentPlayer(factionID) then return end
 
-    local currentValue, _, _, hasRewardPending, tooLowLevel, storageLevel =
+    local currentValue, threshold, _, hasRewardPending, tooLowLevel, storageLevel =
         C_Reputation.GetFactionParagonInfo(factionID)
 
     if currentValue == nil then return end
@@ -121,11 +132,133 @@ local function readParagon(factionID)
         pending = (hasRewardPending and not tooLowLevel) or false,
         level   = storageLevel or 0,
         value   = currentValue,
-    }
+    }, threshold
+end
+
+--- A bar with nothing further to earn in it.
+---
+--- One over one rather than the real numbers, which is Blizzard's own shape for
+--- a finished bar -- there is no range left to express, so any two capped bars
+--- may as well be the same one. The flag is what tells the row apart from a bar
+--- that merely happens to be full.
+---@param kind string
+---@return table
+local function cappedBar(kind)
+    return { value = 1, max = 1, kind = kind, capped = true }
+end
+
+--- The progress bar half of a record: how far through its current step this
+--- character is, and which of the four kinds of step that is.
+---
+--- Precedence and arithmetic copy Blizzard's watched-faction HUD bar,
+--- ReputationStatusBarMixin:Update, rather than the reputation panel's. The
+--- panel resolves friendship ahead of major faction and leaves paragon out of
+--- the bar entirely, so a character maxed on a major faction would sit at a
+--- permanently full renown bar there while still banking paragon every week.
+--- Paragon progress is one of the keys this module ranks characters by, so the
+--- order that shows it is the one that matches what the window is for.
+---
+--- Nothing here asks the client a question recordFor has already asked. All four
+--- of those answers arrive as arguments, because a full scan runs this against
+--- every visible faction on the account inside one frame -- on a mature account
+--- that is several hundred rows, and a second answer to a settled question buys
+--- nothing at all. Only HasMaximumRenown is read here, because only the bar
+--- wants it.
+---@param factionData      table
+---@param isMajor          boolean
+---@param majorData        table|nil  GetMajorFactionData's answer, when isMajor
+---@param paragon          table|nil  readParagon's record, when the faction is in paragon
+---@param paragonThreshold number|nil the paragon band's width, from the same reading
+---@param friendship       table|nil  GetFriendshipReputation's answer, when it was read
+---@return table bar
+local function readBar(factionData, isMajor, majorData, paragon, paragonThreshold, friendship)
+    local kind, minimum, maximum, value
+
+    -- The threshold is checked for width as well as presence: the modulo below
+    -- raises on a zero divisor, and a paragon band with no width is not a bar
+    -- that can be drawn anyway. Either way the faction falls through to the
+    -- kind it would have had before paragon opened.
+    if paragon and paragonThreshold and paragonThreshold > 0 then
+        kind = enum.BAR_KIND.PARAGON
+        minimum, maximum, value = 0, paragonThreshold, paragon.value % paragonThreshold
+
+        -- Deliberately *not* Blizzard's `value = value + threshold` for a chest
+        -- the character has not claimed. Blizzard overflows the bar past full to
+        -- advertise the chest; the row here already carries the chest icon for
+        -- exactly that state, so the overflow would be a second indicator saying
+        -- the same thing -- and it would read as more progress banked since the
+        -- last claim than the character actually has.
+    elseif isMajor then
+        kind = enum.BAR_KIND.MAJOR
+
+        if C_MajorFactions.HasMaximumRenown(factionData.factionID) then
+            return cappedBar(kind)
+        end
+
+        minimum = 0
+        maximum = majorData and majorData.renownLevelThreshold
+        value = majorData and majorData.renownReputationEarned
+    else
+        -- friendshipFactionID > 0, which is what ReputationFrame's own
+        -- GetReputationTypeFromElementData tests. Its ShowFriendshipReputationTooltip
+        -- asks `< 0` of the same field a hundred and fifty lines later, which
+        -- passes for every faction that has no friendship at all -- that one is
+        -- a Blizzard bug rather than the shape to copy.
+        if friendship and friendship.friendshipFactionID > 0 then
+            kind = enum.BAR_KIND.FRIENDSHIP
+
+            -- A nil nextThreshold is Blizzard's max-rank sentinel: the API has
+            -- no further rank to name, so there is nothing left to count towards.
+            if friendship.nextThreshold == nil then
+                return cappedBar(kind)
+            end
+
+            minimum, maximum, value =
+                friendship.reactionThreshold, friendship.nextThreshold, friendship.standing
+        else
+            kind = enum.BAR_KIND.STANDARD
+
+            if factionData.reaction == MAX_REPUTATION_REACTION then
+                return cappedBar(kind)
+            end
+
+            minimum, maximum, value = factionData.currentReactionThreshold,
+                factionData.nextReactionThreshold, factionData.currentStanding
+        end
+    end
+
+    -- Normalized exactly as Blizzard's NormalizeBarValues does: the range
+    -- minimum comes out of both ends, so a hostile faction's negative
+    -- thresholds arrive at the view as an ordinary bar starting at zero. The
+    -- nil coalescing is what covers a major faction whose data the client has
+    -- not sent yet, which is the one branch above that can leave a hole.
+    minimum, maximum, value = minimum or 0, maximum or 0, value or 0
+    maximum, value = maximum - minimum, value - minimum
+
+    -- A range that comes out zero or negative is unmeasurable rather than
+    -- finished, and the bar says so by carrying no figures at all: the kind is
+    -- what was learned, the two numbers were not. A placeholder pair of zero
+    -- over one would draw the same empty bar -- Blizzard's own
+    -- InitializeBarForMajorFaction falls back to 0, 0, 0 for missing data, which
+    -- draws empty too -- but it is indistinguishable from a real reading, and
+    -- the tooltip that formats it would announce a maximum of one reputation,
+    -- which is true of no faction in the game. Leaving both out puts an
+    -- unmeasurable bar exactly where a record written before bars existed
+    -- already lands: drawn empty, and silent about numbers it does not have.
+    if maximum <= 0 then
+        return { kind = kind }
+    end
+
+    return { value = value, max = maximum, kind = kind }
 end
 
 --- Builds one character's record for a faction, and merges what this reading
 --- reveals about the faction itself.
+---
+--- Every question the client is asked about a faction is asked here, once, and
+--- the answers are handed down to the helpers rather than asked again inside
+--- them. This runs against every visible faction on the account in a single
+--- frame on the full scan, so the duplicates are not free.
 ---@param factionData table
 ---@return table record
 local function recordFor(factionData)
@@ -137,6 +270,16 @@ local function recordFor(factionData)
         majorData = C_MajorFactions.GetMajorFactionData(factionID)
         renownLevel = C_MajorFactions.GetCurrentRenownLevel(factionID)
     end
+
+    -- Skipped for a major faction that has a renown level, the one shape that
+    -- wants it for neither half: the level names the standing, and the renown
+    -- branch draws the bar. Every other faction reaches it through one or both.
+    local friendship
+    if not renownLevel then
+        friendship = C_GossipInfo.GetFriendshipReputation(factionID)
+    end
+
+    local paragon, paragonThreshold = readParagon(factionID)
 
     model.MergeFaction(factionID, {
         name          = factionData.name,
@@ -150,8 +293,15 @@ local function recordFor(factionData)
         tier    = factionData.reaction,
         renown  = renownLevel,
         value   = factionData.currentStanding,
-        paragon = readParagon(factionID),
-        label   = resolveLabel(factionID, factionData.reaction, renownLevel),
+        paragon = paragon,
+        label   = resolveLabel(friendship, factionData.reaction, renownLevel),
+        -- Added without bumping SCHEMA_VERSION, because the stored shape only
+        -- grows: a migration cannot fabricate a bar it never observed, and the
+        -- full scan rewrites every record the logging-in character holds anyway.
+        -- An alt therefore reads record.bar == nil until it is next played,
+        -- which is the ordinary case rather than a fault, and the view draws the
+        -- row without one.
+        bar     = readBar(factionData, isMajor, majorData, paragon, paragonThreshold, friendship),
     }
 end
 
@@ -398,16 +548,6 @@ control.scanner = scanner
 ---@class BitForge.RepRank.Control.Alerts
 local alerts = {}
 
---- The character half of a "Name-Realm" key.
----
---- Realms are identical across an account, so spelling them out in a chat line
---- says nothing the player does not already know.
----@param charKey string
----@return string
-local function shortCharacterName(charKey)
-    return match(charKey, "^([^-]+)") or charKey
-end
-
 --- Whether a fresh paragon reading is a transition worth announcing.
 ---
 --- Compared against the *stored* record rather than a session-local table: that
@@ -434,7 +574,11 @@ end
 --- affecting the other.
 ---
 --- The current character's lines name only the faction; an alt's name the
---- character too, because that is the part the player has to act on.
+--- character too, because that is the part the player has to act on -- through
+--- the view's own label, which is the module's single answer to "how is a
+--- charKey shown to a player" and paints it in that character's class colour.
+--- charKey itself stays the plain string here: the comparison below is identity,
+--- and markup inside one would make every line read as an alt's.
 ---@param pending { charKey: string, factionID: number, name: string }[]
 function alerts.Announce(pending)
     local count = #pending
@@ -448,7 +592,7 @@ function alerts.Announce(pending)
                 BitForge:Print(format(locale["alert:pendingSelf"], entry.name))
             else
                 BitForge:Print(format(locale["alert:pendingAlt"],
-                    shortCharacterName(entry.charKey), entry.name))
+                    view.CharacterLabel(entry.charKey), entry.name))
             end
         end
     end

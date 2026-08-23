@@ -41,6 +41,7 @@ APIs/UI/Templates/Frame.lua
 APIs/UI/Templates/Buttons.lua
 APIs/UI/Templates/EditBox.lua
 APIs/UI/Templates/Dropdown.lua
+APIs/UI/Templates/Bar.lua
 APIs/UI/Templates/Slider.lua
 APIs/UI/Templates/Tab.lua
 APIs/Utils.lua

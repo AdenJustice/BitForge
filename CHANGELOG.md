@@ -1,5 +1,15 @@
 # Changelog
 
+## [v12.1.0.6] — 2026-08-23
+
+### Added
+
+- **RepRank:** every faction now carries a progress bar showing how far the leading character is through their current step, so you can see who is close to the next rank rather than only which rank they have reached. The bar is coloured by what kind of progress it is — the game's own standing colours for ordinary reputations, green for friendships, the accent colour for renown, and purple for paragon — and hovering it gives you the exact figures. A faction in paragon shows its paragon progress rather than a permanently full bar. A faction with nothing left to earn shows a full bar and no figures, and one the game has not sent numbers for shows an empty bar rather than a made-up total. The window is wider to make room for the column.
+
+### Changed
+
+- **RepRank:** character names are shown in class colours — in the window's Best column, in the tooltip listing who has a paragon reward waiting, and in the paragon alerts printed to chat. A character is coloured from the next time you log in on it; until then it looks exactly as it does today.
+
 ## [v12.1.0.5] — 2026-08-23
 
 ### Added

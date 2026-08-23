@@ -53,6 +53,11 @@ Records every character's reputations as you play them, and shows which characte
 furthest along with each faction — so the alt closest to that Exalted-only recipe is one
 window away instead of one login each. Opened from the BitForge minimap button.
 
+Each faction carries a progress bar for how far that character is through their current
+step — a standing, a friendship rank, a renown level, or a paragon bracket — coloured by
+which of those it is, with the exact figures on hover. Character names are shown in class
+colours, from the next time you log in on each character.
+
 Warband-wide reputations are listed separately, with the single standing every character
 shares: there is nothing to rank when they all report the same number. What they do carry
 is paragon, which is per character even on an account-wide reputation, so the list marks

@@ -57,3 +57,27 @@ function BitForge:LerpColor(cA, cB, t)
         cA[2] + t * (cB[2] - cA[2]),
         cA[3] + t * (cB[3] - cA[3])
 end
+
+--- The ColorMixin for the class a character plays, or nil.
+---
+--- Two nil paths, independent of each other and neither a fault. Core learns a
+--- class only when that character logs in, so on an account played for years
+--- every alt reads classless until it is next played; and
+--- C_ClassColor.GetClassColor MayReturnNothing for a class file the client does
+--- not recognise. A caller renders the character unadorned in either case.
+---
+--- The colour comes back bare rather than wrapped around a string, because the
+--- callers want different things done with it -- TaskTome dims it for a
+--- finished row before wrapping the character name, RepRank paints a bar and
+--- wraps nothing. A helper that returned markup would serve only one of them.
+---@param charKey string  as returned by BitForge:GetCurrentCharacter()
+---@return ColorMixin|nil
+function BitForge:GetCharacterClassColor(charKey)
+    local classFile = self:GetCharacterClass(charKey)
+    if not classFile then return nil end
+
+    -- Called for its single return rather than tail-called: MayReturnNothing
+    -- means no values at all, and this promises exactly one.
+    local color = C_ClassColor.GetClassColor(classFile)
+    return color
+end

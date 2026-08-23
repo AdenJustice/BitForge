@@ -437,11 +437,10 @@ do
 
     --- A character key, in that character's class colour.
     ---
-    --- Core learns a class only when the character in question logs in, so on
-    --- an account that has been played for years every alt reads as classless
-    --- until it is next played. That is the ordinary case rather than a fault,
-    --- and so is a class file the client has no colour for, so both fall through
-    --- to the bare key and render exactly as they always did.
+    --- A character with no colour is the ordinary case rather than a fault --
+    --- BitForge:GetCharacterClassColor documents the two ways it happens -- so
+    --- both nil paths fall through to the bare key and render exactly as they
+    --- always did.
     ---
     --- Only the label is coloured. charKey stays the plain string everywhere it
     --- is used as an identity -- completion lookups, collapse keys -- because
@@ -450,11 +449,7 @@ do
     ---@param completed? boolean  dim the colour, as a finished row's name is
     ---@return string
     local function CharacterLabel(charKey, completed)
-        local classFile = BitForge:GetCharacterClass(charKey)
-        if not classFile then return charKey end
-
-        -- GetClassColor MayReturnNothing for a name it does not recognise.
-        local color = C_ClassColor.GetClassColor(classFile)
+        local color = BitForge:GetCharacterClassColor(charKey)
         if not color then return charKey end
 
         if completed then

@@ -664,8 +664,23 @@ function BitForge:RegisterCharacter()
 
     -- UnitClassBase MayReturnNothing. Nothing back leaves whatever was recorded
     -- before in place rather than erasing a good answer with a missing one.
+    --
+    -- A secret is treated identically, for the same reason: it is an answer
+    -- this cannot use, and an unusable answer must not evict a usable one. The
+    -- function carries SecretWhenUnitIdentityRestricted exactly as UnitClass
+    -- does -- it is not exempt -- and while the documented condition ("the unit
+    -- isn't player-controlled or in the party/raid") means "player" should
+    -- never trip it, the docs promise nothing, characterClasses is
+    -- SavedVariables, and no behaviour is defined for serialising a secret.
+    -- Blizzard refuses the equivalent write outright: every setter in
+    -- Blizzard_SharedXMLBase/SecureTypes.lua asserts against storing one.
+    --
+    -- issecretvalue itself is guarded rather than assumed present. It is
+    -- documented and addon-callable on 12.1, but this runs on core's login path,
+    -- where calling a nil global would take the whole suite's startup with it --
+    -- and the cost of not finding out is one extra global lookup.
     local classFile = UnitClassBase("player")
-    if classFile then
+    if classFile ~= nil and not (issecretvalue and issecretvalue(classFile)) then
         db.global.characterClasses[key] = classFile
     end
 
