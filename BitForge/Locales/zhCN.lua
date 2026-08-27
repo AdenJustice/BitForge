@@ -20,9 +20,11 @@ L["cmd:noSuchCommand"] = "%s 没有 %s 命令"
 L["cmd:coreUsage"] = "/bitforge core whatsnew -- 显示本次更新的内容"
 
 -- Report window
-L["report:windowTitle"] = "举报物品"
+L["report:windowTitle"] = "报告物品"
+L["report:windowTitleDiagnostic"] = "诊断报告"
 L["report:howTo"] = "全选后按 Ctrl+C，然后粘贴到以下地址的新议题中："
 L["report:selectAll"] = "全选"
+L["report:encoded"] = "这份报告太长，无法直接阅读，因此已被压缩。请原样粘贴 -- 开发者的工具会将其解压。"
 
 -- The release-notes popup
 L["whatsNew:windowTitle"] = "BitForge 更新内容"

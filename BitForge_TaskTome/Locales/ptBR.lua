@@ -3,9 +3,9 @@ if GetLocale() ~= "ptBR" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["status:widgetTitle"] = "Livro de Tarefas"
+L["status:widgetTitle"] = "Task Tome"
 
-L["settings:configTitle"] = "Livro de Tarefas — Configuração"
+L["settings:configTitle"] = "Task Tome — Configuração"
 L["btn:addRootTask"] = "Adicionar Tarefa Principal"
 L["btn:addChildTask"] = "Adicionar Subtarefa"
 L["btn:deleteTask"] = "Excluir Tarefa"
@@ -31,7 +31,7 @@ L["btn:confirmDelete"] = "Excluir"
 L["btn:cancel"] = "Cancelar"
 L["msg:nameRequired"] = "O nome da tarefa não pode estar vazio."
 
-L["settings:taskTomePanel"] = "Livro de Tarefas"
+L["settings:taskTomePanel"] = "Task Tome"
 L["settings:config"] = "Configuração"
 L["settings:openConfig"] = "Abrir"
 
@@ -44,5 +44,5 @@ L["tooltip:openConfig"] = "Abre a janela de configuração do Livro de Tarefas."
 L["tooltip:widgetLocked"] = "A janela está travada. Clique para destravá-la e poder movê-la e redimensioná-la."
 L["tooltip:widgetUnlocked"] = "A janela está destravada. Clique para travar sua posição e tamanho."
 
-L["settings:editingFor"] = "Editando Para"
+L["settings:editingFor"] = "Editando para"
 L["settings:optStateFor"] = "Atribuição de %s"

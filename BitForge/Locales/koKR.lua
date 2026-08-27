@@ -21,8 +21,10 @@ L["cmd:coreUsage"] = "/bitforge core whatsnew -- 이번 업데이트에서 무�
 
 -- Report window
 L["report:windowTitle"] = "아이템 신고"
+L["report:windowTitleDiagnostic"] = "진단 보고서"
 L["report:howTo"] = "전체 선택 후 Ctrl+C를 누르세요. 아래 주소에 새 이슈로 붙여넣으세요:"
 L["report:selectAll"] = "전체 선택"
+L["report:encoded"] = "이 보고서는 너무 길어서 압축되었습니다. 그대로 붙여넣으세요 -- 개발자 도구가 압축을 풀어줍니다."
 
 -- The release-notes popup
 L["whatsNew:windowTitle"] = "BitForge의 새로운 소식"

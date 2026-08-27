@@ -3,9 +3,9 @@ if GetLocale() ~= "itIT" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["status:widgetTitle"] = "Tomo dei compiti"
+L["status:widgetTitle"] = "Task Tome"
 
-L["settings:configTitle"] = "Tomo dei compiti — Configurazione"
+L["settings:configTitle"] = "Task Tome — Configurazione"
 L["btn:addRootTask"] = "Aggiungi compito radice"
 L["btn:addChildTask"] = "Aggiungi compito figlio"
 L["btn:deleteTask"] = "Elimina compito"
@@ -31,7 +31,7 @@ L["btn:confirmDelete"] = "Elimina"
 L["btn:cancel"] = "Annulla"
 L["msg:nameRequired"] = "Il nome del compito non può essere vuoto."
 
-L["settings:taskTomePanel"] = "Tomo dei compiti"
+L["settings:taskTomePanel"] = "Task Tome"
 L["settings:config"] = "Configurazione"
 L["settings:openConfig"] = "Apri"
 

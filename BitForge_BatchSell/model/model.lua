@@ -76,15 +76,15 @@ local DB_DEFAULTS = {
             },
 
             gear = {
-                -- Off by default: the quality veto is the opt-in amplifier
-                -- above the margin ladder, not a replacement for it (#236).
-                compareQuality     = false,
-                compareItemLevel   = true,
-                ilvlMargin         = 10,
-                emphasizeQuality   = false,
+                -- Two independent dials, and the whole comparison. margin is
+                -- slack at the player's own quality; qualityMargin is what one
+                -- tier costs. 0/10 is what ilvlMargin 10 with emphasis off
+                -- resolved to, so the shipped comparison is unchanged.
+                margin             = 0,
+                qualityMargin      = 10,
                 spareBindOnAccount = "CURRENT",
                 spareBindOnEquip   = "CURRENT",
-                keepForDisenchant  = true,
+                keepForDisenchant  = "CURRENT",
             },
             armor = { sellRelics = true },
 
@@ -99,6 +99,7 @@ local DB_DEFAULTS = {
             recipes     = { keepLearnable = true, keepTradeable = true },
             misc        = {
                 sellCollectedMounts = true,
+                sellCollectedToys = true,
                 sellPets = false,
                 sellHoliday = false,
                 sellMountEquipment = false
@@ -427,20 +428,28 @@ function model.IsPastExpansion(facts, expansionThreshold)
     return facts.expacID < expansionThreshold
 end
 
---- True when the piece *occupying* a slot is last expansion's, so the bar it
---- sets is no longer worth a quality discount.
+--- True when the piece *occupying* a slot is last expansion's.
 ---
---- Quality is a proxy for how hard a piece was to get, and it stops meaning that
---- the moment the expansion turns over. A levelling character wears last
---- expansion's epic and loots this expansion's green with more item level on it;
---- the quality ladder in compareToSlot makes the green buy back two whole tiers
---- to survive, and sells the better item. What has gone stale is the bar, not
---- the candidate, so the test is on what is equipped.
+--- It decides one thing: which reason a keep against this slot is reported
+--- under. RULE.OUTDATED_EXPAC rather than RULE.EQUIPPABLE says the candidate
+--- won against a bar the game has moved past, which is a different sentence in
+--- the tooltip and a different thing for a player to act on. Nothing about
+--- what is computed depends on it -- see compareToSlot, which used to branch
+--- here and no longer does.
 ---
 --- A timewalking piece is not stale. Its expansion ID is old and its item level
 --- is current, so the ID is the one field that lies about the bar it sets.
 --- Chromie Time gear needs no exemption: it carries no difficulty subtext, and
 --- it scales into the current band, so its bar is honest as it stands.
+---
+--- It tells the truth about what the piece is made of, though: a rescue
+--- asking what the item yields must NOT inherit this exemption. Same field,
+--- two questions, two answers.
+---
+--- Nobody should reach for the other answer casually, either: the candidate in
+--- the bags carries no isTimewalking at all. It is gathered per equipped
+--- inventory slot, at most two per candidate (control.lua:74-100), so testing
+--- it on a candidate would cost a tooltip read for every bag item on every scan.
 ---@param equipped table   One entry from facts.equippedItems
 ---@param settings table
 ---@return boolean
@@ -458,19 +467,27 @@ end
 --- and only gear none of the three claims reaches the vendor. nil means the
 --- slot could not be read at all.
 ---
---- The bar moves a whole margin per quality tier, and the tiers are not
---- symmetric about it:
+--- Two dials, and the ladder they build. `margin` lowers the bar once at every
+--- quality; `qualityMargin` is what one tier is worth. Writing the lowered bar
+--- as `bar = equipped - margin`, the tiers are not symmetric about it:
 ---
----   a tier up or more    KEEP at  equipped - margin
----   same quality         KEEP at  above equipped
----   a tier down or more  KEEP at  above equipped + margin * tiers
+---   a tier up or more    KEEP at  bar - qualityMargin
+---   same quality         KEEP at  bar, or above
+---   a tier down or more  KEEP at  bar + qualityMargin * tiers, or above
 ---
---- So the margin is what one quality tier is worth, not a tolerance at your own
---- tier: at equal quality a piece has to be a strict item level upgrade, and
---- every tier given up is bought back a whole margin at a time. The discount is
---- capped at one margin however far up the ladder the candidate is, while the
---- debt keeps stacking downwards -- quality above what you wear is worth having,
---- but not worth an unbounded item level rebate.
+--- Every branch clears on a match, not only on a beat: a piece that merely
+--- ties the bar is not worse than what you are wearing, and this criterion
+--- condemns only on evidence -- a tie is not evidence of anything. Every tier
+--- given up is bought back a whole qualityMargin at a time. The discount is
+--- capped at one qualityMargin however far up the ladder the candidate is,
+--- while the debt keeps stacking downwards -- quality above what you wear is
+--- worth having, but not worth an unbounded item level rebate.
+---
+--- `qualityMargin` has one position above its range for the case that rebate
+--- deliberately excludes: at enum.QUALITY_MARGIN_ALWAYS the step is unbounded,
+--- so any higher quality is kept whatever its item level and no item level
+--- buys a lower one back. Both halves are the same infinity read in the two
+--- directions, which is why one substitution expresses them.
 ---
 --- Monotonic by construction: the bar never rises as the candidate's quality
 --- rises, so improving either axis can only move a piece towards being kept.
@@ -479,46 +496,46 @@ local function compareToSlot(facts, equipped, settings)
     -- Unknown is not evidence, and must never pass an item towards the vendor.
     if equipped.unreadable then return nil end
 
-    -- A bar set last expansion is answered on item level alone: no margin, no
-    -- quality credit, no tolerance. Everything below this line prices one
-    -- quality tier against some number of item levels, and that trade is exactly
-    -- what a stale bar no longer earns.
-    if equippedIsOutdated(equipped, settings) then
-        if facts.level > equipped.level then
-            return enum.DECISION.KEEP, enum.RULE.OUTDATED_EXPAC
-        end
-        return enum.DECISION.SELL
-    end
-
     local qualityGap = facts.quality - equipped.quality
 
-    -- Emphasis does two things at once, and both are needed to keep the rungs
-    -- evenly spaced: it doubles what a tier costs, and it grants a tolerance at
-    -- the candidate's own tier. Without the second the doubling would leave the
-    -- gap between "same quality" and "one tier down" three times the gap below
-    -- it. Without the first the tolerance alone would only ever be leniency,
-    -- and the point of emphasis is that quality below yours gets dearer too.
+    -- One dial each, and nothing derives one from the other: tolerance moves
+    -- the whole ladder down without changing its spacing, while step is
+    -- asymmetric -- capped at one tier above the slot, uncapped below it (see
+    -- the doc comment above).
     local gear = settings.rules.gear
-    local step = gear.ilvlMargin * (gear.emphasizeQuality and 2 or 1)
-    local tolerance = gear.emphasizeQuality and gear.ilvlMargin or 0
+    local step = gear.qualityMargin
+    -- The multiplication below cannot go indeterminate: that limb runs only
+    -- where qualityGap is negative, so the multiplier is at least 1.
+    if step >= enum.QUALITY_MARGIN_ALWAYS then step = math.huge end
+    local tolerance = gear.margin
     local level = equipped.level - tolerance
 
+    local keep
     if qualityGap > 0 then
-        if facts.level >= level - step then return enum.DECISION.KEEP end
-        return enum.DECISION.SELL
+        keep = facts.level >= level - step
+    elseif qualityGap == 0 then
+        keep = facts.level >= level
+    else
+        -- qualityGap is negative here, so negating it is the number of tiers
+        -- given up, and each one is a whole step the candidate has to make
+        -- back.
+        keep = facts.level >= level + step * -qualityGap
     end
 
-    if qualityGap == 0 then
-        if facts.level > level then return enum.DECISION.KEEP end
-        return enum.DECISION.SELL
-    end
+    if not keep then return enum.DECISION.SELL end
 
-    -- qualityGap is negative here, so negating it is the number of tiers given
-    -- up, and each one is a whole step the candidate has to make back.
-    if facts.level > level + step * -qualityGap then
-        return enum.DECISION.KEEP
+    -- A bar set last expansion is answered by the same two margins as any
+    -- other. That REVERSES what this function used to do -- it read a stale
+    -- bar on item level alone, on the argument that the quality trade "is
+    -- exactly what a stale bar no longer earns" -- and the reversal is
+    -- deliberate: there is one arithmetic in this rule now. Do not restore the
+    -- special case as a fix. What staleness still decides is the reason a keep
+    -- is reported under, because a player reading the tooltip is owed the
+    -- difference between beating what they wear and outliving it.
+    if equippedIsOutdated(equipped, settings) then
+        return enum.DECISION.KEEP, enum.RULE.OUTDATED_EXPAC
     end
-    return enum.DECISION.SELL
+    return enum.DECISION.KEEP
 end
 
 --- What the slots this item could fill make of it.
@@ -559,34 +576,6 @@ function model.CompareToEquipped(facts, settings)
 
     if condemned and not undecided then return enum.DECISION.SELL end
     return nil
-end
-
---- Whether this piece is a lower quality than everything the slot holds, or
---- nil when that cannot be determined.
----
---- Existential and unanimous in the same directions CompareToEquipped is: one
---- equipped piece this beats or matches on quality clears the veto outright,
---- whatever any sibling slot's readability -- but firing the veto the other
---- way needs every equipped piece to be both readable and lower. A single
---- unreadable slot, with nothing else already having cleared the veto, is not
---- evidence that the candidate is worse than what it could not read, so the
---- result is nil rather than true.
----@param facts table
----@param settings table
----@return boolean|nil
-function model.IsLowerQualityThanEquipped(facts, settings)
-    local equipped = facts.equippedItems
-    if not equipped or #equipped == 0 then return false end
-    local unreadable = false
-    for _, item in ipairs(equipped) do
-        if item.unreadable then
-            unreadable = true
-        elseif facts.quality >= item.quality then
-            return false
-        end
-    end
-    if unreadable then return nil end
-    return true
 end
 
 --- What the crawled table predicts about disenchantability, with no bind rules
@@ -638,13 +627,11 @@ end
 --- Whether this copy of the item can still reach anybody but the character
 --- holding it -- an alt, a buyer, a guildmate.
 ---
---- Judged on isBound, not bindType: bindType is the item's rule, isBound is
---- what happened to this copy. A BoE worn once is soulbound for good, and
---- keeping it "for someone else" keeps it for nobody. Warband-bound stays
---- reachable because an alt can take it, and isBindOnAccount is a gathered
---- fact rather than a bindType comparison -- the scanner asks
---- C_Item.IsItemBindToAccount, which covers all three account bind types
---- without this file knowing their numbers.
+--- Judged on isBound alone. Bound is bound: a Warbound piece that has been
+--- equipped is soulbound like any other, so isBindOnAccount is not consulted
+--- here at all once a copy is bound -- it names what the item's bind TYPE
+--- once allowed, not where this particular copy can go now, and reading it
+--- would keep a piece for an alt who can never actually receive it.
 ---
 --- Tri-state, and callers must test it against false rather than for
 --- falsiness: nil is an unread bind state, which is not evidence that nobody
@@ -653,7 +640,7 @@ end
 ---@return boolean|nil  nil when the bind state could not be read
 function model.CanReachAnAlt(facts)
     if facts.isBound == nil then return nil end
-    return facts.isBindOnAccount == true or not facts.isBound
+    return not facts.isBound
 end
 
 --- Whether this item can ever reach an enchanter's hands. Says nothing about
@@ -844,11 +831,16 @@ function model.Decide(facts, settings)
         end
     end
 
-    -- 10. An appearance this collection has never seen. Cross-cutting for the
-    -- same reason step 9 is: a cosmetic can be filed under any class, and
-    -- there is no cosmetic subclass to dispatch on -- both items in #32 are
-    -- weapons, which is how a rule scoped to Armor's Cosmetic (5) came to sell
-    -- an appearance the player had never collected.
+    -- 10. An appearance this collection has never seen. Cross-cutting rather
+    -- than filed under the gear criterion -- #32's own shape is told in full
+    -- at control.lua's isCosmetic gather and rules.lua's Armor criterion.
+    -- What is only argued here is why it has to sit above the
+    -- class-proficiency question rather than move into judgeGear: cosmetic
+    -- armor already has an explicit exception in IsEquippableBy, so it is
+    -- never charged NOT_EQUIPPABLE there, but cosmetic weapons have no such
+    -- exception -- filed inside judgeGear, an off-class cosmetic weapon would
+    -- carry that charge to step 8 and lose its uncollected appearance unless
+    -- another rescue happened to catch it first.
     --
     -- Selling one is irreversible in a way nothing else in this cascade is: an
     -- unsold item can be sold next visit, and a destroyed appearance cannot be

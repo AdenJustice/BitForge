@@ -3,9 +3,9 @@ if GetLocale() ~= "deDE" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["panel:title"] = "Untermine-Paketdienst"
+L["panel:title"] = "Undermine Parcel Service"
 L["settings:enabled"] = "UPS aktivieren"
-L["settings:enabledTooltip"] = "Handwerksreagenzien bei einem Bankbesuch in der Kriegsmeutebank verstauen"
+L["settings:enabledTooltip"] = "Handwerksreagenzien bei einem Bankbesuch in der Kriegsmeutenbank verstauen"
 L["settings:previewMoves"] = "Vor dem Verstauen anzeigen"
 L["settings:previewMovesTooltip"] = "Ein Bestätigungsfenster mit allen Bewegungen anzeigen, bevor etwas verstaut wird"
 L["settings:onlyWantedReagents"] = "Nur verwendbare Reagenzien einlagern"
@@ -16,20 +16,20 @@ L["btn:depositing"] = "Verstaue… %d"
 
 L["preview:title"] = "Verstauen bestätigen"
 L["preview:summary"] = "%d Gegenstand/Gegenstände in %d Bewegung(en)"
-L["preview:toWarband"] = "→ Kriegsmeutebank"
+L["preview:toWarband"] = "→ Kriegsmeutenbank"
 L["preview:dontAskAgain"] = "Nicht erneut fragen"
 L["btn:confirm"] = "Bestätigen"
 L["btn:cancel"] = "Abbrechen"
 
 L["msg:nothingToDo"] = "UPS: Nichts zu verschieben."
 L["msg:done"] = "UPS: Fertig. %d Gegenstand/Gegenstände verschoben."
-L["msg:noVacancy"] = "UPS: Die Kriegsmeutebank ist voll."
-L["msg:blockedCombat"] = "UPS: Abgebrochen — du bist im Kampf."
+L["msg:noVacancy"] = "UPS: Die Kriegsmeutenbank ist voll."
+L["msg:blockedCombat"] = "UPS: Abgebrochen — Ihr seid im Kampf."
 L["msg:blockedBankClosed"] = "UPS: Abgebrochen — die Bank wurde geschlossen."
-L["msg:blockedCursor"] = "UPS: Abgebrochen — du hältst etwas am Cursor."
+L["msg:blockedCursor"] = "UPS: Abgebrochen — Ihr haltet etwas am Cursor."
 L["msg:blockedLocked"] = "UPS: Abgebrochen — ein Gegenstand ist gesperrt."
 L["msg:moveFailed"] = "UPS: Abgebrochen — eine Bewegung wurde nicht abgeschlossen."
-L["msg:openProfession"] = "UPS: Öffne einmal dein %s-Fenster, damit UPS erfassen kann, welche Rezepte du kennst."
+L["msg:openProfession"] = "UPS: Öffnet einmal Euer %s-Fenster, damit UPS erfassen kann, welche Rezepte Ihr kennt."
 
 -- Curation window
 L["curation:title"] = "UPS — Gegenstandsverwaltung"
@@ -42,18 +42,18 @@ L["curation:sourceBuiltIn"] = "Dieser Charakter"
 L["curation:count"] = "%d Gegenstand/Gegenstände"
 L["curation:unscanned"] = "Nie nach Rezepten durchsucht: %s. Bis dahin gilt jedes Rezept ihrer Berufe als benötigt und wird verstaut."
 L["curation:heldBy"] = "Im Besitz von"
-L["curation:overrideTooltip"] = "Dieses Ziel hast du selbst gewählt. Setze es zurück, um wieder den Regeln zu folgen."
+L["curation:overrideTooltip"] = "Dieses Ziel habt Ihr selbst gewählt. Setzt es zurück, um wieder den Regeln zu folgen."
 
 -- Destinations
-L["dest:warband"] = "Kriegsmeutebank"
+L["dest:warband"] = "Kriegsmeutenbank"
 L["dest:private"] = "Eigene Bank"
 L["dest:privateOwned"] = "Eigene Bank (%s)"
 L["dest:ignore"] = "Unangetastet lassen"
 
 -- Private destination
 L["preview:toPrivate"] = "→ Eigene Bank"
-L["preview:reclaim"] = "Kriegsmeutebank → Eigene Bank"
-L["msg:noVacancyPrivate"] = "UPS: Deine Bank ist voll."
+L["preview:reclaim"] = "Kriegsmeutenbank → Eigene Bank"
+L["msg:noVacancyPrivate"] = "UPS: Eure Bank ist voll."
 L["curation:privateTooltip"] = "Wird in der eigenen Bank eines Charakters aufbewahrt statt im gemeinsamen Lager. Ohne festgelegten Besitzer beansprucht es der erste Charakter, der eine Bank besucht."
 
 -- Target quantity

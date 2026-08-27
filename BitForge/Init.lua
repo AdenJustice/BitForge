@@ -28,12 +28,23 @@ local enum = {
         -- see model.ReleaseNotesSince. Seeded as an empty string rather than
         -- left absent so SeedDefaults always has something to write and an
         -- existing profile picks the key up on its next login.
+        --
+        -- reportWindowPoint is the report window's last dragged position --
+        -- the report window only, per issue #312; What's New is read once
+        -- after an update and never worked in -- in the { point, relPoint, x,
+        -- y } shape BitForge_Openables already stores its button's position
+        -- in, because an anchor pair survives a resolution change where a raw
+        -- screen offset would not. Seeded false rather than left absent, so
+        -- SeedDefaults still has something to write for an existing profile.
+        -- false means "never dragged," exactly the state the window's own
+        -- CENTER anchor already describes, so ShowReport leaves it alone.
         global = {
-            knownCharacters  = {},
-            characterClasses = {},
-            minimapPos       = 45,
-            professions      = {},
-            lastSeenVersion  = "",
+            knownCharacters   = {},
+            characterClasses  = {},
+            minimapPos        = 45,
+            professions       = {},
+            lastSeenVersion   = "",
+            reportWindowPoint = false,
         },
         modules = {},
     },
@@ -110,6 +121,11 @@ BitForge.Events = {
     BAG_UPDATE_DELAYED     = "BAG_UPDATE_DELAYED",
     ITEM_DATA_LOAD_RESULT  = "ITEM_DATA_LOAD_RESULT",
     EQUIPMENT_SETS_CHANGED = "EQUIPMENT_SETS_CHANGED",
+
+    -- A bag slot locking or unlocking. Distinct from BAG_UPDATE_DELAYED: an
+    -- interrupted cast unlocks its slot without changing what is in any bag,
+    -- so it is the only signal that a hold on an in-flight item should release.
+    ITEM_LOCK_CHANGED      = "ITEM_LOCK_CHANGED",
 
     -- Announces that a sparse or cache tooltip lookup has resolved. Distinct
     -- from ITEM_DATA_LOAD_RESULT: item data and tooltip data are two caches, and

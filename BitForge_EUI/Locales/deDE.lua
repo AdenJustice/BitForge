@@ -13,7 +13,7 @@ L["cmd:helpCapture"] = "capture -- die aktuelle Geometrie von EllesmereUI speich
 L["cmd:helpList"] = "list [-u] [Text] -- positionierbare Elemente auflisten"
 L["cmd:helpListUnmanaged"] = "  -u -- nur Elemente, die das gespeicherte Layout nicht verwaltet"
 L["cmd:helpReset"] = "reset [anchors] -- das gespeicherte Layout verwerfen"
-L["cmd:deprecated"] = "/bfeui ist veraltet -- benutze stattdessen /bitforge eui"
+L["cmd:deprecated"] = "/bfeui ist veraltet -- benutzt stattdessen /bitforge eui"
 
 L["error:noEllesmere"] = "EllesmereUI ist nicht geladen"
 L["error:noRegistry"] = "Die Elementliste von EllesmereUI ist nicht verfügbar"
@@ -46,23 +46,23 @@ L["list:noPosition"] = "keine Position"
 L["list:readFailed"] = "%s (Lesen fehlgeschlagen)"
 
 L["capture:result"] = "%d Element(e) erfasst"
-L["capture:seeded"] = "Erster Start: dein aktuelles Layout wurde gespeichert (%d Elemente). Es wurde nichts verschoben."
+L["capture:seeded"] = "Erster Start: Euer aktuelles Layout wurde gespeichert (%d Elemente). Es wurde nichts verschoben."
 
 L["unlock:attachedWarning"] = "%d Element(e) sind angeheftet. Sie hier zu ziehen löst die Anheftung."
 L["unlock:noLongerAttached"] = "Nicht mehr angeheftet: %s"
 
-L["reset:confirm"] = "Dies verwirft dein gespeichertes Layout. Führe 'reset confirm' aus, um fortzufahren."
+L["reset:confirm"] = "Dies verwirft Euer gespeichertes Layout. Führt 'reset confirm' aus, um fortzufahren."
 L["reset:done"] = "Gespeichertes Layout verworfen. Es wird beim nächsten Anmelden aus EllesmereUI neu aufgebaut."
-L["reset:anchorsConfirm"] = "Dies löscht auch deine Ankerdefinitionen, die NICHT wiederhergestellt werden können. Führe 'reset anchors confirm' aus, um fortzufahren."
+L["reset:anchorsConfirm"] = "Dies löscht auch Eure Ankerdefinitionen, die NICHT wiederhergestellt werden können. Führt 'reset anchors confirm' aus, um fortzufahren."
 L["reset:anchorsDone"] = "Gespeichertes Layout und Ankerdefinitionen verworfen."
 
 L["anchor:badTable"] = "Anker '%s' ist keine Tabelle"
 L["anchor:badSize"] = "Anker '%s' benötigt ein positives w und h; ohne sie hat er keine Kanten"
-L["anchor:collides"] = "Anker '%s' kollidiert mit einem vorhandenen EllesmereUI-Element (%s); benenne ihn um"
+L["anchor:collides"] = "Anker '%s' kollidiert mit einem vorhandenen EllesmereUI-Element (%s); benennt ihn um"
 
 L["ui:title"] = "BitForge-Layout"
 L["ui:filter"] = "Suche"
-L["ui:notReady"] = "Dein Layout wird noch gelesen -- versuche es gleich erneut"
+L["ui:notReady"] = "Euer Layout wird noch gelesen -- versucht es gleich erneut"
 L["ui:markAttachedEui"] = "[verankert]"
 L["ui:markAttachedBitForge"] = "[angeheftet]"
 L["ui:markHidden"] = "[verborgen]"
@@ -94,5 +94,7 @@ L["ui:anchorDeleteConfirm"] = "Ankerrahmen '%s' löschen? Ankerdefinitionen exis
 L["ui:anchorKeyEmpty"] = "Ein Ankerrahmen benötigt einen Schlüssel"
 L["ui:anchorKeyTaken"] = "Ein Ankerrahmen namens '%s' existiert bereits"
 
-L["apply:deferredCombat"] = "Im Kampf -- das Layout wird angewendet, sobald du ihn verlässt"
+L["apply:deferredCombat"] = "Im Kampf -- das Layout wird angewendet, sobald Ihr ihn verlasst"
 L["apply:deferredDone"] = "Kampf beendet: %d angewendet, %d unverändert"
+
+L["report:blurb"] = "Dieser Bericht enthält Bezeichnung und Ordner eines EllesmereUI-Elements, ob es an ein anderes Element und an welcher Seite verankert ist, seine gespeicherte Position und Größe, sowie ob das gespeicherte Layout es verwaltet. Nichts hier nennt Euren Charakter, Euren Realm, Eure Gilde oder Eure Fraktion."

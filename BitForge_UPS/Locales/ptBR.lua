@@ -3,7 +3,7 @@ if GetLocale() ~= "ptBR" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["panel:title"] = "Serviço de Encomendas de Kaz'Mina"
+L["panel:title"] = "Undermine Parcel Service"
 L["settings:enabled"] = "Ativar UPS"
 L["settings:enabledTooltip"] = "Depositar reagentes de profissão no Banco do Bando de Guerra ao visitar um banco"
 L["settings:previewMoves"] = "Pré-visualizar antes de depositar"

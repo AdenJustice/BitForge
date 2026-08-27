@@ -23,6 +23,11 @@
 ## AddonCompartmentFuncOnLeave: BitForge_OnAddonCompartmentLeave
 
 Init.lua
+# LibDeflate's header self-registers with LibStub when it finds one already
+# loaded, so LibStub has to load first -- this order is load-bearing, not
+# alphabetical.
+Libs\LibStub\LibStub.lua
+Libs\LibDeflate\LibDeflate.lua
 ReagentData.lua
 ReleaseNotes.lua
 Locales\enUS.lua
@@ -36,6 +41,7 @@ Locales\ptBR.lua
 Locales\ruRU.lua
 Locales\zhCN.lua
 Locales\zhTW.lua
+APIs/Compress.lua
 APIs/Settings.lua
 APIs/UI/Core.lua
 APIs/UI/Templates/Frame.lua

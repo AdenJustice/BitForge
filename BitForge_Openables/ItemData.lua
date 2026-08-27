@@ -63,6 +63,14 @@ enum.ALLOW_LIST = {
     [147860] = PRIORITY.LEARN, -- Empowered Elven Tome
     [151638] = PRIORITY.OPEN,  -- Leprous Sack of Pet Supplies
     [166999] = PRIORITY.OPEN,  -- Treasure Map
+    -- Consumable/Generic, which the class rules deny wholesale: the client
+    -- prints it "Explosives and Devices" and fills it with gadgets. These are
+    -- upstream's openables in it, and the crest packs below need this entry
+    -- rather than merely benefiting from it -- their Use: line collects a
+    -- currency, so no loot window opens, hasLoot is false and no openable line
+    -- is drawn.
+    [170502] = PRIORITY.OPEN,  -- Waterlogged Toolbox
+    [170505] = PRIORITY.OPEN,  -- Grimy Manaperal Bracelet
     [186520] = PRIORITY.OPEN,  -- Chest of Playtest Equipment
     [189707] = PRIORITY.OPEN,  -- Pocopoc's Bronze and Gold Body
     [193205] = PRIORITY.OPEN,  -- Ohuna Companion Color: Brown
@@ -181,6 +189,12 @@ enum.ALLOW_LIST = {
     [226145] = PRIORITY.OPEN,  -- Minor Spool of Eternal Thread
     [226258] = PRIORITY.OPEN,  -- Delver's Pouch of Reagents
     [229353] = PRIORITY.OPEN,  -- Rage-Filled Idol
+    [231153] = PRIORITY.OPEN,  -- Triumphant Satchel of Carved Undermine Crests
+    [231154] = PRIORITY.OPEN,  -- Celebratory Pack of Runed Undermine Crests
+    [231264] = PRIORITY.OPEN,  -- Glorious Cluster of Gilded Undermine Crests
+    [231267] = PRIORITY.OPEN,  -- Pouch of Weathered Undermine Crests
+    [231269] = PRIORITY.OPEN,  -- Satchel of Carved Undermine Crests
+    [231270] = PRIORITY.OPEN,  -- Pack of Runed Undermine Crests
     [232981] = PRIORITY.TOKEN, -- GNZ Airmaster 9000
     [233071] = PRIORITY.OPEN,  -- Delver's Bounty
     [233555] = PRIORITY.OPEN,  -- Restored Coffer Key
@@ -202,6 +216,30 @@ enum.DENY_LIST = {
     -- Queen's Conservatory node, so away from that node the button offers a
     -- click that does nothing, and no API says so.
     [178880] = true, -- Superior Loyal Spirit
+    -- Reported through #265, in one capture. Each carries a plain Use: line in
+    -- a class pair the rules deliberately leave open -- Consumable/Other for
+    -- the conduits and reputation tokens that live there, Miscellaneous/Junk
+    -- and Tradegoods/Cloth for the same reason -- and nothing in the tooltip or
+    -- in any API tells them apart from an openable. Two carry a reputation
+    -- requirement rather than a trade skill one, so the profession-tool branch
+    -- does not reach them either.
+    --
+    -- Data rather than a rule, and deliberately so: a rule wide enough to catch
+    -- these would empty the pairs they sit in. Retire an entry when the
+    -- detection improves enough to answer for it.
+    [45896]  = true, -- Unbound Fragments of Val'anyr
+    [63359]  = true, -- Banner of Cooperation
+    [86425]  = true, -- Cooking School Bell
+    [128503] = true, -- Master Hunter's Seeking Crystal
+    [136856] = true, -- Songs of Peace
+    [164733] = true, -- Synchronous Thread
+    [181469] = true, -- Indelible Victory
+    [182653] = true, -- Larion Treats
+    [190644] = true, -- Vessel of Profound Possibilities
+    [225692] = true, -- Glowglow Cap
+    [226107] = true, -- Homebrewed Blink Vial
+    [243144] = true, -- Reshii Crystal Fragments
+    [244193] = true, -- L00T RAID-R Mini
 }
 
 -- [itemID] = minimum stack size. Some items do nothing until enough of them

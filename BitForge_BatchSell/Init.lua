@@ -157,17 +157,17 @@ local enum = {
     -- explaining it lives in L["tooltip:charOverride"].
     CHAR_OVERRIDE_MARK = "!",
 
-    -- The slot comparison's margin, in item levels. Zero is a real setting --
-    -- every tolerance collapses and quality drops out, leaving item level alone
-    -- to decide -- so the range starts there rather than at the step.
-    ILVL_MARGIN_MIN = 0,
-    ILVL_MARGIN_MAX = 30,
-    ILVL_MARGIN_STEP = 2,
+    -- The quality margin's slider position above its 0-30 range, and not a
+    -- number of item levels: model.compareToSlot reads it as the step
+    -- unbounded, which keeps any higher quality whatever its item level and
+    -- lets no item level buy a lower one back. Stored as the position rather
+    -- than as a large number so the track's own arithmetic stays honest.
+    QUALITY_MARGIN_ALWAYS = 32,
 
     -- Bumped whenever the stored shape changes incompatibly. Every version
     -- needs a migration step registered in control.lua; core refuses to start
     -- the module against a shape nothing converted.
-    SCHEMA_VERSION = 8,
+    SCHEMA_VERSION = 11,
 }
 ns.enum = enum
 

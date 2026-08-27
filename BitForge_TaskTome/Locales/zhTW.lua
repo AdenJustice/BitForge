@@ -3,9 +3,9 @@ if GetLocale() ~= "zhTW" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["status:widgetTitle"] = "任務冊"
+L["status:widgetTitle"] = "Task Tome"
 
-L["settings:configTitle"] = "任務冊 — 設定"
+L["settings:configTitle"] = "Task Tome — 設定"
 L["btn:addRootTask"] = "新增根任務"
 L["btn:addChildTask"] = "新增子任務"
 L["btn:deleteTask"] = "刪除任務"
@@ -31,7 +31,7 @@ L["btn:confirmDelete"] = "刪除"
 L["btn:cancel"] = "取消"
 L["msg:nameRequired"] = "任務名稱不能為空。"
 
-L["settings:taskTomePanel"] = "任務冊"
+L["settings:taskTomePanel"] = "Task Tome"
 L["settings:config"] = "設定"
 L["settings:openConfig"] = "開啟"
 

@@ -21,7 +21,14 @@ local DB_DEFAULTS = {
         -- model.RecordCurationReview.
         curationReview = {},
     },
-    char = {},
+    char = {
+        -- [parentProfessionName] = { [professionName] = skillLevel }, one entry
+        -- per expansion's line. Char-scoped because a rank is the character's
+        -- own, and nested rather than flat so a re-harvest can replace one
+        -- profession's lines wholesale -- a merge would keep a line the player
+        -- has since dropped, and nothing reports that.
+        professionRanks = {},
+    },
 }
 local db
 
@@ -144,12 +151,44 @@ function model.IsDeferred(itemID)
     return model.deferred[itemID] == true
 end
 
+--- Send this item to the back of the queue, and start a new round when it was
+--- already at the back.
+---
+--- Deferring twice is the wrap: every other candidate has been clicked through
+--- to get back here. Leaving the flag set would change no state at all, and
+--- model.Rank is deterministic over bags that have not moved -- so the next
+--- scan would return this same item, and every click after it.
 function model.Defer(itemID)
+    if model.deferred[itemID] then
+        wipe(model.deferred)
+    end
     model.deferred[itemID] = true
 end
 
 function model.ClearDeferred()
     wipe(model.deferred)
+end
+
+-- What the last click acted on, while its use is still resolving. Session
+-- state like model.deferred: nothing persists it, and a fresh login starts
+-- with an empty button anyway.
+local inFlight
+
+--- Mark what a click acted on, so the scan it triggers does not repaint.
+---
+--- Separate from Defer even though the same click sets both: the deferral is
+--- durable and outlives the round, while this lives only until the use
+--- resolves.
+function model.MarkInFlight(itemID)
+    inFlight = itemID
+end
+
+function model.InFlightItem()
+    return inFlight
+end
+
+function model.ClearInFlight()
+    inFlight = nil
 end
 
 -- Every hand-curated table in ItemData.lua is a standing bet that the API cannot
@@ -187,6 +226,27 @@ function model.SetPoint(point, relPoint, x, y)
     stored.point, stored.relPoint, stored.x, stored.y = point, relPoint, x, y
 end
 
+--- Every expansion line this character has been seen to hold, by profession.
+---
+--- The stored table itself rather than a copy: detector.RefreshProfessions
+--- walks it on every skill-line change and at startup, and callers only read.
+---@return table<string, table<string, number>>
+function model.GetProfessionRanks()
+    return db.char.professionRanks
+end
+
+--- Replaces one profession's lines with what the client just stated.
+---
+--- Wholesale rather than merged. A rank only ever rises, so merging looks safe
+--- -- but the client stops reporting a line the player has dropped, and a merge
+--- would keep answering requirements with it forever.
+---@param parentName string
+---@param lines table<string, number>
+function model.SetProfessionRanks(parentName, lines)
+    if not parentName then return end
+    db.char.professionRanks[parentName] = lines
+end
+
 -- Pure: no API calls, no frame access. Cooldown and deferral state arrive as
 -- candidate fields so this stays testable outside the game.
 function model.Rank(candidates)
@@ -195,8 +255,9 @@ function model.Rank(candidates)
         -- has already happened, and the whole point of it is that the next
         -- click reaches something else. It rejects nothing -- once every
         -- candidate is deferred the key is equal across the field, drops out of
-        -- the comparison, and the ordinary order resumes. That is the round
-        -- starting over, with no reset logic to run.
+        -- the comparison, and the ordinary order resumes, which is what puts
+        -- the wrapped round back on its first item. model.Defer clears the
+        -- field on that item's next click; ranking holds no reset of its own.
         if left.deferred ~= right.deferred then
             return not left.deferred
         end

@@ -102,3 +102,6 @@ L["ui:anchorKeyTaken"] = "An anchor frame named '%s' already exists"
 -- the outcome once combat ends and the retry runs.
 L["apply:deferredCombat"] = "In combat -- the layout will be applied when you leave it"
 L["apply:deferredDone"] = "Combat ended: applied %d, unchanged %d"
+
+-- The report window's footnote for /bfdump eui <key>.
+L["report:blurb"] = "This report carries one EllesmereUI element's label and folder, whether it is anchored to another element and to which side, its saved position and size, and whether the saved layout manages it. Nothing here names your character, realm, guild or faction."

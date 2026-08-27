@@ -11,16 +11,16 @@
 -- gone, not missing: CHANGELOG.md still has them, this table never will.
 --
 -- `lead` IS OPTIONAL. It is a bullet's bold prefix, where the source bullet
--- had one; 3 of the 73 items below have none, so a consumer
+-- had one; 3 of the 101 items below have none, so a consumer
 -- must not assume every item carries one.
 --
 -- `sep` IS THE SEPARATOR THE CHANGELOG WROTE between a lead and the rest of
 -- the bullet -- an em dash or a colon, recorded rather than dropped. ABSENT
--- MEANS THE SOURCE WROTE NEITHER, not that one went missing: 64 of the
--- 70 leads below have no `sep`, and supplying one for those strands a
+-- MEANS THE SOURCE WROTE NEITHER, not that one went missing: 97 of the
+-- 98 leads below have no `sep`, and supplying one for those strands a
 -- predicate with nothing in front of it ("BatchSell -- now asks ...").
 --
--- 5 releases, 73 items, v12.1.0.7 down to v12.1.0.3.
+-- 5 releases, 101 items, v12.1.0.8 down to v12.1.0.4.
 
 ---@class BitForge.Core
 local ns = select(2, ...)
@@ -29,6 +29,56 @@ local ns = select(2, ...)
 local enum = ns.enum
 
 enum.RELEASE_NOTES = {
+    {
+        version = "v12.1.0.8",
+        date = "2026-08-27",
+        sections = {
+            {
+                heading = "Changed",
+                items = {
+                    { lead = "/bfdump batchsell opens a window you can copy out of.", text = "It used to write its record into the saved variables, so getting it to us meant setting a debug flag by hand, running the command, reloading, opening SavedVariables/BitForge.lua in a text editor and pasting a Lua table — which is why almost nobody ever did. It now renders the record straight into the same window the report button uses: select, copy, paste. Nothing is written to disk, so the diagnostics flag no longer has to be on for the command to answer, and each report still states what it discloses before you send it. The other modules follow." },
+                    { lead = "Every /bfdump now opens that window", sep = "—", text = "Openables and the EllesmereUI helper as well as BatchSell, and each with its own footnote saying what that particular report discloses. A diagnostic dump opens under its own title rather than borrowing the item report's, since a bag's ranked list or a frame's position is not an item. /bfdump dev recipes is the one exception and keeps writing to the saved variables: a whole profession is a quarter of a megabyte, and it exists to be carried out of the game as a file rather than read." },
+                    { lead = "A diagnostic too long to read is compressed instead.", text = "The bag-walking dumps run to hundreds of lines of tooltip text nobody was ever going to read — just select and paste. Above a few thousand characters the window now shows a single compressed line instead, and the footnote says so: paste it exactly as it is and the developer's tools unpack it. Reports short enough to read are untouched and stay readable, which is the whole point of the window." },
+                    { lead = "The report window stays where you put it.", text = "Drag it somewhere that suits your screen and it opens there next time, for every character on the account. It only remembers the report window — the What's New popup still opens where it always did." },
+                    { lead = "BatchSell sells a toy once you have collected it.", text = "Mounts, battle pets and housing decor were already judged on whether your collection has them; toys were the one kind left out, so a toy already in your toy box sat in your bags forever. It is sold only once the copy in your bags is bound — an unbound one is kept whatever your collection says, because it can still reach someone who wants it. On by default, and switchable in the Rules window beside the other three." },
+                    { lead = "BatchSell's gear comparison now has two dials instead of one.", text = "\"Item Level Margin\" was named for item levels but priced a quality tier, and \"Emphasize Quality\" doubled it and granted a tolerance of the same size — one slider doing two jobs, and a checkbox you could not have one without the other of. They are replaced by a margin, which is how far under the slot a piece of your own quality may sit, and a quality margin, which is what one quality tier is worth in item levels. Either can be set to 0 on its own: no tolerance, or quality stops counting and item level alone decides. Your existing settings for these two are reset to the new defaults, which reproduce the comparison BitForge shipped with — so if you never touched them, nothing changes. If you had raised the old margin, gear a quality tier above what you wear will now be sold more readily than before until you set the quality margin back where you want it." },
+                    { lead = "And the two checkboxes above them are gone.", text = "\"Compare Item Level\" and \"Compare Quality\" have left the Rules window, so the two dials are now the whole of the comparison. The first only said whether the two sliders beside it applied at all, and its own description was wrong about what turning it off did; the second sold any piece of lower quality than what you have equipped, whatever its item level. If you had either set away from its default, gear will be judged differently for you from now on — the item level comparison can no longer be switched off, and instead of an outright quality veto a lower quality piece now has to make the difference up in item levels, at the price the quality margin sets. If you left both alone, nothing changes." },
+                    { lead = "BatchSell's quality margin gained an \"Always\" setting.", text = "Past the top of the slider there is now one more position, and it is not a number of item levels: set there, gear of a higher quality than what you have equipped is kept whatever its item level, and no amount of item level saves a piece of lower quality. It is the outright quality preference the retired \"Compare Quality\" tick used to give, now on the same dial as everything else it competes with. The slider also runs to 30 rather than 20, matching the item level margin beside it." },
+                    { lead = "Gear that matches what you are wearing is kept rather than sold.", text = "Every item level comparison in the rule was \"strictly better\"; it is now \"at least as good\". At the default margin of 0, a piece level with the slot is kept instead of vendored, and a piece a tier below only has to make the quality margin up exactly rather than exceed it. Quality itself is unchanged — this is about item levels alone." },
+                    { lead = "A piece from a finished expansion is now weighed by the same two dials as anything else.", text = "BitForge v12.1.0.7 said the opposite — that such a piece \"sets its bar on item level alone, no margin, no quality discount\" — and that is withdrawn. There is one comparison in the rule again, and what a finished-expansion piece still changes is the reason you are told: the tooltip says you outlived that bar rather than merely beat it. If you are levelling in last expansion's gear, expect this to matter: at the shipped defaults, this expansion's rare has to beat a finished-expansion epic by the quality margin rather than by a single item level. Setting the quality margin to 0 restores the v12.1.0.7 behaviour, for every comparison rather than only that one." },
+                    { lead = "German now addresses you the way the game does.", text = "The client is consistently formal — Eure Taschen sind voll — and BitForge was mixing that with the familiar du, sometimes inside a single window: BatchSell's settings block was formal while the rule window beside it was not." },
+                    { lead = "Each module keeps its name in every language.", text = "Openables, RepRank, Task Tome, AutoBalance and Undermine Parcel Service were being translated as though they were descriptions, which is how UPS ended up named after Undercity in French, Azeroth in Chinese and Kaz'Mina in Portuguese — three places, none of them Undermine." },
+                    { lead = "BatchSell stops calling one thing two names inside a single language.", text = "Mexican Spanish used two different verbs down one column of checkboxes; Russian split quality between two words and crafting between two more; Chinese had two words for collecting and two for artifact relics; Portuguese, Italian and Traditional Chinese each named dyes, decor or holiday items differently in the settings than in the rules that describe them." },
+                    { lead = "BatchSell speaks the game's own vocabulary in every language.", text = "A Russian setting told you to turn it on under exactly the condition it should be left off. Korean named the sell-list tab and the always-sell tab identically, called Skinning by a word the game does not use, and described item enhancements as arcane power. Six languages narrowed \"enhancements\" to enchants alone, contradicting the line directly above them. Chinese called heirlooms \"retro\", used patch where it meant expansion, and used the verb for reporting a player to Blizzard. Spanish called crafting reagents chemical reagents, in three different ways within one file. Around ninety strings in all." },
+                    { lead = "The report window and the minimap hint say the right thing in Chinese, German and Russian.", text = "The Chinese title used the verb for reporting someone to the authorities, the German instructions named a key German keyboards do not have (Ctrl, not Strg), and the Russian minimap hint pointed at the wrong word for settings. French now names its own button correctly in the line above it." },
+                    { lead = "AutoBalance:", text = "the gold target says \"your bags\" in the words each client uses for bags, and the Russian checkbox reads as a setting to turn on rather than a section heading." },
+                    { lead = "Openables in Portuguese no longer reads as though it destroys things.", text = "Blacklisting was worded with the verb the game uses for delete, so \"Ctrl + right-click to permanently exclude\" invited exactly the wrong reading. Spanish, French and Chinese also get the module's own name and its report wording corrected." },
+                    { lead = "TaskTome in Russian calls a task a task.", text = "It used the word the Russian client reserves for quests, which made every tracked item look like one." },
+                    { lead = "BatchSell:", text = "the two Bind on Account / Bind on Equip sparing settings explain themselves. They described \"unbound Bind on Account gear\", which reads in English only because Bind on Account is a name — every other language rendered it as \"unbound bound gear\". They now say what the state is: gear kept while it can still be passed on." },
+                    { lead = "The Warband is called what the game calls it", text = ", in every language and every module. Ten of the eleven locales had invented their own word for it, and several used a different invention in each module — Korean alone had three (워밴드, 전투부대, 전쟁부대) for the one thing the game calls 전투부대. The names now match what you read on the bank itself." },
+                    { lead = "BatchSell:", text = "the German and Italian Rules window no longer names one thing two ways — the line listing recipe types and the explanation under it used different words for \"pattern\", on two lines that sit next to each other." },
+                    { lead = "BatchSell:", text = "in the Rules window, \"Keep this expansion's unless no recipe wants it\" now greys out while \"Keep everything from this expansion\" is ticked above it — for consumables and for gems alike. It could be ticked before and changed nothing, because the broader rule had already kept the item." },
+                },
+            },
+            {
+                heading = "Fixed",
+                items = {
+                    { lead = "Keeping gear for an enchanter now asks what it would turn into.", text = "\"Keep Disenchantable Gear\" was on-or-off, so a Classic-era green was kept forever by a rule whose whole argument is that somebody wants the materials — and nobody wants those. It becomes a choice of current materials, any materials, or don't keep, worded about the materials because that is what a disenchant actually gives you: gear from a finished expansion yields that expansion's materials, however current its item level looks. Your existing setting is carried across unchanged — if it was on you keep everything, exactly as before, until you narrow it yourself. A new character starts on current materials. Your own enchanter still keeps what only they can reach at any setting; what this decides is whether that reaches older materials too." },
+                    { lead = "Warband gear you have already equipped is no longer treated as though an alt could still take it.", text = "A Warbound piece moves freely between your characters until you equip it, and equipping binds it for good — but BatchSell was still reading it as account-bound afterwards, so a worn piece was kept for an alt's enchanter, and a bound Warbound reagent was weighed against every profession on the account rather than the one holding it. Once something is bound, it is bound." },
+                    { lead = "BatchSell no longer sells a bound piece when the game has not said whether it is Warbound.", text = "The three rules that keep gear for somebody else each worked out separately whether a copy could still leave you, and one of them read an unanswered question as a no — so a soulbound item the game had not finished describing could be vendored as outclassed. There is one answer to that question now, and where it cannot be answered nothing is sold on it." },
+                    { lead = "Openables:", text = "the button stops flickering past an item when what you clicked has a cast time. Clicking it moved the button on, and then moved it on again when the cast finished — so the item it showed in between was never really offered. It now holds still until the use resolves and moves on once." },
+                    { lead = "Openables:", text = "an item you cannot use yet is not offered. Something waiting on a part you have not looted, a level you have not reached or a currency you have not saved was being put on the button on nothing more than the fact that it does something — an egg that combines with a second half you do not have, for instance. It appears the moment it becomes usable. Items recognised for what they are rather than for having a use — toys, recipes, appearances, anything that opens — are unaffected." },
+                    { lead = "Openables:", text = "a toy you have not collected yet is offered as something to learn. One whose tooltip describes what it does rather than announcing itself as a toy — a teleport key, say — was being read as junk and hidden. Once it is in your toy box it goes back to being hidden, since the copy in your bags has nothing left to give." },
+                    { lead = "Openables:", text = "profession knowledge items appear again. They had stopped, because the client reports every profession in the game at rank zero when asked by skill line — including the ones your character actually has — so nothing could be recognised as yours. The rank now comes from the API that states it." },
+                    { lead = "Openables:", text = "thirteen more items that were never openable stop appearing on the button — a guild banner, a cooking bell, a conduit, a music roll, a blink vial and the rest of one player's report. They are listed by name rather than caught by a rule, because any rule wide enough to catch them would also hide the conduits and reputation tokens they sit beside." },
+                    { lead = "Openables:", text = "gadgets stay off the button — repair bots, target dummies, time displacers, remote auction house access and the rest of the category the game files them under. The handful of real containers that share it are unaffected." },
+                    { lead = "Openables:", text = "baits, lures and other profession tools stay off the button whether or not your character has learned the profession. One gated on a profession you do not have was offered as something to open — the case where it is least useful, since you cannot use it at all." },
+                    { lead = "Openables:", text = "a character who has learned no professions is no longer offered every oddment in their bags as something to study." },
+                    { lead = "Openables:", text = "the button keeps moving on however long you go. Clicking through your items advanced once through the whole set and then stuck on the first one, and only logging out or reloading started it moving again." },
+                },
+            },
+        },
+    },
     {
         version = "v12.1.0.7",
         date = "2026-08-27",
@@ -176,33 +226,6 @@ enum.RELEASE_NOTES = {
                 heading = "Fixed",
                 items = {
                     { lead = "BatchSell:", text = "the list of items that cannot be disenchanted was badly incomplete — about 2,000 entries where the real figure is over 15,000. Shirts, tabards, rings, trinkets, cloaks and every cosmetic item were missing entirely, so BatchSell treated them as disenchantable and offered them for sale on that basis. All of them are now recognised." },
-                },
-            },
-        },
-    },
-    {
-        version = "v12.1.0.3",
-        date = "2026-08-21",
-        sections = {
-            {
-                heading = "Added",
-                items = {
-                    { lead = "BatchSell", sep = "—", text = "your blacklist and whitelist are now readable from the merchant window. The sell list gained tabs, so you can see everything on each list, remove entries one at a time, and watch the sell list re-decide immediately. Previously the lists were write-only: you could add an item but the only way back was resetting a whole list." },
-                    { lead = "BatchSell", sep = "—", text = "drag an item from your bags onto the sell list to sell it on this visit only. It is forgotten when you close the merchant, and it never overrides your blacklist, an equipment set, a locked item, or something no vendor will buy — if you drag one of those, it tells you why in chat. Dragging in something you had temporarily excluded simply changes your mind back." },
-                    { lead = "BatchSell", sep = "—", text = "item tooltips at a vendor now tell you whether the item will be sold or kept, and which rule decided it." },
-                },
-            },
-            {
-                heading = "Changed",
-                items = {
-                    { lead = "BatchSell", sep = "—", text = "a substantial rework of what gets sold. Nothing is vendored now unless a rule specifically selects it, where previously anything no rule protected was fair game. Gear is judged against what you are actually wearing in that slot rather than against typed-in numbers: the item level margin and the quality thresholds are gone, replaced by a margin you can apply separately to gear of higher, equal, or lower quality than your own. Crafting materials and consumables each gained their own setting — keep everything, keep the current expansion, keep from an expansion you choose, or sell it all. Please review your settings before your next vendor trip. The old \"Keep Equippable\" option, the quality threshold, and the past-expansion toggles no longer exist, and your saved values for them are cleared automatically." },
-                    { lead = "BatchSell", sep = "—", text = "the settings panel is grouped into collapsible sections — General, Equipment, Crafting Materials, Consumables & Other, and Lists — instead of one long list." },
-                },
-            },
-            {
-                heading = "Fixed",
-                items = {
-                    { lead = "BitForge", sep = "—", text = "the minimap button reacts to being pressed again. Holding it down was meant to zoom the icon in slightly as an acknowledgement, but the effect never appeared and raised an error every time instead." },
                 },
             },
         },

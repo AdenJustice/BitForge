@@ -3,7 +3,7 @@ if GetLocale() ~= "ruRU" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["panel:title"] = "Служба посылок Подземья"
+L["panel:title"] = "Undermine Parcel Service"
 L["settings:enabled"] = "Включить UPS"
 L["settings:enabledTooltip"] = "Складывать реагенты профессий в банк отряда при посещении банка"
 L["settings:previewMoves"] = "Предпросмотр перед отправкой"

@@ -210,24 +210,37 @@ local function sparesIt(mode, facts, settings)
     return false
 end
 
+-- Where a copy of this item can still go. Bound is bound: once isBound is
+-- true there is nothing further to ask, because a Warbound piece that has
+-- been equipped is soulbound like any other -- only the bind TYPE would say
+-- otherwise, and it describes what the item was, not where this copy can go
+-- now. While a copy is still unbound, the account binding is what separates
+-- one a buyer could take (ANYONE) from one that can only ever move between
+-- this account's own characters (ALTS); once bound, neither the account
+-- binding nor the ordinary bind type says anything more, and it is NOBODY
+-- but this character's own enchanter. model.CanReachAnAlt carries the same
+-- rule for the rest of the module, collapsing ALTS and ANYONE into one
+-- true -- both reach an alt, and only NOBODY does not.
+local REACH = { ANYONE = "ANYONE", ALTS = "ALTS", NOBODY = "NOBODY" }
+
 --- Weapons and armor, judged against what is equipped. One function and one
---- settings block: the comparison, the margin and what to spare are shared, and
+--- settings block: the comparison, the two margins and what to spare are shared, and
 --- the window says so rather than offering a switch.
 ---
---- The ladder's shape is load-bearing. Step 1 and step 2 route to 4 rather than
+--- The ladder's shape is load-bearing. Step 1 and step 2 route to 3 rather than
 --- terminating, so a piece this character cannot use still gets the alt and
 --- disenchant questions -- off-class gear is the gear most likely to suit an
 --- alt, and vendoring it before the alt is asked is the mistake. Step 1 has a
 --- third, earlier exit of its own: an unread class identity abstains the
 --- whole criterion immediately, rather than being folded into "cannot use it"
---- and routed to 4 like a known off-class piece.
+--- and routed to 3 like a known off-class piece.
 ---
---- Step 4 routes to 7 while 5 and 6 route to 8, because a bound item can only be
---- disenchanted by me, so step 7 asks whether I am an enchanter. An unbound item
+--- Step 3 routes to 6 while 4 and 5 route to 7, because a bound item can only be
+--- disenchanted by me, so step 6 asks whether I am an enchanter. An unbound item
 --- can reach any enchanter -- traded, mailed or sold -- so that question does
 --- not apply to it.
 ---
---- Step 9 fires only when every fact consulted above was readable. An
+--- Step 8 fires only when every fact consulted above was readable. An
 --- inconclusive slot comparison or an unknown disenchant verdict makes the
 --- criterion abstain, and the item falls through to the global KEEP.
 local function judgeGear(facts, settings)
@@ -246,97 +259,114 @@ local function judgeGear(facts, settings)
     -- knowing who is asking, so an unread class identity abstains the whole
     -- criterion here rather than falling into the "not equippable" branch and
     -- condemning gear the class may well be able to use -- a KNOWN off-class
-    -- piece still gets that branch, and still falls through to steps 4-8.
+    -- piece still gets that branch, and still falls through to steps 3-7.
     local equippable = model.IsEquippableBy(facts, settings.playerClass)
     if equippable == nil then return nil end
 
     if not equippable then
         condemnedRule = RULE.NOT_EQUIPPABLE
     else
-        -- 2. The optional veto, above the ladder rather than replacing it.
-        -- IsLowerQualityThanEquipped can itself abstain (nil) when a slot it
-        -- would need unanimity over is unreadable; that is no less an
-        -- inconclusive comparison than step 3's, so it ends the criterion the
-        -- same way step 3's own nil does, rather than falling through to a
-        -- question the veto never actually answered.
-        local vetoed = false
-        if gear.compareQuality and facts.equippedItems then
-            vetoed = model.IsLowerQualityThanEquipped(facts, settings)
-            if vetoed == nil then return nil end
+        -- 2. The margin ladder: quality gap converted to item levels,
+        -- existential over dual slots, an empty slot meaning no opinion rather
+        -- than a sale. Nothing gates it any more: the toggle withheld the
+        -- comparison rather than configuring it, and the veto above it sold on
+        -- quality alone, which is this ladder's own quality margin taken to
+        -- its limit.
+        --
+        -- settings is handed straight through: compareToSlot reads its
+        -- margins off settings.rules.gear itself, and currentExpansion is
+        -- already at the top level settings carries.
+        local verdict, keptBy = model.CompareToEquipped(facts, settings)
+        if verdict == DECISION.KEEP then
+            return DECISION.KEEP, keptBy or RULE.EQUIPPABLE
         end
-
-        if vetoed then
+        if verdict == DECISION.SELL then
             condemnedRule = RULE.OUTCLASSED
-        elseif gear.compareItemLevel then
-            -- 3. The margin ladder: quality gap converted to item levels,
-            -- existential over dual slots, an empty slot meaning no opinion
-            -- rather than a sale.
-            --
-            -- settings is handed straight through: compareToSlot reads its
-            -- margin off settings.rules.gear itself, and currentExpansion is
-            -- already at the top level settings carries.
-            local verdict, keptBy = model.CompareToEquipped(facts, settings)
-            if verdict == DECISION.KEEP then
-                return DECISION.KEEP, keptBy or RULE.EQUIPPABLE
-            end
-            if verdict == DECISION.SELL then
-                condemnedRule = RULE.OUTCLASSED
-            else
-                -- nil: the comparison could not read the slot. No evidence, so
-                -- no condemnation.
-                return nil
-            end
+        else
+            -- nil: the comparison could not read the slot. No evidence, so no
+            -- condemnation.
+            return nil
         end
     end
 
-    -- 4. Is this instance already bound to me? An unread bind state is
-    -- unknown, not unbound -- C_Item.IsBound can answer secret, and folding
-    -- nil into false here is the condemn-without-evidence failure this
-    -- design exists to prevent.
+    -- 3. Where this copy can still go, answered once. isBound can answer
+    -- secret, and folding that into false here is the condemn-without-
+    -- evidence failure this design exists to prevent.
     if facts.isBound == nil then return nil end
-    if not facts.isBound then
-        -- 5. BoA and BoW reach an alt directly. Same rule for
-        -- isBindOnAccount: the IsItemBindToAccount family can also answer
-        -- secret, so an unread value abstains rather than reading as "not
-        -- account bound".
+
+    local reaches
+    if facts.isBound then
+        reaches = REACH.NOBODY
+    else
+        -- isBindOnAccount is read only here, and only while still unbound:
+        -- this is the one question it answers about where the copy can go.
+        -- Bound is bound -- once isBound is true the account-bind type is
+        -- never consulted again, because a Warbound piece that has been
+        -- equipped is soulbound like any other, and asking which kind of
+        -- account binding it once had would keep it for an alt who can
+        -- never actually receive it.
         if facts.isBindOnAccount == nil then return nil end
-        if facts.isBindOnAccount then
-            if sparesIt(gear.spareBindOnAccount, facts, settings) then
-                return DECISION.KEEP, RULE.BIND_ON_ACCOUNT
-            end
-        -- 6. BoE reaches an alt or a buyer. An unread bindType is unknown,
-        -- not "definitely not BoE" -- same reasoning as isBound and
-        -- isBindOnAccount just above, and steps 4 and 5 guard their own facts
-        -- the same way; this one did not, and silently read a secret or
-        -- otherwise-unread bindType as "not BoE," losing the sparing.
-        elseif facts.bindType == nil then
-            return nil
-        elseif facts.bindType == enum.BIND_TYPE.ON_EQUIP then
+        reaches = facts.isBindOnAccount and REACH.ALTS or REACH.ANYONE
+    end
+
+    -- 4 and 5. Which rescue applies is read directly off `reaches`, computed
+    -- once above rather than re-derived per step.
+    if reaches == REACH.ALTS then
+        -- 4. BoA. reaches == ALTS already IS "unbound and Warbound", which is
+        -- exactly what spareBindOnAccount is about.
+        if sparesIt(gear.spareBindOnAccount, facts, settings) then
+            return DECISION.KEEP, RULE.BIND_ON_ACCOUNT
+        end
+    elseif reaches == REACH.ANYONE then
+        -- 5. BoE. An unread bindType is unknown, not "definitely not BoE" --
+        -- the same reasoning as isBindOnAccount above, and this fact is read
+        -- only here because only this branch consults it: a secret or
+        -- otherwise-unread bindType used to be read as "not BoE," losing the
+        -- sparing.
+        if facts.bindType == nil then return nil end
+        if facts.bindType == enum.BIND_TYPE.ON_EQUIP then
             if sparesIt(gear.spareBindOnEquip, facts, settings) then
                 return DECISION.KEEP, RULE.BIND_ON_EQUIP
             end
         end
     end
 
-    -- 7 and 8. Both gated on the item actually being disenchantable: without
+    -- 6 and 7. Both gated on the item actually being disenchantable: without
     -- that gate an enchanter would vendor no gear at all.
     if model.IsDisenchantable(facts) then
-        -- 7. My own enchanter can disenchant a soulbound piece, and nobody
-        -- else ever will, so this one does not wait to be opted into.
-        if facts.isBound and settings.isEnchanter then
-            return DECISION.KEEP, RULE.DISENCHANTABLE
+        -- What the item YIELDS, not how old the item is -- which is why the
+        -- setting is worded about materials. A timewalking piece wears a
+        -- current item level and disenchants into its own expansion's
+        -- materials, so it is PAST here while being a real bar in the
+        -- comparison above.
+        --
+        -- The player's own enchanter skips the whether-question and not the
+        -- age one: at NONE there is nobody else to keep it for, which is
+        -- what the setting says, but stale materials are stale in their bags
+        -- too -- so NONE floors to CURRENT for this limb only, and ALL still
+        -- reaches past materials the way it does for everyone else.
+        local selfSpares = gear.keepForDisenchant
+        if selfSpares == SPARE.NONE then selfSpares = SPARE.CURRENT end
+
+        -- 6. My own enchanter can disenchant anything already bound to me,
+        -- so this one does not wait to be opted into -- only asked whether
+        -- the materials are still current.
+        if reaches == REACH.NOBODY and settings.isEnchanter then
+            if sparesIt(selfSpares, facts, settings) then
+                return DECISION.KEEP, RULE.DISENCHANTABLE
+            end
         end
-        -- 8. Keeping it for someone else's enchanter is only worth anything
-        -- if someone else can have it. A piece already soulbound to a
-        -- non-enchanter is dead weight, however disenchantable it is.
-        if gear.keepForDisenchant then
-            local reachable = model.CanReachAnEnchanter(facts, settings.isEnchanter)
-            if reachable == nil then return nil end
-            if reachable then return DECISION.KEEP, RULE.DISENCHANTABLE end
+        -- 7. Keeping it for someone else's enchanter is only worth anything
+        -- if someone else can have it -- an alt's enchanter and any enchanter
+        -- both count, so ALTS and ANYONE both reach this. A piece that
+        -- reaches nobody is dead weight for this rescue however
+        -- disenchantable it is.
+        if reaches ~= REACH.NOBODY and sparesIt(gear.keepForDisenchant, facts, settings) then
+            return DECISION.KEEP, RULE.DISENCHANTABLE
         end
     end
 
-    -- 9. Nothing kept it, and every fact consulted was readable.
+    -- 8. Nothing kept it, and every fact consulted was readable.
     if condemnedRule then return DECISION.SELL, condemnedRule end
     return DECISION.KEEP, RULE.EQUIPPABLE
 end
@@ -408,7 +438,7 @@ CLASS_RULES[ItemClass.Recipe] = function(facts, settings)
     return DECISION.SELL, RULE.NOT_WANTED
 end
 
---- Pets, mounts, holiday items and oddments.
+--- Pets, mounts, toys, holiday items and oddments.
 ---
 --- Junk (0) has no rule here. Poor is a quality, not a class -- the
 --- cross-cutting rule already covers every class, and a copy filed under 15/0
@@ -417,6 +447,20 @@ CLASS_RULES[ItemClass.Miscellaneous] = function(facts, settings)
     local opts = settings.rules.misc
     if not opts then return nil end
     local sub = facts.subclassID
+
+    -- Keyed on the fact rather than the subclass: subclass 4 holds ordinary
+    -- oddments beside the toys, and a toy shipping in some other Miscellaneous
+    -- subclass would be missed by a subclass test.
+    --
+    -- Unbound wins over collection, as it does for mounts: a tradeable copy can
+    -- still reach someone who wants it, so collection only decides the bound
+    -- ones.
+    if opts.sellCollectedToys and facts.toyCollected ~= nil then
+        if facts.isBound == nil then return nil end
+        if not facts.isBound then return DECISION.KEEP, RULE.STILL_TRADEABLE end
+        if facts.toyCollected then return DECISION.SELL, RULE.ALREADY_COLLECTED end
+        return DECISION.KEEP, RULE.NOT_COLLECTED
+    end
 
     if sub == MISC_SUBCLASS.MOUNT then
         if not opts.sellCollectedMounts then return nil end

@@ -3,9 +3,9 @@ if GetLocale() ~= "esMX" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["status:widgetTitle"] = "Tomo de tareas"
+L["status:widgetTitle"] = "Task Tome"
 
-L["settings:configTitle"] = "Tomo de tareas — Configuración"
+L["settings:configTitle"] = "Task Tome — Configuración"
 L["btn:addRootTask"] = "Agregar tarea raíz"
 L["btn:addChildTask"] = "Agregar subtarea"
 L["btn:deleteTask"] = "Eliminar tarea"
@@ -31,7 +31,7 @@ L["btn:confirmDelete"] = "Eliminar"
 L["btn:cancel"] = "Cancelar"
 L["msg:nameRequired"] = "El nombre de la tarea no puede estar vacío."
 
-L["settings:taskTomePanel"] = "Tomo de tareas"
+L["settings:taskTomePanel"] = "Task Tome"
 L["settings:config"] = "Configuración"
 L["settings:openConfig"] = "Abrir"
 

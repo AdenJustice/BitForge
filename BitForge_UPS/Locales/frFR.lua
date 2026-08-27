@@ -3,7 +3,7 @@ if GetLocale() ~= "frFR" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["panel:title"] = "Service de colis d'Undercity"
+L["panel:title"] = "Undermine Parcel Service"
 L["settings:enabled"] = "Activer UPS"
 L["settings:enabledTooltip"] = "Déposer les composants d'artisanat à la banque de bataillon lors d'une visite à la banque"
 L["settings:previewMoves"] = "Aperçu avant dépôt"

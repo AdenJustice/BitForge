@@ -54,7 +54,8 @@ local enum = {
         QUEST_TAKEN     = "QUEST_TAKEN",     -- QUEST_GATED, and the quest is on or completed
         NO_UNLOCK       = "NO_UNLOCK",       -- a locked box, but no unlock spell is known
         REJECT_LINE     = "REJECT_LINE",     -- a typed line said it cannot be used; detail is that line
-        UNUSABLE        = "UNUSABLE",        -- a requirement line, and IsUsableItem agrees it is unmet
+        UNUSABLE        = "UNUSABLE",        -- IsUsableItem says no; detail is the line type for a
+                                              -- UsageRequirement line, nil for the plain-Use guard
         DENIED_CLASS    = "DENIED_CLASS",    -- whole item class is never openable
         ON_USE_ARMOR    = "ON_USE_ARMOR",    -- on-use armor accepted on a plain Use: line
         ON_USE_MISC     = "ON_USE_MISC",     -- Miscellaneous/Other accepted on a plain Use: line

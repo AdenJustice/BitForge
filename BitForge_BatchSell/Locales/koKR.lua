@@ -6,7 +6,7 @@ local L = ns.locale
 L["panel:batchSell"] = "일괄 판매"
 L["panel:sellManifest"] = "판매 목록"
 L["panel:blacklist"] = "보호 목록"
-L["panel:whitelist"] = "판매 목록"
+L["panel:whitelist"] = "항상 판매 목록"
 
 L["ui:ruleWindowTitle"] = "일괄 판매 규칙"
 L["ui:ruleWindowNothingToConfigure"] = "여기에는 설정할 항목이 없습니다."
@@ -20,7 +20,7 @@ L["btn:rules"] = "규칙"
 
 L["menu:temporaryExclude"] = "이번 방문만 제외"
 L["menu:blacklisted"] = "보호 목록"
-L["menu:whitelisted"] = "판매 목록"
+L["menu:whitelisted"] = "항상 판매"
 L["menu:noStatus"] = "없음"
 L["menu:reportVerdict"] = "이 판정 신고"
 
@@ -41,33 +41,28 @@ L["settings:openRuleWindow"] = "규칙 보기"
 L["settings:openRuleWindowTooltip"] =
 "각 규칙이 무엇을 확인하는지, 아이템이 왜 남거나 판매되었는지 설명합니다"
 L["settings:sellJunk"] = "쓰레기 아이템 판매"
-L["settings:sellJunkTooltip"] = "낮은 품질(회색) 아이템을 상인 방문 시 자동으로 판매합니다"
+L["settings:sellJunkTooltip"] = "조잡한 품질(회색) 아이템을 상인 방문 시 자동으로 판매합니다"
 L["settings:limitBatch"] = "12개씩 판매"
 L["settings:limitBatchTooltip"] = "서버 제한 방지를 위해 한 번에 최대 12개까지만 판매합니다"
 L["settings:keepUsedReagents"] = "전문기술이 쓰는 재료 보관"
 L["settings:keepUsedReagentsTooltip"] =
 "이 계정의 전문기술이 사용할 수 있는 제작 재료를 보관합니다. 귀속된 재료는 다른 캐릭터에게 갈 수 없으므로 이 캐릭터의 전문기술만 그것을 보관합니다"
-L["settings:compareQuality"] = "품질 비교"
-L["settings:compareQualityTooltip"] =
-"아이템 레벨과 상관없이 장착한 것보다 품질이 낮은 장비를 판매합니다"
-L["settings:compareItemLevel"] = "아이템 레벨 비교"
-L["settings:compareItemLevelTooltip"] =
-"아래의 여유값을 이용해 장착한 것과 아이템 레벨을 비교합니다. 끄면 아이템 레벨은 판단에 전혀 반영되지 않습니다"
-L["settings:ilvlMargin"] = "아이템 레벨 여유"
-L["settings:ilvlMarginTooltip"] =
-"품질 한 단계가 아이템 레벨로 몇 점어치인지 정합니다. 10이면 장착한 것보다 한 단계 낮은 장비는 10만큼 앞서야 유지되고, 한 단계 높은 장비는 10만큼 뒤져도 유지됩니다. 같은 품질이면 장착한 것을 그냥 넘어서야 합니다. 0이면 품질을 세지 않고 아이템 레벨만으로 판단합니다"
-L["settings:emphasizeQuality"] = "품질 강조"
-L["settings:emphasizeQualityTooltip"] =
-"품질 한 단계를 마진의 두 배로 계산하고, 같은 품질에도 마진만큼의 여유를 줍니다. 장착한 것보다 높은 품질은 유지하기 쉬워지고, 낮은 품질은 봐주기 어려워집니다"
-L["settings:keepForDisenchant"] = "마력 추출 가능 장비 유지"
+L["settings:margin"] = "아이템 레벨 여유"
+L["settings:marginTooltip"] =
+"같은 품질의 장비가 장착한 것보다 몇 점 아래로 내려가면 판매되는지 정합니다. 0이면 장착한 것과 같기만 해도 유지됩니다"
+L["settings:qualityMargin"] = "품질 여유"
+L["settings:qualityMarginTooltip"] =
+"품질 한 단계가 아이템 레벨로 몇 점어치인지 정합니다. 10이면 장착한 것보다 한 단계 낮은 장비는 10만큼만 앞서면 유지되고, 한 단계 높은 장비는 10만큼 뒤져도 유지됩니다. 0이면 품질을 세지 않고 아이템 레벨만으로 판단합니다. '항상'으로 두면 품질이 더 높은 장비는 아이템 레벨과 상관없이 유지되고, 품질이 더 낮은 장비는 아이템 레벨이 아무리 높아도 유지되지 않습니다"
+L["settings:qualityMarginAlways"] = "항상"
+L["settings:keepForDisenchant"] = "마력 추출할 가치가 있는 장비 유지"
 L["settings:keepForDisenchantTooltip"] =
-"경매장에 올리거나 해당 전문기술을 가진 분신을 위해 마력 추출이 가능한 장비를 유지합니다. 마법부여사는 이 설정과 상관없이 자신에게 귀속된 마력 추출 가능 장비를 항상 유지합니다"
+"마법부여사가 마력 추출할 수 있는 장비를 만들어낼 재료에 따라 유지합니다. 이미 끝난 확장팩의 장비에서는 그 확장팩의 재료가 나오므로, 이 선택은 장비가 아니라 재료에 관한 것입니다. 자신의 마법부여사는 어떤 설정에서도 그 캐릭터만 손에 넣을 수 있는 장비를 항상 유지하지만, 그 범위가 오래된 재료까지 넓어지는지는 이 설정이 계속 정합니다"
 L["settings:spareBindOnAccount"] = "전투부대 귀속 장비 남겨두기"
 L["settings:spareBindOnAccountTooltip"] =
-"다른 캐릭터에게 전달할 수 있도록 귀속되지 않은 전투부대 귀속 장비 중 무엇을 남겨둘지 정합니다: 현재 확장팩만, 전체, 또는 없음"
+"전투부대 귀속 장비 중 아직 다른 캐릭터에게 넘길 수 있는 것을 얼마나 남겨둘지 정합니다: 현재 확장팩만, 전체, 또는 없음"
 L["settings:spareBindOnEquip"] = "착용 시 귀속 장비 남겨두기"
 L["settings:spareBindOnEquipTooltip"] =
-"다른 캐릭터나 경매장을 위해 귀속되지 않은 착용 시 귀속 장비 중 무엇을 남겨둘지 정합니다: 현재 확장팩만, 전체, 또는 없음"
+"착용 시 귀속 장비 중 아직 다른 캐릭터나 경매장에 보낼 수 있는 것을 얼마나 남겨둘지 정합니다: 현재 확장팩만, 전체, 또는 없음"
 L["settings:reagentsCurrentOnly"] = "현재 확장팩 재료만"
 L["settings:reagentsCurrentOnlyTooltip"] =
 "위 규칙을 현재 확장팩 재료로만 좁힙니다. 클래식 약초를 원하는 제조법은 지금도 똑같이 원하므로, 오래된 재료를 쌓아두기 싫은 경우가 아니면 꺼 둡니다"
@@ -101,6 +96,9 @@ L["settings:keepTradeableRecipesTooltip"] =
 L["settings:sellCollectedMounts"] = "수집한 탈것 판매"
 L["settings:sellCollectedMountsTooltip"] =
 "이미 가지고 있는 탈것을 판매합니다. 귀속된 것만 해당하며, 귀속되지 않은 탈것은 아직 누군가에게 갈 수 있으므로 이 설정과 상관없이 유지됩니다"
+L["settings:sellCollectedToys"] = "수집한 장난감 판매"
+L["settings:sellCollectedToysTooltip"] =
+"이미 가지고 있는 장난감을 판매합니다. 가방 속 사본이 귀속된 것만 해당하며, 귀속되지 않은 장난감은 아직 누군가에게 갈 수 있으므로 수집 여부와 상관없이 유지됩니다"
 L["settings:sellCollectedPets"] = "수집한 애완동물 판매"
 L["settings:sellCollectedPetsTooltip"] =
 "이미 가지고 있는 전투 애완동물을 판매합니다. 아직 수집하지 않은 것은 어떤 설정에서도 이 규칙이 팔지 않습니다"
@@ -124,6 +122,10 @@ L["spare:current"] = "현재 확장팩"
 L["spare:all"] = "전체"
 L["spare:none"] = "없음"
 
+L["materials:current"] = "현재 확장팩 재료"
+L["materials:all"] = "모든 재료"
+L["materials:none"] = "유지하지 않음"
+
 L["profession:FirstAid"] = "응급치료"
 L["profession:Blacksmithing"] = "대장기술"
 L["profession:Leatherworking"] = "가죽세공"
@@ -135,7 +137,7 @@ L["profession:Tailoring"] = "재봉술"
 L["profession:Engineering"] = "기계공학"
 L["profession:Enchanting"] = "마법부여"
 L["profession:Fishing"] = "낚시"
-L["profession:Skinning"] = "가죽벗기기"
+L["profession:Skinning"] = "무두질"
 L["profession:Jewelcrafting"] = "보석세공"
 L["profession:Inscription"] = "주문각인"
 L["profession:Archaeology"] = "고고학"
@@ -171,7 +173,7 @@ L["reason:LOCKED"] = "잠긴 아이템입니다"
 L["reason:EQUIPMENT_SET"] = "장비 세트의 일부입니다"
 L["reason:NO_SELL_PRICE"] = "어떤 상인도 구매하지 않습니다"
 L["reason:REFUNDABLE"] = "아직 환불 가능 기간입니다"
-L["reason:WHITELISTED"] = "판매 목록에 있음"
+L["reason:WHITELISTED"] = "항상 판매 목록에 있음"
 L["reason:TEMP_INCLUDED"] = "이번 상인 방문에서 추가됨"
 L["reason:JUNK"] = "'쓰레기 아이템 판매'가 꺼져 있어 손대지 않습니다"
 L["reason:JUNK_SOLD"] = "'쓰레기 아이템 판매'가 켜져 있어 판매합니다"
@@ -180,26 +182,26 @@ L["reason:BIND_ON_ACCOUNT"] = "전투부대 귀속 장비는 유지됩니다"
 L["reason:DISENCHANTABLE"] = "마력 추출하거나 다른 곳에 팔 가치가 있습니다"
 L["reason:BAG_KEPT"] = "가방은 절대 판매되지 않습니다"
 L["reason:PROFESSION_GEAR_KEPT"] = "전문기술 장비는 절대 판매되지 않습니다"
-L["reason:ENHANCEMENT_CURRENT"] = "이 확장팩의 마력은 보관됩니다"
-L["reason:ENHANCEMENT_LAST_EXPANSION"] = "지난 확장팩의 마력은 보관됩니다"
-L["reason:ENHANCEMENT_OUTDATED"] = "이전 확장팩의 마력은 판매됩니다"
+L["reason:ENHANCEMENT_CURRENT"] = "이 확장팩의 아이템 강화는 보관됩니다"
+L["reason:ENHANCEMENT_LAST_EXPANSION"] = "지난 확장팩의 아이템 강화는 보관됩니다"
+L["reason:ENHANCEMENT_OUTDATED"] = "이전 확장팩의 아이템 강화는 판매됩니다"
 L["reason:CONSUMABLE_CURRENT"] = "이 확장팩의 소모품은 보관됩니다"
 L["reason:CONSUMABLE_LAST_EXPANSION"] = "지난 확장팩의 소모품은 보관됩니다"
-L["reason:CONSUMABLE_REAGENT"] = "어딘가의 제작법이 이것을 재료로 사용합니다"
+L["reason:CONSUMABLE_REAGENT"] = "어딘가의 제조법이 이것을 재료로 사용합니다"
 L["reason:GEM_CURRENT"] = "이 확장팩의 보석은 보관됩니다"
-L["reason:GEM_REAGENT"] = "어딘가의 제작법이 이것을 재료로 사용합니다"
-L["reason:GEM_ARTIFACT_RELIC_KEPT"] = "아티팩트 유물은 보관됩니다"
-L["reason:TRADE_GOOD_SPARED"] = "보호하기로 선택한 전문기술이 이것을 원합니다"
+L["reason:GEM_REAGENT"] = "어딘가의 제조법이 이것을 재료로 사용합니다"
+L["reason:GEM_ARTIFACT_RELIC_KEPT"] = "유물 보석은 보관됩니다"
+L["reason:TRADE_GOOD_SPARED"] = "남겨두기로 선택한 전문기술이 이것을 원합니다"
 L["reason:NOT_WANTED"] = "어떤 항목도 보관하지 않아 판매됩니다"
 L["reason:REAGENT_WANTED"] = "이것을 사용할 수 있는 전문기술이 재료로 필요로 합니다"
 L["reason:NOT_EQUIPPABLE"] = "직업이 장착할 수 없거나 권장되지 않는 장비입니다"
 L["reason:EQUIPPABLE"] = "장착 중인 장비에 비해 충분히 쓸만합니다"
 L["reason:OUTCLASSED"] = "장착 중인 장비보다 성능이 떨어집니다"
-L["reason:OUTDATED_EXPAC"] = "지난 확장팩 장비를 착용 중이며 그보다 아이템 레벨이 높습니다"
+L["reason:OUTDATED_EXPAC"] = "착용 중인 지난 확장팩 장비보다 낫습니다"
 L["reason:BIND_ON_EQUIP"] = "착용 시 귀속되는 장비는 유지됩니다"
-L["reason:ARMOR_RELIC"] = "이제 아무도 성물을 착용할 수 없어 판매됩니다"
+L["reason:ARMOR_RELIC"] = "이제 아무도 유물을 착용할 수 없어 판매됩니다"
 L["reason:RECIPE_LEARNABLE"] = "아직 배우지 않아 보관됩니다"
-L["reason:HOLIDAY_ITEM"] = "명절 아이템은 판매됩니다"
+L["reason:HOLIDAY_ITEM"] = "축제 아이템은 판매됩니다"
 L["reason:MOUNT_EQUIPMENT"] = "탈것 장비는 판매됩니다"
 L["reason:ALREADY_COLLECTED"] = "이미 수집되어 판매됩니다"
 L["reason:NOT_COLLECTED"] = "아직 수집되지 않아 보관됩니다"
@@ -208,9 +210,9 @@ L["reason:ALREADY_LEARNED"] = "이미 배워 판매됩니다"
 L["reason:DEFAULT"] = "어떤 규칙도 적용되지 않아 유지됩니다"
 
 L["listReset:warbandBlacklist"] = "전투부대 보호 목록 초기화"
-L["listReset:warbandWhitelist"] = "전투부대 판매 목록 초기화"
+L["listReset:warbandWhitelist"] = "전투부대 항상 판매 목록 초기화"
 L["listReset:charBlacklist"] = "캐릭터 보호 목록 초기화"
-L["listReset:charWhitelist"] = "캐릭터 판매 목록 초기화"
+L["listReset:charWhitelist"] = "캐릭터 항상 판매 목록 초기화"
 L["listReset:confirm"] = "이 목록을 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
 -- Chat messages. Printed through BitForge:Print, which prefixes [BitForge].
@@ -250,11 +252,11 @@ L["rule:epicBlurb"] =
 L["rule:reagent"] = "제작 재료"
 L["rule:reagentSub"] = "전문기술 목록을 사용합니다"
 L["rule:reagentBlurb"] =
-"이 계정의 전문기술이 사용할 수 있는 재료라면, 아이템 종류와 상관없이 보관합니다. 재료는 물약으로도, 보석으로도, 무역 용품으로도 나타나므로 아이템 종류보다 먼저 판정됩니다. 이 목록은 게임의 제작법에서 직접 읽어 오므로, 제작법이 받아들이는 선택 재료와 모든 품질 등급이 이미 들어 있습니다 -- 따로 열어 보거나 훑어야 할 것은 없습니다."
+"이 계정의 전문기술이 사용할 수 있는 재료라면, 아이템 종류와 상관없이 보관합니다. 재료는 물약으로도, 보석으로도, 무역 용품으로도 나타나므로 아이템 종류보다 먼저 판정됩니다. 이 목록은 게임의 제조법에서 직접 읽어 오므로, 제조법이 받아들이는 선택 재료와 모든 품질 등급이 이미 들어 있습니다 -- 따로 열어 보거나 훑어야 할 것은 없습니다."
 L["rule:cosmetic"] = "수집하지 않은 외형"
-L["rule:cosmeticSub"] = "아직 수집하지 않은 장식 아이템"
+L["rule:cosmeticSub"] = "아직 수집하지 않은 겉모습 아이템"
 L["rule:cosmeticBlurb"] =
-"아직 수집하지 않은 장식 아이템은 보관됩니다. 판매한다고 외형이 수집되는 것이 아니라 그냥 사라지므로, 이 창에서 실수를 되돌릴 수 없는 유일한 지점입니다. 이미 수집한 장식 아이템은 장식이라는 이유만으로 보관되지 않습니다. 더 이상 지킬 것이 없으므로, 그저 원래 무기나 방어구로서 판정을 받습니다."
+"아직 수집하지 않은 겉모습 아이템은 보관됩니다. 판매한다고 외형이 수집되는 것이 아니라 그냥 사라지므로, 이 창에서 실수를 되돌릴 수 없는 유일한 지점입니다. 이미 수집한 겉모습 아이템은 겉모습이라는 이유만으로 보관되지 않습니다. 더 이상 지킬 것이 없으므로, 그저 원래 무기나 방어구로서 판정을 받습니다."
 L["rule:consumables"] = "소모품"
 L["rule:consumablesSub"] = "물약, 음식, 주문서, 진기한 물건"
 L["rule:consumablesBlurb"] =
@@ -279,14 +281,14 @@ L["rule:enhancements"] = "아이템 강화"
 L["rule:enhancementsSub"] = "마법부여, 기름, 돌"
 L["rule:enhancementsBlurb"] =
 "새 확장팩이 나오면 이것들을 적용할 수 있는 장비 범위가 제한되어, 오래된 것은 가치를 잃습니다. 이번 확장팩 것은 보관되며, 원한다면 지난 확장팩 것도 보관할 수 있습니다."
-L["rule:recipes"] = "제작법"
+L["rule:recipes"] = "제조법"
 L["rule:recipesSub"] = "도안, 설계도, 공식"
 L["rule:recipesBlurb"] =
-"제작법에는 그것이 속한 전문기술이 함께 담겨 있으므로, 상인 앞에서 곧바로 판정됩니다. 어느 한 전문기술에도 속하지 않는 제작법, 즉 범용 도안이나 설명서는 견줄 기준이 없으므로 그대로 둡니다."
+"제조법에는 그것이 속한 전문기술이 함께 담겨 있으므로, 상인 앞에서 곧바로 판정됩니다. 어느 한 전문기술에도 속하지 않는 제조법, 즉 범용 도안이나 설명서는 견줄 기준이 없으므로 그대로 둡니다."
 L["rule:misc"] = "기타"
-L["rule:miscSub"] = "애완동물, 탈것, 명절 아이템"
+L["rule:miscSub"] = "애완동물, 탈것, 장난감, 축제 아이템"
 L["rule:miscBlurb"] =
-"주문 재료와 분류되지 않은 자잘한 아이템은 그대로 둡니다. 회색 아이템은 여기가 아니라 위의 조잡한 품질 규칙에서 처리합니다."
+"주문 재료는 그대로 둡니다. 분류되지 않은 자잘한 아이템 중에서는 장난감만 판정합니다: 장난감 상자에 이미 있고 가방 속 사본이 귀속된 경우 판매됩니다. 회색 아이템은 여기가 아니라 위의 조잡한 품질 규칙에서 처리합니다."
 L["rule:profession"] = "전문기술 장비"
 L["rule:professionSub"] = "도구와 부속품"
 L["rule:professionBlurb"] =
@@ -303,3 +305,7 @@ L["rule:noneBlurb"] =
 -- The report window's footnote. What BatchSell discloses is not what Openables
 -- discloses, so each module states its own.
 L["report:blurb"] = "이 신고에는 아이템의 링크, 이 아이템이 채울 칸에 현재 착용 중인 장비, 그리고 그 둘을 판정한 설정이 담깁니다. 아이템 링크는 캐릭터의 레벨과 전문화를 담고 있습니다 -- 이는 링크 자체 형식의 일부라서, 이를 빼면 신고를 재현 가능하게 만드는 세부 정보를 잃게 됩니다. 여기에는 캐릭터, 서버, 길드, 진영 중 어느 것의 이름도 나타나지 않으며, 그 밖의 어떤 칸도 설명하지 않습니다."
+
+-- The disenchant scan's own footnote: it discloses several bag items and
+-- their tooltips, not the single item/link pair report:blurb describes.
+L["report:blurbDisenchant"] = "이 신고에는 가방 속에서 마력 추출할 가치가 있을 수 있는 무기와 방어구가 최대 여덟 개까지, 각각이 있는 칸의 위치와 툴팁의 전체 텍스트와 함께 담깁니다. 여기에는 캐릭터, 서버, 길드, 진영 중 어느 것의 이름도 나타나지 않으며, 가방 속 다른 어떤 것도 설명하지 않습니다."

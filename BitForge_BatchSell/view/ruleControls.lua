@@ -16,7 +16,6 @@ local UI = BitForge.UI
 local colors = UI.Colors
 local Profession = Enum.Profession
 
-local enum = ns.enum
 local model = ns.model
 local locale = ns.locale
 -- Captured once rather than reached through ns on every call. Safe despite
@@ -40,13 +39,10 @@ local SMALL_LINE = 14
 -- for.
 local ROW_HEIGHT = 26
 local STACKED_ROW_HEIGHT = SMALL_LINE + 4 + ROW_HEIGHT
--- A dependant sits under the control it qualifies rather than beside it.
-local DEPENDANT_INDENT = 16
 -- BitForge/APIs/UI/Templates/Buttons.lua anchors a check button's own label at
 -- LEFT + 26, past the tick. Every other builder draws its own label, so it
 -- repeats that inset by hand -- without it the pane's rows start their text at
--- four different offsets and a dependant slider reads further left than the
--- checkbox it hangs off.
+-- four different offsets.
 local LABEL_INSET = 26
 -- One width for all three dropdown kinds. Dropdown.lua's label anchor reserves
 -- ARROW_SIZE 14 + H_PADDING 10 + 6 on the right and H_PADDING 10 on the left,
@@ -56,21 +52,31 @@ local LABEL_INSET = 26
 local DROPDOWN_WIDTH, DROPDOWN_HEIGHT = 170, 22
 
 -- A dependant is greyed, never hidden: a control that vanishes reads as a
--- missing feature, and the rule it belongs to still exists. Keyed by the
--- dependant's stored key and resolved inside its own section, so neither half
--- of a pair has to name where it lives.
+-- missing feature, and the rule it belongs to still exists.
 --
--- Both of gear's dependants hang off compareItemLevel rather than one each.
--- The margin and the emphasis are read together inside model.compareToSlot,
--- and the ladder in model.rules reaches it only through compareItemLevel;
--- compareQuality gates a different branch -- the IsLowerQualityThanEquipped
--- veto -- and never arrives at that arithmetic. Greying the emphasis behind
--- compareQuality would hide a live setting at the shipped defaults, where
--- compareQuality is off and compareItemLevel is on.
-local DEPENDS_ON = {
-    ilvlMargin       = "compareItemLevel",
-    emphasizeQuality = "compareItemLevel",
+-- Every dependency left is inverted -- live only while its parent is OFF.
+-- model/rules.lua returns KEEP on `current` before either recipe column is
+-- read, so recipesNow cannot change an outcome underneath it, and `current`
+-- ships ticked, which left a control that provably did nothing looking like
+-- one that did. The upright half of this went with the two gear toggles: the
+-- margins are unconditional now, and nothing else greys out while its parent
+-- is on.
+--
+-- Keyed by section as well as key: `recipesNow` is also a consumables
+-- descriptor, and those all point at one subclass dropdown that a second
+-- writer here would grey out whole. The consumables copy of this dependency
+-- lives in the menu entry instead, where the option actually is.
+local DEAD_UNDER = {
+    gems = { recipesNow = "current" },
 }
+
+--- The parent this control is dead under, if it has one.
+---@param descriptor table
+---@return string|nil parentKey
+local function DeadUnder(descriptor)
+    local section = DEAD_UNDER[descriptor.section]
+    return section and section[descriptor.key]
+end
 
 -- The three ways an unbound BoA/BoE item can be spared, widest first: the
 -- expansion, then everything, then nothing. The stored values are the same
@@ -146,17 +152,6 @@ local function TooltipFor(descriptor)
     return locale["settings:" .. descriptor.name .. "Tooltip"]
 end
 
-local function IndentFor(descriptor)
-    return DEPENDS_ON[descriptor.key] and DEPENDANT_INDENT or 0
-end
-
---- Where a row's text starts. A check button is placed at the indent and puts
---- its own label LABEL_INSET past that; everything else places the text itself,
---- so it adds the inset by hand and the pane reads as one column.
-local function TextInsetFor(descriptor)
-    return IndentFor(descriptor) + LABEL_INSET
-end
-
 --- Where one control files itself in its pane. consumables is the only section
 --- keyed by subclass, and every one of its eight subclasses stores a `current`,
 --- so leaving the subclass out of the path would file all eight at
@@ -189,13 +184,19 @@ local function ShowSelectedCount(dropdown, count)
 end
 
 --- What a single-choice dropdown says while it is closed: the name of the
---- option its stored value picks out. A value SPARE_OPTIONS does not carry is
+--- option its stored value picks out. A value the list does not carry is
 --- shown raw rather than resolved to anything -- reading an unknown value as
 --- "None" would make a bug look like a setting.
+---
+--- `options` is the descriptor's own list, falling back to SPARE_OPTIONS --
+--- the shape #291 used when the tree gained a second slider with a different
+--- range. keepForDisenchant carries MATERIALS_OPTIONS (view/ruleDescriptors.lua)
+--- instead, worded about what a disenchant yields rather than the item's age.
 ---@param dropdown table
 ---@param value string
-local function ShowSelectedOption(dropdown, value)
-    for _, option in ipairs(SPARE_OPTIONS) do
+---@param options table[]|nil
+local function ShowSelectedOption(dropdown, value, options)
+    for _, option in ipairs(options or SPARE_OPTIONS) do
         if option.value == value then
             dropdown.Label:SetText(locale[option.labelKey])
             return
@@ -243,15 +244,19 @@ end
 --- opens in the same state a click leaves it in.
 local function RefreshDependants(pane)
     for _, entry in ipairs(pane.entries) do
-        local parentKey = DEPENDS_ON[entry.descriptor.key]
+        local parentKey = DeadUnder(entry.descriptor)
         if parentKey then
-            local live = model.GetRule(entry.descriptor.section)[parentKey] and true or false
+            local parent = model.GetRule(entry.descriptor.section)[parentKey] and true or false
+            local live = not parent
             entry.widget:SetEnabled(live)
-            -- Only a label this file drew. A check button's belongs to
-            -- CheckButtonMixin, which paints it from the checked, hovered and
-            -- disabled states together; a second writer here took the accent off
-            -- the one ticked dependant in the gear pane, and the mixin's own
-            -- OnEnter brightened it back when a greyed one was hovered.
+            -- Only a label this file drew, never one CheckButtonMixin owns:
+            -- a check button paints its own label from the checked, hovered and
+            -- disabled states together, and a second writer here once fought it
+            -- for the accent -- the mixin's own OnEnter brightened a greyed
+            -- gear-pane checkbox right back. KIND.check learned that and returns
+            -- no label, so every dependant today is a check button and this
+            -- branch never runs; it stands ready for the first slider or
+            -- dropdown dependant, whose label belongs to this file alone.
             if entry.label then
                 entry.label:SetTextColor((live and colors.text or colors.textDisabled):GetRGB())
             end
@@ -306,7 +311,7 @@ end
 ---@return table
 local function CreateRowLabel(container, descriptor, offsetY, text, beside)
     local label = container:CreateFontString(nil, "OVERLAY", "BitForgeFontSmallOutline")
-    PixelUtil.SetPoint(label, "TOPLEFT", container, "TOPLEFT", TextInsetFor(descriptor), -offsetY)
+    PixelUtil.SetPoint(label, "TOPLEFT", container, "TOPLEFT", LABEL_INSET, -offsetY)
     if beside then
         PixelUtil.SetPoint(label, "BOTTOMRIGHT", beside, "BOTTOMLEFT", -PADDING, 0)
     else
@@ -353,7 +358,7 @@ end
 
 KIND.check = function(pane, container, descriptor, offsetY)
     local button = UI.CreateCheckButton(nil, container, LabelFor(descriptor), true)
-    PixelUtil.SetPoint(button, "TOPLEFT", container, "TOPLEFT", IndentFor(descriptor), -offsetY)
+    PixelUtil.SetPoint(button, "TOPLEFT", container, "TOPLEFT", 0, -offsetY)
     button:SetTooltips(TooltipFor(descriptor))
     button:SetScript("OnClick", function(self)
         Commit(pane, descriptor, self:GetChecked() and true or false)
@@ -370,11 +375,26 @@ KIND.check = function(pane, container, descriptor, offsetY)
     }
 end
 
+--- One path for both write sites (the change handler and Sync), so a future
+--- change cannot land in one and not the other.
+---
+--- A slider whose descriptor names a topName tops out at a position rather than
+--- at a quantity, so the number there would be read as one -- it draws the
+--- word instead.
+local function WriteReadout(readout, descriptor, value)
+    if descriptor.topName and value >= descriptor.max then
+        readout:SetText(locale["settings:" .. descriptor.topName])
+    else
+        readout:SetText(tostring(value))
+    end
+end
+
 KIND.slider = function(pane, container, descriptor, offsetY)
     local label = CreateRowLabel(container, descriptor, offsetY, LabelFor(descriptor))
 
-    -- The number the track alone cannot say. Bare digits, so it needs no
-    -- format string and no locale key of its own.
+    -- The number the track alone cannot say. Bare digits, except at a
+    -- descriptor's topName position, where WriteReadout draws its own string
+    -- instead.
     local readout = container:CreateFontString(nil, "OVERLAY", "BitForgeFontSmallOutline")
     PixelUtil.SetPoint(readout, "TOPRIGHT", label, "TOPRIGHT", 0, 0)
     readout:SetJustifyH("RIGHT")
@@ -383,10 +403,10 @@ KIND.slider = function(pane, container, descriptor, offsetY)
     local slider = UI.CreateSlider(container)
     PixelUtil.SetPoint(slider, "TOPLEFT", label, "BOTTOMLEFT", 0, -4)
     PixelUtil.SetPoint(slider, "TOPRIGHT", label, "BOTTOMRIGHT", 0, -4)
-    -- The tree's only slider, so the bounds stay on ns.enum and are read here
-    -- rather than carried on the descriptor. A second one would move them.
-    slider:SetMinMaxValues(enum.ILVL_MARGIN_MIN, enum.ILVL_MARGIN_MAX)
-    slider:SetValueStep(enum.ILVL_MARGIN_STEP)
+    -- Carried on the descriptor since the tree gained a second slider with a
+    -- different range.
+    slider:SetMinMaxValues(descriptor.min, descriptor.max)
+    slider:SetValueStep(descriptor.step)
     slider:SetObeyStepOnDrag(true)
 
     -- The rescan a drag owes, paid once when the thumb is let go.
@@ -395,7 +415,7 @@ KIND.slider = function(pane, container, descriptor, offsetY)
     -- SetOnChange fires on drags only, not on the SetValue below, so a repaint
     -- cannot write the value back at itself.
     slider:SetOnChange(function(value)
-        readout:SetText(tostring(value))
+        WriteReadout(readout, descriptor, value)
         -- Stored on every step, so the readout and the rule never disagree.
         -- Only the rescan waits: control.scanner.Scan walks every bag slot,
         -- calls Gather and model.Decide per item, rebuilds the manifest and
@@ -421,13 +441,14 @@ KIND.slider = function(pane, container, descriptor, offsetY)
     return {
         widget = slider,
         label = label,
+        readout = readout,
         hover = CreateHoverRegion(container, label, TooltipFor(descriptor)),
         regions = { label, readout },
         height = STACKED_ROW_HEIGHT,
         Sync = function()
             local value = model.GetRule(descriptor.section)[descriptor.key]
             slider:SetValue(value)
-            readout:SetText(tostring(value))
+            WriteReadout(readout, descriptor, value)
         end,
     }
 end
@@ -438,12 +459,12 @@ KIND.dropdown = function(pane, container, descriptor, offsetY)
     local dropdown, label = CreateStackedDropdown(container, descriptor, offsetY)
 
     local function ShowStored()
-        ShowSelectedOption(dropdown, model.GetRule(descriptor.section)[descriptor.key])
+        ShowSelectedOption(dropdown, model.GetRule(descriptor.section)[descriptor.key], descriptor.options)
     end
     OwnsItsClosedLabel(dropdown, ShowStored)
 
     dropdown:SetupMenu(function(_, root)
-        for _, option in ipairs(SPARE_OPTIONS) do
+        for _, option in ipairs(descriptor.options or SPARE_OPTIONS) do
             root:CreateRadio(locale[option.labelKey],
                 function(value) return model.GetRule(descriptor.section)[descriptor.key] == value end,
                 function(value)
@@ -624,6 +645,13 @@ KIND.subclass = function(pane, container, descriptor, offsetY)
                 -- click it then took would store a true the model had just
                 -- cleared.
                 option:SetEnabled(function() return Stored().current and true or false end)
+            elseif optionKey == "recipesNow" then
+                -- The same dependency inverted, and a predicate for the same
+                -- reason: `current` keeps every item of this expansion before
+                -- the recipe columns are consulted, so this one is unreachable
+                -- exactly while that is ticked. recipesOld is left alone -- a
+                -- past item never enters the branch `current` answers.
+                option:SetEnabled(function() return not Stored().current end)
             end
         end
     end)
@@ -747,6 +775,18 @@ end
 function ruleControls.__subclassDropdown(subclassID)
     local pane = panes.consumables
     return pane and pane.subclassRows and pane.subclassRows[subclassID] or nil
+end
+
+--- The digits beside a slider's track, for a test that has to prove what the
+--- player reads rather than what is stored.
+---@param criterionKey string
+---@param section string
+---@param key string
+---@return string|nil
+function ruleControls.__readout(criterionKey, section, key)
+    local pane = panes[criterionKey]
+    local entry = pane and pane.byPath[PathOf(section, key)]
+    return entry and entry.readout and entry.readout:GetText()
 end
 
 --- Test seam: what a hover over that control's row tooltips from. A checkbox

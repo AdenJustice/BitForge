@@ -96,3 +96,5 @@ L["ui:anchorKeyTaken"] = "Un cadre d'ancrage nommé '%s' existe déjà"
 
 L["apply:deferredCombat"] = "En combat -- la disposition sera appliquée dès que vous en sortirez"
 L["apply:deferredDone"] = "Combat terminé : %d appliqué(s), %d inchangé(s)"
+
+L["report:blurb"] = "Ce rapport contient l'étiquette et le dossier d'un élément d'EllesmereUI, s'il est ancré à un autre élément et de quel côté, sa position et sa taille enregistrées, et si la disposition enregistrée le gère. Rien ici ne mentionne votre personnage, royaume, guilde ou faction."

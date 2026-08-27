@@ -3,7 +3,7 @@ if GetLocale() ~= "zhCN" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["panel:title"] = "艾泽拉斯包裹服务"
+L["panel:title"] = "Undermine Parcel Service"
 L["settings:enabled"] = "启用 UPS"
 L["settings:enabledTooltip"] = "访问银行时将专业材料存入战团银行"
 L["settings:previewMoves"] = "存入前预览"

@@ -3,9 +3,9 @@ if GetLocale() ~= "frFR" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["status:widgetTitle"] = "Tome des tâches"
+L["status:widgetTitle"] = "Task Tome"
 
-L["settings:configTitle"] = "Tome des tâches — Configuration"
+L["settings:configTitle"] = "Task Tome — Configuration"
 L["btn:addRootTask"] = "Ajouter une tâche racine"
 L["btn:addChildTask"] = "Ajouter une sous-tâche"
 L["btn:deleteTask"] = "Supprimer la tâche"
@@ -31,7 +31,7 @@ L["btn:confirmDelete"] = "Supprimer"
 L["btn:cancel"] = "Annuler"
 L["msg:nameRequired"] = "Le nom de la tâche ne peut pas être vide."
 
-L["settings:taskTomePanel"] = "Tome des tâches"
+L["settings:taskTomePanel"] = "Task Tome"
 L["settings:config"] = "Configuration"
 L["settings:openConfig"] = "Ouvrir"
 

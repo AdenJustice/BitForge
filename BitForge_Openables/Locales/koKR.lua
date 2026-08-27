@@ -3,8 +3,8 @@ if GetLocale() ~= "koKR" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["panel:title"] = "개봉"
-L["settings:enabled"] = "개봉 활성화"
+L["panel:title"] = "Openables"
+L["settings:enabled"] = "Openables 활성화"
 L["settings:enabledTooltip"] = "가방 속 다음 개봉 또는 사용 가능한 아이템 버튼을 표시합니다"
 L["settings:locked"] = "버튼 고정"
 L["settings:lockedTooltip"] = "버튼을 드래그할 수 없도록 고정합니다"
@@ -25,11 +25,13 @@ L["tooltip:drag"] = "Alt + 드래그하여 이동합니다."
 
 L["report:blurb"] = "이 신고에는 아이템, BitForge가 이를 분류한 방식, 툴팁 텍스트, 그리고 이 캐릭터가 아는 전문기술이 담깁니다. 캐릭터, 서버, 길드, 진영의 이름은 여기에 없습니다."
 
+L["report:blurbField"] = "이 신고에는 마지막 스캔이 다음에 열 후보로 순위 매긴 모든 항목이 순위 순서대로 담깁니다: 각 항목의 이름, 아이템 ID, 가방과 칸, 스택 수, 우선순위와 그 순위를 받은 이유, 그리고 잠김·재사용 대기·보류 여부가 포함됩니다. 캐릭터, 서버, 길드, 진영의 이름은 여기에 없으며, 어떤 아이템의 툴팁 텍스트도 포함되지 않습니다."
+
 L["blacklist:windowTitle"] = "제외된 아이템"
 L["blacklist:empty"] = "제외된 아이템이 없습니다."
 L["blacklist:remove"] = "제거"
 L["blacklist:clearAll"] = "모두 지우기"
 L["blacklist:unknownItem"] = "아이템 %d"
 
-L["binding:header"] = "BitForge 개봉"
+L["binding:header"] = "BitForge Openables"
 L["binding:use"] = "개봉 아이템 사용"

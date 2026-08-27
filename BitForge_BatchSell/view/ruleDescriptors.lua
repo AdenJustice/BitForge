@@ -4,6 +4,9 @@ local ns = select(2, ...)
 ---@class BitForge.BatchSell.View
 local view = ns.view
 
+---@class BitForge.BatchSell.Enum
+local enum = ns.enum
+
 -- Eight subclasses carry a stored key; four of those also carry lastExpansion.
 -- Generated rather than typed, so a subclass gaining or losing a column in
 -- DB_DEFAULTS surfaces as a test failure rather than a silent mismatch.
@@ -12,6 +15,19 @@ local view = ns.view
 -- eight menus, naming each row from sub:<subclassID> and each menu entry from
 -- option:<key>, so twenty-eight settings: labels would be twenty-eight strings
 -- nobody reads.
+
+-- keepForDisenchant's own option list, worded about what a disenchant
+-- YIELDS rather than about the item's own age -- unlike SPARE_OPTIONS
+-- (view/ruleControls.lua), whose spare: labels are worded about the item's
+-- expansion and are exactly what this setting must not say. Same stored
+-- values as SPARE_OPTIONS (CURRENT/ALL/NONE match model/rules.lua's SPARE
+-- table), only the labels differ.
+local MATERIALS_OPTIONS = {
+    { value = "CURRENT", labelKey = "materials:current" },
+    { value = "ALL",     labelKey = "materials:all" },
+    { value = "NONE",    labelKey = "materials:none" },
+}
+
 local CONSUMABLE_SUBCLASSES = { 0, 1, 2, 3, 5, 7, 8, 9 }
 local CONSUMABLE_LAST = { [1] = true, [2] = true, [3] = true, [5] = true }
 local CONSUMABLE_COLUMNS = { "current", "recipesNow", "recipesOld" }
@@ -31,8 +47,9 @@ end
 -- Data, not a builder. A test reads this without running any of it, which is
 -- what lets the completeness test need none of the frame stubs the window does.
 --
--- Built from DB_DEFAULTS outward, not from the wireframe inward: the drawing
--- covers 53 of the 54 keys and omits gear.emphasizeQuality, which ships today.
+-- Built from DB_DEFAULTS outward, not from the wireframe inward: its coverage
+-- is checked against the defaults directly, not against what the wireframe
+-- happens to draw.
 --
 -- Each CONTROL carries its own (section, key) rather than the criterion
 -- carrying one. Weapons & Armor is why: seven of its controls are rules.gear and
@@ -65,11 +82,18 @@ local ruleDescriptors = {
     { key = "consumables", group = "class", controls = consumableControls },
     { key = "bags",        group = "class", locked = true, controls = {} },
     { key = "gear",        group = "class", controls = {
-        { section = "gear", key = "compareQuality",     kind = "check",    name = "compareQuality" },
-        { section = "gear", key = "compareItemLevel",   kind = "check",    name = "compareItemLevel" },
-        { section = "gear", key = "ilvlMargin",         kind = "slider",   name = "ilvlMargin" },
-        { section = "gear", key = "emphasizeQuality",   kind = "check",    name = "emphasizeQuality" },
-        { section = "gear", key = "keepForDisenchant",  kind = "check",    name = "keepForDisenchant" },
+        -- Both ranges start at 0 rather than at the step: 0 is a real setting
+        -- on each -- no tolerance, or no quality credit -- not an off-state.
+        { section = "gear", key = "margin",             kind = "slider",   name = "margin",
+          min = 0, max = 30, step = 2 },
+        -- Not 0-32 in item levels: the position above 30 is the always-keep
+        -- one, drawn as a word by the readout and read by compareToSlot as an
+        -- unbounded step.
+        { section = "gear", key = "qualityMargin",      kind = "slider",   name = "qualityMargin",
+          min = 0, max = enum.QUALITY_MARGIN_ALWAYS, step = 2,
+          topName = "qualityMarginAlways" },
+        { section = "gear", key = "keepForDisenchant",  kind = "dropdown", name = "keepForDisenchant",
+          options = MATERIALS_OPTIONS },
         { section = "gear", key = "spareBindOnAccount", kind = "dropdown", name = "spareBindOnAccount" },
         { section = "gear", key = "spareBindOnEquip",   kind = "dropdown", name = "spareBindOnEquip" },
         -- Armor only. There is no weapon equivalent and no armor copy of
@@ -99,6 +123,7 @@ local ruleDescriptors = {
     } },
     { key = "misc", group = "class", controls = {
         { section = "misc", key = "sellCollectedMounts", kind = "check", name = "sellCollectedMounts" },
+        { section = "misc", key = "sellCollectedToys",   kind = "check", name = "sellCollectedToys" },
         { section = "misc", key = "sellPets",            kind = "check", name = "sellCollectedPets" },
         { section = "misc", key = "sellHoliday",         kind = "check", name = "sellHoliday" },
         { section = "misc", key = "sellMountEquipment",  kind = "check", name = "sellMountEquipment" },

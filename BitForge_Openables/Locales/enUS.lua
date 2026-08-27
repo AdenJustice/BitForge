@@ -28,6 +28,11 @@ L["tooltip:drag"] = "Alt + drag to move."
 -- module states its own.
 L["report:blurb"] = "This report carries the item, how BitForge classified it, the text of its tooltip, and which professions this character knows. Nothing here names your character, realm, guild or faction."
 
+-- /bfdump o all's own footnote: it discloses every ranked candidate in the
+-- player's bags, not the single item report:blurb describes, and carries no
+-- tooltip text.
+L["report:blurbField"] = "This report carries every candidate the last scan ranked to open next, in ranked order: each one's name, item ID, bag and slot, stack count, priority and the reason it ranked where it did, and whether it is locked, on cooldown or deferred. Nothing here names your character, realm, guild or faction, and no item's tooltip text is included."
+
 L["blacklist:windowTitle"] = "Blacklisted Items"
 L["blacklist:empty"] = "No items are blacklisted."
 L["blacklist:remove"] = "Remove"

@@ -96,3 +96,5 @@ L["ui:anchorKeyTaken"] = "Já existe um quadro de ancoragem chamado '%s'"
 
 L["apply:deferredCombat"] = "Em combate -- o layout será aplicado quando você sair dele"
 L["apply:deferredDone"] = "Combate encerrado: %d aplicados, %d sem alteração"
+
+L["report:blurb"] = "Este relatório contém o rótulo e a pasta de um elemento do EllesmereUI, se ele está ancorado a outro elemento e em qual lado, sua posição e tamanho salvos, e se o layout salvo o gerencia. Nada aqui menciona seu personagem, reino, guilda ou facção."

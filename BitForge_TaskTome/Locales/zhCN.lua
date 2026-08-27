@@ -3,9 +3,9 @@ if GetLocale() ~= "zhCN" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["status:widgetTitle"] = "任务册"
+L["status:widgetTitle"] = "Task Tome"
 
-L["settings:configTitle"] = "任务册 — 配置"
+L["settings:configTitle"] = "Task Tome — 配置"
 L["btn:addRootTask"] = "添加主任务"
 L["btn:addChildTask"] = "添加子任务"
 L["btn:deleteTask"] = "删除任务"
@@ -31,7 +31,7 @@ L["btn:confirmDelete"] = "删除"
 L["btn:cancel"] = "取消"
 L["msg:nameRequired"] = "任务名称不能为空。"
 
-L["settings:taskTomePanel"] = "任务册"
+L["settings:taskTomePanel"] = "Task Tome"
 L["settings:config"] = "配置"
 L["settings:openConfig"] = "打开"
 

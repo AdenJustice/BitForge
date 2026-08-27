@@ -21,8 +21,10 @@ L["cmd:coreUsage"] = "/bitforge core whatsnew -- affiche ce qui a changé dans c
 
 -- Report window
 L["report:windowTitle"] = "Signaler un objet"
-L["report:howTo"] = "Sélectionnez tout, puis appuyez sur Ctrl+C. Collez-le dans un nouveau ticket à :"
+L["report:windowTitleDiagnostic"] = "Rapport de diagnostic"
+L["report:howTo"] = "Tout sélectionner, puis appuyez sur Ctrl+C. Collez-le dans un nouveau ticket à :"
 L["report:selectAll"] = "Tout sélectionner"
+L["report:encoded"] = "Ce rapport était trop long pour être lu, il a donc été compressé. Collez-le tel quel -- les outils du développeur le décompresseront."
 
 -- The release-notes popup
 L["whatsNew:windowTitle"] = "Nouveautés de BitForge"

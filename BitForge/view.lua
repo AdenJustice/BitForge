@@ -29,6 +29,7 @@ local CreateFrame = CreateFrame
 local Minimap = Minimap
 local GameTooltip = GameTooltip
 local GetCursorPosition = GetCursorPosition
+local UIParent = UIParent
 
 ---@param modules { name: string, title: string, enabled: boolean }[]
 ---@param callbacks table<string, { getValue: fun(), setValue: fun(value: boolean) }>
@@ -289,19 +290,48 @@ view.minimapButton = minimapButton
 -- the first on screen carrying another module's item.
 local reportWindow
 
+--- The report window's title for a diagnostic dump (/bfdump), as opposed to
+--- the item-report default ShowReport falls back to. An element's frame
+--- geometry or a bag's whole ranked field is not "an item," so the window
+--- should not claim it is one.
+---@return string
+function BitForge:DiagnosticReportTitle()
+    return locale["report:windowTitleDiagnostic"]
+end
+
 --- Shows a module's report, focused and selected, ready for the player's Ctrl+C.
 ---
 --- Core owns the window because modules never call siblings. It owns nothing
---- else: the payload and the sentence about what that payload discloses both
---- arrive from the caller, because BatchSell sends an item link -- which states
---- the character's level and specialization in its own fields -- and Openables
---- sends no link at all.
+--- else: the payload, the sentence about what that payload discloses, and the
+--- title all arrive from the caller, because BatchSell sends an item link --
+--- which states the character's level and specialization in its own fields --
+--- and Openables sends no link at all, and because an item report and a
+--- diagnostic dump are not describing the same thing.
 ---@param body  string  the report text
 ---@param blurb string  the calling module's own sentence about what it discloses
-function BitForge:ShowReport(body, blurb)
+---@param title string?  defaults to locale["report:windowTitle"]; a diagnostic
+---                       dump passes BitForge:DiagnosticReportTitle() instead
+function BitForge:ShowReport(body, blurb, title)
+    title = title or locale["report:windowTitle"]
+
+    -- Long reports are encoded rather than shown. Not a size limit -- nothing
+    -- in this window truncates -- but a report a player was never going to
+    -- read is a wall to select, and a printable blob is one line to copy.
+    -- The footnote is load-bearing: an unreadable payload with no
+    -- explanation reads as a bug.
+    --
+    -- EncodeForPaste answering nil -- the library missing -- falls through to
+    -- plain text by construction. This is the branch nobody will exercise in
+    -- game: BitForge.toc loads LibDeflate unconditionally.
+    local encoded = #body > self.COMPRESS_THRESHOLD and self:EncodeForPaste(body)
+    if encoded then
+        body = encoded
+        blurb = blurb .. " " .. locale["report:encoded"]
+    end
+
     if not reportWindow then
         reportWindow = UI.CreateTextWindow({
-            title         = locale["report:windowTitle"],
+            title         = title,
             lead          = locale["report:howTo"],
             link          = ns.enum.REPORT_URL,
             footnote      = blurb,
@@ -314,8 +344,48 @@ function BitForge:ShowReport(body, blurb)
                 },
             },
         })
+
+        -- Applied once, right here at creation, and never again on a later
+        -- Open(): the window is created once and reused for the rest of the
+        -- session, so restoring on every open would undo a drag the player
+        -- made earlier in the same session while it stayed up. A falsy record
+        -- (never dragged) leaves the window on the CENTER anchor
+        -- CreateTextWindow already gave it.
+        --
+        -- All four fields are checked, not just the record. Nothing this addon
+        -- writes is ever partial -- UpdateDatabase stores the table in one shot
+        -- and core's own db.global is not walked by PruneMatchingDefaults -- but
+        -- SetPoint raises on a nil anchor, and the saved variables are a file a
+        -- player can edit. A half-written record would break the window, and
+        -- with it every /bfdump, until they found and cleared the value by hand.
+        local storedPoint = model.ReadDatabase("reportWindowPoint")
+        if storedPoint and storedPoint.point and storedPoint.relPoint
+            and storedPoint.x and storedPoint.y then
+            reportWindow:ClearAllPoints()
+            reportWindow:SetPoint(storedPoint.point, UIParent, storedPoint.relPoint,
+                storedPoint.x, storedPoint.y)
+        end
+
+        -- Hooked directly on the frame rather than a TextWindow onMoved
+        -- option: this is the one window issue #312 asked for -- What's New
+        -- is opened once after an update and read, not dragged around during
+        -- use -- so a reusable template option nothing else would ever supply
+        -- is speculative. HookScript chains after CreateTextWindow's own
+        -- OnDragStop, which already called StopMovingOrSizing, so the point
+        -- read here is the one the drag just settled on. Stored on drag stop
+        -- rather than on close, so a window dismissed with Escape still
+        -- remembers where it was.
+        reportWindow:HookScript("OnDragStop", function(self)
+            local point, _, relPoint, x, y = self:GetPoint()
+            model.UpdateDatabase("reportWindowPoint",
+                { point = point, relPoint = relPoint, x = x, y = y })
+        end)
     end
 
+    -- Retitled on every call, not only at creation: the window is reused
+    -- across modules and across the item-report/diagnostic-dump split, so a
+    -- stale title from whichever call came before would linger otherwise.
+    reportWindow:SetTitle(title)
     reportWindow:SetText(body)
     reportWindow:SetFootnote(blurb)
     reportWindow:Open()

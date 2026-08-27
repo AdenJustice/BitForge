@@ -96,3 +96,5 @@ L["ui:anchorKeyTaken"] = "Ya existe un marco de anclaje llamado '%s'"
 
 L["apply:deferredCombat"] = "En combate -- el diseño se aplicará cuando salgas de él"
 L["apply:deferredDone"] = "Combate terminado: %d aplicados, %d sin cambios"
+
+L["report:blurb"] = "Este informe incluye la etiqueta y la carpeta de un elemento de EllesmereUI, si está anclado a otro elemento y por qué lado, su posición y tamaño guardados, y si el diseño guardado lo gestiona. Nada aquí menciona tu personaje, reino, hermandad o facción."

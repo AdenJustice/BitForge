@@ -96,3 +96,5 @@ L["ui:anchorKeyTaken"] = "Esiste già un riquadro di ancoraggio chiamato '%s'"
 
 L["apply:deferredCombat"] = "In combattimento -- il layout verrà applicato quando ne uscirai"
 L["apply:deferredDone"] = "Combattimento terminato: %d applicati, %d invariati"
+
+L["report:blurb"] = "Questo rapporto include l'etichetta e la cartella di un elemento di EllesmereUI, se è ancorato a un altro elemento e su quale lato, la sua posizione e dimensione salvate, e se il layout salvato lo gestisce. Niente qui menziona il tuo personaggio, regno, gilda o fazione."

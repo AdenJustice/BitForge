@@ -31,7 +31,7 @@ L["ui:manifestHint"] = "Ti aspettavi qualcosa che non è nell'elenco? Passa il m
 
 -- Merchant row
 L["tooltip:charOverride"] =
-"L'impostazione di questo personaggio ha la precedenza sulla lista del gruppo di guerra: questo oggetto verrà venduto."
+"L'impostazione di questo personaggio ha la precedenza sulla lista della Brigata: questo oggetto verrà venduto."
 
 L["section:general"] = "Generale"
 L["section:lists"] = "Liste"
@@ -42,33 +42,28 @@ L["settings:openRuleWindow"] = "Visualizza regole"
 L["settings:openRuleWindowTooltip"] =
 "Spiega cosa cerca ogni regola e perché un oggetto è stato tenuto o venduto"
 L["settings:sellJunk"] = "Vendi spazzatura"
-L["settings:sellJunkTooltip"] = "Vendi automaticamente tutti gli oggetti di scarsa qualità (grigi) quando visiti un venditore"
+L["settings:sellJunkTooltip"] = "Vendi automaticamente tutti gli oggetti di qualità scadente (grigi) quando visiti un venditore"
 L["settings:limitBatch"] = "Limita blocco a 12"
-L["settings:limitBatchTooltip"] = "Vendi al massimo 12 oggetti per clic per evitare il throttling del server"
+L["settings:limitBatchTooltip"] = "Vendi al massimo 12 oggetti per clic per evitare la limitazione del server"
 L["settings:keepUsedReagents"] = "Conserva i componenti dei tuoi mestieri"
 L["settings:keepUsedReagentsTooltip"] =
 "Conserva i componenti d'artigianato che un mestiere di questo account può usare. Una copia legata all'anima non raggiungerà mai un altro personaggio, quindi la conservano solo i mestieri di questo personaggio"
-L["settings:compareQuality"] = "Confronta la qualità"
-L["settings:compareQualityTooltip"] =
-"Vendi l'equipaggiamento la cui qualità è inferiore a quella che indossi, indipendentemente dal livello oggetto"
-L["settings:compareItemLevel"] = "Confronta il livello oggetto"
-L["settings:compareItemLevelTooltip"] =
-"Confronta l'equipaggiamento con quello che indossi in base al livello oggetto, usando il margine sottostante. Se disattivato, il livello oggetto non influisce sulla decisione"
-L["settings:ilvlMargin"] = "Margine livello oggetto"
-L["settings:ilvlMarginTooltip"] =
-"Quanto vale un grado di qualità in livelli oggetto. Con 10, un pezzo un grado sotto quello che indossi deve superarlo di 10 per essere tenuto, e uno un grado sopra sopravvive 10 sotto. Alla tua stessa qualità un pezzo deve semplicemente battere lo slot. Con 0 la qualità smette di contare e decide solo il livello dell'oggetto"
-L["settings:emphasizeQuality"] = "Enfatizza la qualità"
-L["settings:emphasizeQualityTooltip"] =
-"Conta un grado di qualità per il doppio del margine e consente a un pezzo di pari qualità di restare quel margine sotto lo slot. La qualità superiore a quella che indossi diventa più economica da tenere, e quella inferiore più cara da giustificare"
-L["settings:keepForDisenchant"] = "Mantieni equipaggiamento disincantabile"
+L["settings:margin"] = "Margine livello oggetto"
+L["settings:marginTooltip"] =
+"Di quanto un pezzo della tua stessa qualità può restare sotto lo slot prima di essere venduto. Con 0 basta eguagliare lo slot"
+L["settings:qualityMargin"] = "Margine qualità"
+L["settings:qualityMarginTooltip"] =
+"Quanto vale un grado di qualità in livelli oggetto. Con 10, un pezzo un grado sotto quello che indossi ha bisogno di 10 livelli oggetto in più per essere tenuto, e uno un grado sopra sopravvive 10 sotto. Con 0 la qualità smette di contare e decide solo il livello dell'oggetto. Con Sempre, qualsiasi qualità superiore viene tenuta a prescindere dal livello oggetto, e nessun livello oggetto salva una inferiore"
+L["settings:qualityMarginAlways"] = "Sempre"
+L["settings:keepForDisenchant"] = "Mantieni l'equipaggiamento che vale la pena disincantare"
 L["settings:keepForDisenchantTooltip"] =
-"Mantieni l'equipaggiamento che potrebbe essere disincantato, per l'asta o un alter con il mestiere. Gli incantatori mantengono sempre il proprio equipaggiamento legato disincantabile, indipendentemente da questa impostazione"
+"Mantieni l'equipaggiamento che un incantatore potrebbe disincantare, in base a ciò che produrrebbe. L'equipaggiamento di un'espansione conclusa produce i materiali di quell'espansione, motivo per cui la scelta riguarda i materiali e non l'equipaggiamento. Il tuo incantatore personale mantiene sempre ciò che solo lui può raggiungere, con qualsiasi impostazione -- ma questa impostazione decide comunque se ciò si estende anche ai materiali più vecchi"
 L["settings:spareBindOnAccount"] = "Risparmia equipaggiamento legato all'account"
 L["settings:spareBindOnAccountTooltip"] =
-"Quale equipaggiamento non legato, legato all'account, mantenere affinché una copia raggiunga un altro personaggio: quello di questa espansione, tutto, o nessuno"
+"Quale equipaggiamento legato all'account mantenere finché può ancora passare a un altro personaggio: quello di questa espansione, tutto, o nessuno"
 L["settings:spareBindOnEquip"] = "Risparmia equipaggiamento che si lega quando indossato"
 L["settings:spareBindOnEquipTooltip"] =
-"Quale equipaggiamento non legato, che si lega quando indossato, mantenere per un altro personaggio o l'asta: quello di questa espansione, tutto, o nessuno"
+"Quale equipaggiamento che si lega quando indossato mantenere finché può ancora raggiungere un altro personaggio o la casa d'aste: quello di questa espansione, tutto, o nessuno"
 L["settings:reagentsCurrentOnly"] = "Solo i componenti di questa espansione"
 L["settings:reagentsCurrentOnlyTooltip"] =
 "Restringe la regola qui sopra ai componenti dell'espansione corrente. Una ricetta che chiede un'erba di Classic la chiede ancora oggi allo stesso modo, quindi questa opzione resta disattivata a meno che tu non preferisca non accumulare componenti vecchi"
@@ -98,10 +93,13 @@ L["settings:keepLearnableTooltip"] =
 "Mantiene una ricetta che questo personaggio non ha imparato"
 L["settings:keepTradeableRecipes"] = "Mantieni le ricette commerciabili"
 L["settings:keepTradeableRecipesTooltip"] =
-"Mantiene una ricetta ancora non legata, così da poter raggiungere un alt o l'asta anche quando questo personaggio l'ha già imparata"
+"Mantiene una ricetta ancora non legata, così da poter raggiungere un personaggio secondario o la casa d'aste anche quando questo personaggio l'ha già imparata"
 L["settings:sellCollectedMounts"] = "Vendi le cavalcature già ottenute"
 L["settings:sellCollectedMountsTooltip"] =
 "Vende una cavalcatura che possiedi già, purché quella copia sia legata all'anima. Una copia non legata viene mantenuta qualunque cosa dica questa opzione, perché può ancora raggiungere qualcuno"
+L["settings:sellCollectedToys"] = "Vendi i giocattoli già ottenuti"
+L["settings:sellCollectedToysTooltip"] =
+"Vende un giocattolo che possiedi già, purché la copia nelle tue borse sia legata. Una copia non legata viene mantenuta qualunque cosa dica la tua collezione, perché può ancora raggiungere qualcuno"
 L["settings:sellCollectedPets"] = "Vendi le mascotte già ottenute"
 L["settings:sellCollectedPetsTooltip"] =
 "Vende una mascotte da combattimento che hai già. Una che non hai mai ottenuto non viene mai venduta da questa regola, in nessuna delle due posizioni"
@@ -110,10 +108,10 @@ L["settings:sellHolidayTooltip"] =
 "Vende i gettoni, i costumi e le curiosità che gli eventi mondiali lasciano nelle tue borse"
 L["settings:sellMountEquipment"] = "Vendi l'equipaggiamento da cavalcatura"
 L["settings:sellMountEquipmentTooltip"] =
-"Vende l'equipaggiamento da cavalcatura. Ne vale un pezzo solo per tutto l'account alla volta, quindi le scorte nelle borse non fanno nulla"
-L["settings:sellCollectedDecor"] = "Vendi gli arredi già ottenuti"
+"Vende l'equipaggiamento da cavalcatura. Si applica un solo pezzo per volta a tutto l'account, quindi i pezzi di scorta nelle tue borse non fanno nulla"
+L["settings:sellCollectedDecor"] = "Vendi gli decorazioni già ottenuti"
 L["settings:sellCollectedDecorTooltip"] =
-"Vende gli arredi per la casa che il tuo catalogo possiede già. Un pezzo che non ha mai visto viene mantenuto, e così anche uno per cui il catalogo non si è potuto leggere"
+"Vende gli decorazioni per la casa che il tuo catalogo possiede già. Un pezzo che non ha mai visto viene mantenuto, e così anche uno per cui il catalogo non si è potuto leggere"
 L["settings:keepTradeableDyes"] = "Mantieni le tinture commerciabili"
 L["settings:keepTradeableDyesTooltip"] =
 "Una tintura si consuma quando viene applicata e non si impara mai, quindi non c'è nessuna collezione a cui chiedere. Si chiede invece se questa copia può ancora raggiungere qualcuno: non legata viene mantenuta, legata venduta"
@@ -124,6 +122,10 @@ L["settings:spareProfessionsTooltip"] =
 L["spare:current"] = "Espansione attuale"
 L["spare:all"] = "Tutto"
 L["spare:none"] = "Nessuno"
+
+L["materials:current"] = "Materiali attuali"
+L["materials:all"] = "Qualsiasi materiale"
+L["materials:none"] = "Non mantenere"
 
 L["profession:FirstAid"] = "Primo Soccorso"
 L["profession:Blacksmithing"] = "Forgiatura"
@@ -157,7 +159,7 @@ L["option:recipesOld"] = "Tieni quelli più vecchi, salvo che nessuna ricetta li
 
 -- List tabs
 L["btn:removeEntry"] = "Rimuovi"
-L["list:warband"] = "Gruppo di guerra"
+L["list:warband"] = "Brigata"
 L["list:character"] = "Personaggio"
 L["status:listEmpty"] = "Questa lista è vuota"
 L["status:listCount"] = "%d voci"
@@ -179,16 +181,16 @@ L["reason:JUNK_SOLD"] = "«Vendi spazzatura» è attivato, la spazzatura viene v
 L["reason:ABOVE_EPIC"] = "Migliore di epico, quindi non viene mai venduto"
 L["reason:BIND_ON_ACCOUNT"] = "L'equipaggiamento legato all'account viene mantenuto"
 L["reason:DISENCHANTABLE"] = "Vale la pena mantenerlo per disincantarlo o rivenderlo"
-L["reason:BAG_KEPT"] = "I sacchetti non vengono mai venduti"
-L["reason:PROFESSION_GEAR_KEPT"] = "L'equipaggiamento professionale non viene mai venduto"
-L["reason:ENHANCEMENT_CURRENT"] = "Gli incantesimi di questa espansione vengono mantenuti"
-L["reason:ENHANCEMENT_LAST_EXPANSION"] = "Gli incantesimi dell'espansione precedente vengono mantenuti"
-L["reason:ENHANCEMENT_OUTDATED"] = "Gli incantesimi delle espansioni passate vengono venduti"
+L["reason:BAG_KEPT"] = "Le borse non vengono mai vendute"
+L["reason:PROFESSION_GEAR_KEPT"] = "L'equipaggiamento da mestiere non viene mai venduto"
+L["reason:ENHANCEMENT_CURRENT"] = "I miglioramenti oggetto di questa espansione vengono mantenuti"
+L["reason:ENHANCEMENT_LAST_EXPANSION"] = "I miglioramenti oggetto dell'espansione precedente vengono mantenuti"
+L["reason:ENHANCEMENT_OUTDATED"] = "I miglioramenti oggetto delle espansioni passate vengono venduti"
 L["reason:CONSUMABLE_CURRENT"] = "I consumabili di questa espansione vengono mantenuti"
 L["reason:CONSUMABLE_LAST_EXPANSION"] = "I consumabili dell'espansione precedente vengono mantenuti"
-L["reason:CONSUMABLE_REAGENT"] = "Una ricetta da qualche parte lo usa come reagente"
+L["reason:CONSUMABLE_REAGENT"] = "Una ricetta da qualche parte lo usa come componente"
 L["reason:GEM_CURRENT"] = "Le gemme di questa espansione vengono mantenute"
-L["reason:GEM_REAGENT"] = "Una ricetta da qualche parte lo usa come reagente"
+L["reason:GEM_REAGENT"] = "Una ricetta da qualche parte lo usa come componente"
 L["reason:GEM_ARTIFACT_RELIC_KEPT"] = "Le reliquie di artefatto vengono mantenute"
 L["reason:TRADE_GOOD_SPARED"] = "Un mestiere che hai scelto di risparmiare lo vuole"
 L["reason:NOT_WANTED"] = "Nessuna casella conserva l'oggetto, quindi viene venduto"
@@ -208,8 +210,8 @@ L["reason:STILL_TRADEABLE"] = "L'oggetto è ancora scambiabile, quindi viene man
 L["reason:ALREADY_LEARNED"] = "L'oggetto è già stato imparato, quindi viene venduto"
 L["reason:DEFAULT"] = "Nessuna regola lo ha reclamato, quindi viene mantenuto"
 
-L["listReset:warbandBlacklist"] = "Reimposta lista nera del gruppo di guerra"
-L["listReset:warbandWhitelist"] = "Reimposta lista bianca del gruppo di guerra"
+L["listReset:warbandBlacklist"] = "Reimposta lista nera della Brigata"
+L["listReset:warbandWhitelist"] = "Reimposta lista bianca della Brigata"
 L["listReset:charBlacklist"] = "Reimposta lista nera del personaggio"
 L["listReset:charWhitelist"] = "Reimposta lista bianca del personaggio"
 L["listReset:confirm"] = "Sei sicuro di voler svuotare questa lista? L'operazione non può essere annullata."
@@ -227,7 +229,7 @@ L["rule:tempBlurb"] =
 L["rule:black"] = "Non vendere mai"
 L["rule:blackSub"] = "La tua lista Non vendere mai"
 L["rule:blackBlurb"] =
-"Tutto ciò che è nella tua lista Non vendere mai resta nelle tue borse. Un'impostazione su questo personaggio prevale sulla lista del gruppo di guerra, in qualunque direzione i due siano in disaccordo."
+"Tutto ciò che è nella tua lista Non vendere mai resta nelle tue borse. Un'impostazione su questo personaggio prevale sulla lista della Brigata, in qualunque direzione i due siano in disaccordo."
 L["rule:gates"] = "Non vendibile"
 L["rule:gatesSub"] = "Il venditore non li accetta"
 L["rule:gatesBlurb"] =
@@ -283,11 +285,11 @@ L["rule:enhancementsBlurb"] =
 L["rule:recipes"] = "Ricette"
 L["rule:recipesSub"] = "Modelli, progetti, formule"
 L["rule:recipesBlurb"] =
-"Ogni ricetta porta con sé il mestiere a cui appartiene, quindi viene valutata non appena compare dal mercante. Una ricetta che non appartiene a nessun mestiere in particolare -- uno schema o un manuale generico -- viene lasciata stare, perché non c'è nulla con cui valutarla."
+"Ogni ricetta porta con sé il mestiere a cui appartiene, quindi viene valutata non appena compare dal mercante. Una ricetta che non appartiene a nessun mestiere in particolare -- un modello o un manuale generico -- viene lasciata stare, perché non c'è nulla con cui valutarla."
 L["rule:misc"] = "Varie"
-L["rule:miscSub"] = "Cuccioli, cavalcature, oggetti festivi"
+L["rule:miscSub"] = "Mascotte, cavalcature, giocattoli, oggetti festivi"
 L["rule:miscBlurb"] =
-"I componenti di incantesimo e le cianfrusaglie non categorizzate sono lasciati stare. Gli oggetti grigi sono gestiti dalla regola Qualità scadente qui sopra, non qui."
+"I componenti di incantesimo sono lasciati stare. Tra le cianfrusaglie non categorizzate, viene giudicato solo un giocattolo: viene venduto non appena è già nella tua collezione e la copia nelle tue borse è legata. Gli oggetti grigi sono gestiti dalla regola Qualità scadente qui sopra, non qui."
 L["rule:profession"] = "Equipaggiamento da mestiere"
 L["rule:professionSub"] = "Strumenti e accessori"
 L["rule:professionBlurb"] =
@@ -299,8 +301,12 @@ L["rule:housingBlurb"] =
 L["rule:none"] = "Tutto il resto"
 L["rule:noneSub"] = "Oggetti missione, chiavi, glifi, gettoni"
 L["rule:noneBlurb"] =
-"Tipi di oggetto che BatchSell non valuta affatto: oggetti missione, chiavi, cuccioli in gabbia, glifi, gettoni WoW, componenti di incantesimo, frecce e le altre categorie dismesse. Restano nelle tue borse indipendentemente da come sono impostate le regole sopra."
+"Tipi di oggetto che BatchSell non valuta affatto: oggetti missione, chiavi, mascotte in gabbia, glifi, gettoni WoW, componenti di incantesimo, frecce e le altre categorie dismesse. Restano nelle tue borse indipendentemente da come sono impostate le regole sopra."
 
 -- The report window's footnote. What BatchSell discloses is not what Openables
 -- discloses, so each module states its own.
 L["report:blurb"] = "Questo rapporto include il link dell'oggetto, qualunque cosa tu abbia equipaggiato nello slot che occuperebbe, e le impostazioni che hanno giudicato la coppia. Un link oggetto indica il livello e la specializzazione del tuo personaggio -- questo fa parte del formato del link stesso, e rimuoverlo farebbe perdere il dettaglio che rende il rapporto riproducibile. Niente qui nomina il tuo personaggio, il tuo regno, la tua gilda o la tua fazione, e niente descrive un altro slot."
+
+-- The disenchant scan's own footnote: it discloses several bag items and
+-- their tooltips, not the single item/link pair report:blurb describes.
+L["report:blurbDisenchant"] = "Questo rapporto include fino a otto armi o pezzi di armatura dalle tue borse che potrebbero valere la pena disincantare, insieme alla borsa e allo slot di ciascuno e al testo completo del suo tooltip. Niente qui nomina il tuo personaggio, il tuo regno, la tua gilda o la tua fazione, e nient'altro nelle tue borse viene descritto."

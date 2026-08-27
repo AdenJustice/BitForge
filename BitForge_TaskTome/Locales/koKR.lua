@@ -3,9 +3,9 @@ if GetLocale() ~= "koKR" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
-L["status:widgetTitle"] = "할 일 장부"
+L["status:widgetTitle"] = "Task Tome"
 
-L["settings:configTitle"] = "할 일 장부 — 설정"
+L["settings:configTitle"] = "Task Tome — 설정"
 L["btn:addRootTask"] = "최상위 할 일 추가"
 L["btn:addChildTask"] = "하위 할 일 추가"
 L["btn:deleteTask"] = "할 일 삭제"
@@ -31,7 +31,7 @@ L["btn:confirmDelete"] = "삭제"
 L["btn:cancel"] = "취소"
 L["msg:nameRequired"] = "할 일 이름을 입력해야 합니다."
 
-L["settings:taskTomePanel"] = "할 일 장부"
+L["settings:taskTomePanel"] = "Task Tome"
 L["settings:config"] = "설정"
 L["settings:openConfig"] = "열기"
 

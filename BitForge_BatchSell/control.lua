@@ -262,6 +262,12 @@ local function supplement(facts, readTooltip)
         elseif sub == MISC_SUBCLASS.PET then
             facts.petCollected = readTooltip(facts.itemID, ITEM_PET_KNOWN)
         end
+
+        -- Left nil for anything that is not a toy, which makes "is it a toy"
+        -- and "is it collected" one question rather than two.
+        if C_ToyBox.GetToyInfo(facts.itemID) then
+            facts.toyCollected = PlayerHasToy(facts.itemID) and true or false
+        end
     elseif classID == Enum.ItemClass.Recipe then
         facts.recipeKnown = readTooltip(facts.itemID, ITEM_SPELL_KNOWN)
 
@@ -1029,6 +1035,55 @@ local function onPlayerReady()
             [8] = function(moduleDB)
                 moduleDB.global.rules.housing.sellCollectedDecor = false
             end,
+            -- ilvlMargin never was an item level margin: it priced a quality
+            -- tier, and emphasizeQuality doubled it while granting a tolerance
+            -- of the same size. The two effects are now two keys, and the one
+            -- whose meaning changed takes a new name so no stored value is
+            -- silently reinterpreted.
+            --
+            -- Unlike steps 3, 4 and 5, this one COULD have carried the tuning
+            -- across exactly -- emphasis off maps to qualityMargin = ilvlMargin
+            -- with margin 0, emphasis on to double and equal. That was declined
+            -- rather than unavailable, and the neighbouring comments would
+            -- otherwise read as though it had been unavailable here too. The
+            -- seeded defaults reproduce the shipped comparison, so a player who
+            -- never touched these two notices nothing.
+            [9] = function(moduleDB)
+                local gear = moduleDB.global.rules.gear
+                gear.ilvlMargin = nil
+                gear.emphasizeQuality = nil
+            end,
+
+            -- The two gear toggles are retired, and neither transition is
+            -- lossless, which is why no value is carried forward. A player who
+            -- had compareItemLevel off was having no item level comparison at
+            -- all, and no tolerance reproduces that -- the widest is 30 -- so
+            -- they get the ladder's answer now. A player who had compareQuality
+            -- on gets what qualityMargin charges a tier instead of an absolute
+            -- veto. The defaults are unchanged, so a player who touched neither
+            -- notices nothing. Idempotent for the same reason step 9 is.
+            [10] = function(moduleDB)
+                local gear = moduleDB.global.rules.gear
+                gear.compareItemLevel = nil
+                gear.compareQuality = nil
+            end,
+
+            -- keepForDisenchant was a boolean with no age limit at all, so a
+            -- stored true maps to ALL rather than to the new default -- every
+            -- existing player goes on keeping exactly what they kept. A fresh
+            -- profile gets CURRENT instead, so the migration and the default
+            -- deliberately disagree: narrowing someone's stored setting would
+            -- start selling gear they were keeping, and they never asked.
+            --
+            -- Typed rather than truthy: the old value is a boolean and the new
+            -- one a string, so re-running this against a migrated profile has
+            -- to be a no-op, which is what makes it idempotent.
+            [11] = function(moduleDB)
+                local gear = moduleDB.global.rules.gear
+                if type(gear.keepForDisenchant) == "boolean" then
+                    gear.keepForDisenchant = gear.keepForDisenchant and "ALL" or "NONE"
+                end
+            end,
         },
     }, startModule)
 end
@@ -1044,7 +1099,8 @@ ns:Subscribe(events.PLAYER_READY, onPlayerReady)
 
 -- /bfdump b <itemID> captures a whole verdict -- the item, what is equipped in
 -- the slot it would fill, the settings that judged the pair, and the rule that
--- decided -- into the module's debug container, where it survives the session.
+-- decided -- and shows it in the report window, for the player to paste rather
+-- than dig out of SavedVariables.
 --
 -- It takes an ID rather than a bag slot on purpose. The tooltip could already
 -- explain anything you were holding, live, and nothing else: a verdict reported
@@ -1052,10 +1108,8 @@ ns:Subscribe(events.PLAYER_READY, onPlayerReady)
 -- resolves the candidate from the client's cache and the equipped side from the
 -- slots its equip location maps to, so neither has to still be in your bags.
 --
--- Never gate this block on model.IsDebug(), as it once was. The flag is read
--- live everywhere else, so switching it on mid-session reached every check in
--- the pipeline and not the command that reports them. The refusal belongs where
--- GetDebugDump already puts it: at call time.
+-- Never gate this block on model.IsDebug(). The command records nothing -- the
+-- record goes to the player, not to disk -- so there is nothing left to gate.
 do
     -- Every field is flattened with tostring. Item data can carry secret values
     -- in 12.0, the record has to survive being written to a SavedVariable, and
@@ -1100,9 +1154,14 @@ do
     -- bury them, and these are the ones that explain a surprising verdict.
     local function DecidingSettings(settings)
         local gear = settings.rules and settings.rules.gear or {}
+        -- The top position is a word on the slider for a reason: pasted into an
+        -- issue as a bare 32 it reads as thirty-two item levels, the exact
+        -- misreading the word exists to prevent.
+        local qualityMargin = gear.qualityMargin >= enum.QUALITY_MARGIN_ALWAYS
+            and "ALWAYS" or Flatten(gear.qualityMargin)
         return {
-            ilvlMargin         = Flatten(gear.ilvlMargin),
-            emphasizeQuality   = Flatten(gear.emphasizeQuality),
+            margin             = Flatten(gear.margin),
+            qualityMargin      = qualityMargin,
             spareBindOnAccount = Flatten(gear.spareBindOnAccount),
             keepForDisenchant  = Flatten(gear.keepForDisenchant),
             playerClass        = Flatten(settings.playerClass),
@@ -1141,23 +1200,18 @@ do
     local EQUIPPED_FIELDS = { "slot", "link", "level", "quality", "qualityGap", "itemGap" }
 
     local SETTING_FIELDS = {
-        "ilvlMargin", "emphasizeQuality", "spareBindOnAccount", "keepForDisenchant",
+        "margin", "qualityMargin", "spareBindOnAccount", "keepForDisenchant",
         "playerClass", "isEnchanter",
     }
 
-    --- One item's whole verdict as text a player can select and paste.
-    ---
-    --- The record /bfdump b <id> files, rendered rather than stored -- so it carries
-    --- no debug gate, writes nothing and needs no /reload. BuildDump has already
-    --- flattened every value with tostring, which is what makes an item's secret
-    --- values safe to put in front of a player in 12.0.
-    ---@param bagIndex number
-    ---@param slotIndex number
-    ---@return string|nil  nil when the slot is empty or its item data has not arrived
-    function control.ReportText(bagIndex, slotIndex)
-        local report = scanner.Explain(bagIndex, slotIndex)
-        if not report then return nil end
-
+    --- One report as text. Both entry points render the same way -- the
+    --- tooltip's copy affordance and /bfdump differ only in how they resolve
+    --- the item. BuildDump has already flattened every value with tostring,
+    --- which is what makes an item's secret values safe to put in front of a
+    --- player in 12.0.
+    ---@param report table
+    ---@return string
+    local function RenderItemReport(report)
         local dump = BuildDump(report)
         local lines = {
             "BitForge BatchSell -- item report",
@@ -1187,7 +1241,24 @@ do
         return concat(lines, "\n")
     end
 
-    --- Capture one item's verdict into the debug container.
+    --- One item's whole verdict as text a player can select and paste, for
+    --- the item currently under the tooltip's cursor.
+    ---@param bagIndex number
+    ---@param slotIndex number
+    ---@return string|nil  nil when the slot is empty or its item data has not arrived
+    function control.ReportText(bagIndex, slotIndex)
+        local report = scanner.Explain(bagIndex, slotIndex)
+        if not report then return nil end
+
+        return RenderItemReport(report)
+    end
+
+    --- Show one item's whole verdict in the report window.
+    ---
+    --- Nothing is stored: the record used to be parked in db.debug.dump for a
+    --- later session to dig out of SavedVariables, which is why it needed the
+    --- debug flag to stop it accumulating unasked. Rendered and shown, it
+    --- records nothing, so it needs no flag and no /reload.
     ---@param itemID number|nil
     function control.DumpItem(itemID)
         if not itemID then
@@ -1202,15 +1273,8 @@ do
             return
         end
 
-        local dump = model.GetDebugDump()
-        if not dump then
-            BitForge:Print("BatchSell: diagnostics are off for this module")
-            return
-        end
-
-        dump[tostring(itemID)] = BuildDump(report)
-        BitForge:ReportDump(ADDON_NAME, format("dumped item %d (%s / %s)",
-            itemID, tostring(report.verdict), tostring(report.rule)))
+        BitForge:ShowReport(RenderItemReport(report), locale["report:blurb"],
+            BitForge:DiagnosticReportTitle())
     end
 
     -- The disenchant probe is scaffolding for one open question: which signal
@@ -1224,9 +1288,9 @@ do
     -- deliberately. The state under investigation is destroyed by the act of
     -- investigating it any other way: a pending spell does not survive being
     -- studied one pasted line at a time, and a bag does not hold still between
-    -- them. Run it once with the spell up and once with it down; each run is
-    -- filed under its own key, so a /reload afterwards leaves both on disk to
-    -- be compared.
+    -- them. Run it once with the spell up and once with it down -- the report
+    -- window is reused, not stacked, so copy the first result out before
+    -- running the second, or it is gone.
 
     local SCAN_ITEM_LIMIT = 8
 
@@ -1265,16 +1329,44 @@ do
         return captured
     end
 
-    --- Files the client's whole answer about disenchanting into the dump.
-    function control.ScanDisenchant()
-        local dump = model.GetDebugDump()
-        if not dump then
-            BitForge:Print("BatchSell: diagnostics are off for this module")
-            return
+    --- One disenchant-probe scan as text: the client's whole state, followed
+    --- by every captured item's tooltip lines.
+    ---@param scan table
+    ---@return string
+    local function RenderDisenchantReport(scan)
+        local lines = {
+            "BitForge BatchSell -- disenchant scan",
+            BitForge:ReportHeader(ADDON_NAME),
+            "",
+            scan.state,
+        }
+
+        -- Sorted rather than walked in hash order: two runs over the same bag
+        -- render their items in whatever order pairs() happens to reach them,
+        -- and the reason to run twice is to compare the two texts.
+        local keys = {}
+        for key in pairs(scan.items) do
+            keys[#keys + 1] = key
+        end
+        table.sort(keys)
+
+        for _, key in ipairs(keys) do
+            lines[#lines + 1] = ""
+            lines[#lines + 1] = key
+            for _, line in ipairs(scan.items[key]) do
+                lines[#lines + 1] = line
+            end
         end
 
+        return concat(lines, "\n")
+    end
+
+    --- Show the client's whole answer about disenchanting in the report window.
+    ---
+    --- Rendered and shown rather than filed, like control.DumpItem -- see its
+    --- comment for why the debug gate this used to need is gone with it.
+    function control.ScanDisenchant()
         local names = GlobalStringIndex()
-        local targeting = SpellIsTargeting() and true or false
 
         local items = {}
         local seen = 0
@@ -1301,9 +1393,7 @@ do
             end
         end
 
-        -- Keyed by the state it was taken in, so the second run cannot overwrite
-        -- the first -- the two together are the finding, not either alone.
-        dump[("disenchantScan targeting=%s"):format(tostring(targeting))] = {
+        local scan = {
             state = ("targeting=%s canTargetItem=%s canTargetItemID=%s"
                 .. " hasDisenchantSpell=%s isEnchanter=%s"):format(
                 tostring(SpellIsTargeting()),
@@ -1314,9 +1404,8 @@ do
             items = items,
         }
 
-        BitForge:ReportDump(ADDON_NAME,
-            format("captured %d item(s) with targeting=%s -- run again in the other state",
-                seen, tostring(targeting)))
+        BitForge:ShowReport(RenderDisenchantReport(scan), locale["report:blurbDisenchant"],
+            BitForge:DiagnosticReportTitle())
     end
 
     -- One handler, two subcommands. `disenchant` carries no digits and an item

@@ -47,27 +47,22 @@ L["settings:limitBatchTooltip"] = "Sell at most 12 items per click to avoid serv
 L["settings:keepUsedReagents"] = "Keep Reagents Your Professions Use"
 L["settings:keepUsedReagentsTooltip"] =
 "Keep crafting reagents a profession on this account can use. A soulbound copy can never reach an alt, so only this character's professions keep one"
-L["settings:compareQuality"] = "Compare Quality"
-L["settings:compareQualityTooltip"] =
-"Sell gear whose quality is lower than what you have equipped, regardless of item level"
-L["settings:compareItemLevel"] = "Compare Item Level"
-L["settings:compareItemLevelTooltip"] =
-"Weigh gear against what you have equipped by item level, using the margin below. With this off, item level plays no part in the decision"
-L["settings:ilvlMargin"] = "Item Level Margin"
-L["settings:ilvlMarginTooltip"] =
-"What one quality tier is worth in item levels. At 10, gear a tier below what you have equipped has to beat it by 10 to be kept, and a tier above survives 10 under it. At your own quality a piece has to beat the slot outright. At 0 quality stops counting and item level alone decides"
-L["settings:emphasizeQuality"] = "Emphasize Quality"
-L["settings:emphasizeQualityTooltip"] =
-"Count a quality tier for twice the margin, and allow a piece of your own quality that margin below the slot. Quality above what you have equipped becomes cheaper to keep, and quality below it dearer to excuse"
-L["settings:keepForDisenchant"] = "Keep Disenchantable Gear"
+L["settings:margin"] = "Item Level Margin"
+L["settings:marginTooltip"] =
+"How far under the slot a piece of your own quality can sit before it must be sold. At 0 it only has to match the slot"
+L["settings:qualityMargin"] = "Quality Margin"
+L["settings:qualityMarginTooltip"] =
+"What one quality tier is worth in item levels. At 10, gear a tier below what you have equipped needs 10 more item levels to be kept, and a tier above survives 10 under it. At 0 quality stops counting and item level alone decides. At Always, any higher quality is kept whatever its item level, and no item level saves a lower one"
+L["settings:qualityMarginAlways"] = "Always"
+L["settings:keepForDisenchant"] = "Keep Gear Worth Disenchanting"
 L["settings:keepForDisenchantTooltip"] =
-"Keep gear that could be disenchanted, for the auction house or an alt with the profession. Enchanters always keep their own bound disenchantable gear regardless of this setting"
+"Keep gear an enchanter could break down, by what it would yield. Gear from a finished expansion yields that expansion's materials, which is why the choice is about the materials rather than the gear. Your own enchanter always keeps what only they can reach, at any setting -- but this setting still decides whether that reach extends to older materials too"
 L["settings:spareBindOnAccount"] = "Spare Bind on Account Gear"
 L["settings:spareBindOnAccountTooltip"] =
-"Which unbound Bind on Account gear to keep so a copy can reach another character: this expansion's, all of it, or none"
+"Which Bind on Account gear to keep while it can still be passed to another character: this expansion's, all of it, or none"
 L["settings:spareBindOnEquip"] = "Spare Bind on Equip Gear"
 L["settings:spareBindOnEquipTooltip"] =
-"Which unbound Bind on Equip gear to keep for another character or the auction house: this expansion's, all of it, or none"
+"Which Bind on Equip gear to keep while it can still reach another character or the auction house: this expansion's, all of it, or none"
 L["settings:reagentsCurrentOnly"] = "Only This Expansion's Reagents"
 L["settings:reagentsCurrentOnlyTooltip"] =
 "Narrow the rule above to reagents from the current expansion. A recipe that wants a Classic herb wants it exactly as much today, so this stays off unless you would rather not stockpile old ones"
@@ -101,6 +96,9 @@ L["settings:keepTradeableRecipesTooltip"] =
 L["settings:sellCollectedMounts"] = "Sell Collected Mounts"
 L["settings:sellCollectedMountsTooltip"] =
 "Sell a mount you already own, once the copy is soulbound. An unbound one is kept whatever this says, because it can still reach someone who wants it"
+L["settings:sellCollectedToys"] = "Sell Collected Toys"
+L["settings:sellCollectedToysTooltip"] =
+"Sells a toy already in your toy box, once the copy in your bags is bound. An unbound one is kept whatever your collection says, because it can still reach someone who wants it"
 L["settings:sellCollectedPets"] = "Sell Collected Pets"
 L["settings:sellCollectedPetsTooltip"] =
 "Sell a battle pet you already have. One you have never collected is never sold by this rule, whichever way it is set"
@@ -123,6 +121,10 @@ L["settings:spareProfessionsTooltip"] =
 L["spare:current"] = "Current Expansion"
 L["spare:all"] = "All"
 L["spare:none"] = "None"
+
+L["materials:current"] = "Current materials"
+L["materials:all"] = "Any materials"
+L["materials:none"] = "Don't keep"
 
 -- The game's own profession names, so the picker reads as part of the
 -- profession UI rather than a dictionary rendering of it.
@@ -292,9 +294,9 @@ L["rule:recipesSub"] = "Patterns, plans, formulae"
 L["rule:recipesBlurb"] =
 "A recipe carries the profession it belongs to, so it is judged as soon as it turns up at a vendor. A recipe that belongs to no one profession -- a generic pattern or manual -- is left alone, since there is nothing to judge it against."
 L["rule:misc"] = "Miscellaneous"
-L["rule:miscSub"] = "Pets, mounts, holiday items"
+L["rule:miscSub"] = "Pets, mounts, toys, holiday items"
 L["rule:miscBlurb"] =
-"Spell reagents and uncategorized oddments are left alone. Grey items are handled by the Poor Quality rule above, not here."
+"Spell reagents are left alone. Among uncategorized oddments, only a toy is judged: it is sold once your toy box already has it and the copy in your bags is bound. Grey items are handled by the Poor Quality rule above, not here."
 L["rule:profession"] = "Profession Gear"
 L["rule:professionSub"] = "Tools and accessories"
 L["rule:professionBlurb"] =
@@ -311,3 +313,7 @@ L["rule:noneBlurb"] =
 -- The report window's footnote. What BatchSell discloses is not what Openables
 -- discloses, so each module states its own.
 L["report:blurb"] = "This report carries the item's link, whatever you have equipped in the slot it would fill, and the settings that judged the pair. An item link states your character's level and specialization -- that is part of the link's own format, and removing it would lose the detail that makes the report reproducible. Nothing here names your character, realm, guild or faction, and nothing describes any other slot."
+
+-- The disenchant scan's own footnote: it discloses several bag items and
+-- their tooltips, not the single item/link pair report:blurb describes.
+L["report:blurbDisenchant"] = "This report carries up to eight weapons or pieces of armour from your bags that could be worth disenchanting, along with each one's bag and slot and the full text of its tooltip. Nothing here names your character, realm, guild or faction, and nothing else in your bags is described."

@@ -384,38 +384,27 @@ SlashCmdList["BITFORGEEUI"] = function(input)
 end
 
 -- Diagnostics dump -- BitForge_BatchSell's /bfdump batchsell is the worked
--- example this follows. Unlocalized like that one: a diagnostic dump is read
--- by a developer pasting it back, not by a player.
+-- example this follows. The record's own field names stay unlocalized, like
+-- that one: a diagnostic dump is read by a developer pasting it back, not by
+-- a player. Only the report window's footnote goes through ns.locale, since
+-- that is what the player reads before deciding to paste it anywhere.
 
---- Files one registered element's known geometry into the debug dump, keyed
---- by its element key.
----@param key string|nil
-function control.DumpElement(key)
-    if not key then
-        BitForge:Print("EUI: /bfdump eui <key>")
-        return
-    end
+-- The scalar keys BuildElementDump's table literal writes. Fixed here rather
+-- than read with pairs: a table literal's pairs() order is unspecified, and a
+-- report has to render identically for every player who copies one out.
+local DUMP_FIELDS = { "label", "folder", "anchored", "anchor", "position", "size", "managed" }
 
-    local dump = model.GetDebugDump()
-    if not dump then
-        BitForge:Print("EUI: diagnostics are off for this module")
-        return
-    end
-
-    local elements = control.adapters.Elements()
-    local element = elements and elements[key]
-    if not element then
-        BitForge:Print(("EUI: %s is not a registered element"):format(key))
-        return
-    end
-
+--- One registered element's known geometry, flattened to strings so it is
+--- pastable verbatim -- flattening is what makes a value that could be secret
+--- in 12.0 safe to put in front of a player. `label` and `folder` are read by
+--- name off the registry entry (fact 9, docs/eui-integration.md).
+---@param key string
+---@param element table  the raw EllesmereUI registry entry
+---@return table
+local function BuildElementDump(key, element)
     local facts = elementFacts(key)
 
-    -- Flattened to strings: item and tooltip data can carry secret values in
-    -- 12.0, and a record has to survive serialization and be pastable
-    -- verbatim. `label` and `folder` are read by name off the registry entry
-    -- (fact 9, docs/eui-integration.md).
-    dump[key] = {
+    return {
         label    = tostring(element.label or key),
         folder   = tostring(element.folder or "?"),
         anchored = tostring(facts.anchored),
@@ -428,8 +417,51 @@ function control.DumpElement(key)
         size     = format("%sx%s", tostring(facts.width), tostring(facts.height)),
         managed  = tostring(facts.managed),
     }
+end
 
-    BitForge:ReportDump(ADDON_NAME, format("dumped %s", key))
+--- One registered element's known geometry as text a player can select and
+--- paste.
+---@param key string
+---@param element table
+---@return string
+local function RenderElementDump(key, element)
+    local record = BuildElementDump(key, element)
+    local lines = {
+        "BitForge EUI -- element report",
+        BitForge:ReportHeader(ADDON_NAME),
+        "",
+        format("key = %s", key),
+    }
+
+    for _, field in ipairs(DUMP_FIELDS) do
+        lines[#lines + 1] = format("%s = %s", field, tostring(record[field]))
+    end
+
+    return table.concat(lines, "\n")
+end
+
+--- Show one registered element's known geometry in the report window.
+---
+--- Nothing is stored: the record used to be parked in the module's debug
+--- container for a later session to dig out of SavedVariables, which is why
+--- it needed the debug flag to stop it accumulating unasked. Rendered and
+--- shown, it records nothing, so it needs no flag and no /reload.
+---@param key string|nil
+function control.DumpElement(key)
+    if not key then
+        BitForge:Print("EUI: /bfdump eui <key>")
+        return
+    end
+
+    local elements = control.adapters.Elements()
+    local element = elements and elements[key]
+    if not element then
+        BitForge:Print(("EUI: %s is not a registered element"):format(key))
+        return
+    end
+
+    BitForge:ShowReport(RenderElementDump(key, element), locale["report:blurb"],
+        BitForge:DiagnosticReportTitle())
 end
 
 ns:SubscribeCommand(events.MODULE_DUMP, function(addon, argument)

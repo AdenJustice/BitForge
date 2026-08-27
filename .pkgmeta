@@ -17,6 +17,48 @@ move-folders:
   BitForge/BitForge_RepRank: BitForge_RepRank
   BitForge/BitForge_EUI: BitForge_EUI
 
+# LibDeflate has no CurseForge/wowace SVN mirror -- WeakAuras2, which also
+# depends on it, externals the same GitHub URL. Pinned to the tag vendored
+# below so a package rebuild can never silently diverge from what was tested.
+#
+# LibStub itself has no such mirror problem and no tagged releases either --
+# it is versioned by an internal minor number that has barely moved in over a
+# decade, not by SVN tags -- so this is the same svn://.../trunk external
+# LibDeflate's own .pkgmeta uses for the identical dependency.
+#
+# Why ship a library nearly every other addon also ships: LibStub checks its
+# own minor version before redefining itself (`if not LibStub or LibStub.minor
+# < LIBSTUB_MINOR then ...`), so whichever copy another addon already loaded
+# first wins and this one silently defers to it. Loading a second, third or
+# tenth copy across a player's whole addon set is the normal, safe case this
+# library is built for -- it is not a conflict risk the way two copies of an
+# ordinary library would be.
+#
+# Provenance of the committed bytes, which this external does not itself
+# record (it names where the *packager* fetches from at release time, not
+# where BitForge/Libs/LibStub/LibStub.lua as checked in came from): the
+# wowace SVN host above needs authenticated access this development machine
+# doesn't have and svn itself isn't installed here, so the committed copy was
+# fetched from the git-svn mirror github.com/WoWAddonMirrors/LibStub instead,
+# cross-checked byte-identical against a second independent mirror,
+# github.com/wowace-clone/LibStub. sha256 of the committed LibStub.lua:
+# 7ba7300471327c0de1b3e42a4edfd62cbad79bd30100d6377736d2c1080e9b96.
+#
+# One consequence worth stating rather than re-deriving: the committed copies
+# are not what ships. release.sh copies each external over the staged tree at
+# release time, so LibDeflate's pinned `tag: 1.0.2-release` guarantees the
+# shipped bytes equal the reviewed bytes -- but LibStub's `tag: latest` means
+# the zip carries whatever wowace trunk holds at build time, which can differ
+# from the committed copy above. That is universal practice for this library
+# and not a defect; it is just otherwise invisible.
+externals:
+  BitForge/Libs/LibDeflate:
+    url: https://github.com/SafeteeWoW/LibDeflate
+    tag: 1.0.2-release
+  BitForge/Libs/LibStub:
+    url: svn://svn.wowace.com/wow/libstub/mainline/trunk
+    tag: latest
+
 enable-nolib-creation: no
 
 ignore:

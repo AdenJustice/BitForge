@@ -15,12 +15,12 @@ L["settings:marginalRatio"] = "Proporción marginal"
 L["settings:marginalRatioTooltip"] = "Omite el rebalanceo si la diferencia está dentro del saldo deseado × proporción"
 
 L["settings:collectorCharacter"] = "Personaje recolector"
-L["settings:collectorCharacterTooltip"] = "Personaje que recolecta el oro en exceso del Banco del Grupo de Guerra"
+L["settings:collectorCharacterTooltip"] = "Personaje que recolecta el oro en exceso del banco de tropa"
 
 L["settings:none"] = "Ninguno"
 L["settings:always"] = "Siempre"
 
-L["msg:deposit"] = "Depositado %s en el Banco del Grupo de Guerra"
-L["msg:withdraw"] = "Retirado %s del Banco del Grupo de Guerra"
-L["msg:collect"] = "Recolectado %s del Banco del Grupo de Guerra"
-L["msg:noFunds"] = "El Banco del Grupo de Guerra no tiene fondos para retirar"
+L["msg:deposit"] = "Depositado %s en el banco de tropa"
+L["msg:withdraw"] = "Retirado %s del banco de tropa"
+L["msg:collect"] = "Recolectado %s del banco de tropa"
+L["msg:noFunds"] = "El banco de tropa no tiene fondos para retirar"

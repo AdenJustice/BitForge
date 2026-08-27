@@ -21,12 +21,17 @@ L["cmd:ambiguousModule"] = "%s names more than one module: %s"
 L["cmd:noSuchCommand"] = "%s answers no %s command"
 L["cmd:coreUsage"] = "/bitforge core whatsnew -- show what changed in this update"
 
--- The report window. A player who disagrees with a verdict reaches this from
--- the item itself; the payload and the sentence about what it discloses both
--- come from the module that opened it.
+-- The report window serves two entry points: a player who disagrees with a
+-- verdict reaches it from the item itself, and /bfdump reaches it from a
+-- diagnostic dump. Neither is "an item" the other is, so the payload, the
+-- footnote and the title all come from the caller -- report:windowTitle is
+-- the item-report default, and report:windowTitleDiagnostic is what every
+-- /bfdump path asks for instead.
 L["report:windowTitle"] = "Report an Item"
+L["report:windowTitleDiagnostic"] = "Diagnostic Report"
 L["report:howTo"] = "Select All, then Ctrl+C. Paste it into a new issue at:"
 L["report:selectAll"] = "Select All"
+L["report:encoded"] = "This report was too long to read, so it has been compressed. Paste it as it is -- the developer's tools will unpack it."
 
 -- The release-notes popup. The window's chrome is localized; the notes inside
 -- it are English, because they are generated from CHANGELOG.md and translating

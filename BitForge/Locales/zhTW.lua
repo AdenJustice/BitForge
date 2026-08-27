@@ -21,8 +21,10 @@ L["cmd:coreUsage"] = "/bitforge core whatsnew -- 顯示本次更新的內容"
 
 -- Report window
 L["report:windowTitle"] = "回報物品"
+L["report:windowTitleDiagnostic"] = "診斷報告"
 L["report:howTo"] = "全選後按 Ctrl+C，然後貼到以下網址的新議題中："
 L["report:selectAll"] = "全選"
+L["report:encoded"] = "這份報告太長，無法直接閱讀，因此已被壓縮。請原樣貼上 -- 開發者的工具會將其解壓縮。"
 
 -- The release-notes popup
 L["whatsNew:windowTitle"] = "BitForge 更新內容"

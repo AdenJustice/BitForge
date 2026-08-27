@@ -9,18 +9,18 @@ L["settings:useCharSettings"] = "Usar configuración del personaje"
 L["settings:useCharSettingsTooltip"] = "Sobrescribir la configuración de toda la cuenta con valores específicos de este personaje"
 
 L["settings:desiredBalance"] = "Saldo deseado"
-L["settings:desiredBalanceTooltip"] = "Saldo de oro objetivo a mantener en tu mochila"
+L["settings:desiredBalanceTooltip"] = "Saldo de oro objetivo a mantener en tus bolsas"
 
 L["settings:marginalRatio"] = "Ratio marginal"
 L["settings:marginalRatioTooltip"] = "Omitir reequilibrio si la diferencia está dentro del saldo deseado × ratio"
 
 L["settings:collectorCharacter"] = "Personaje recolector"
-L["settings:collectorCharacterTooltip"] = "Personaje que recolecta el oro sobrante del Banco del Grupo de Guerra"
+L["settings:collectorCharacterTooltip"] = "Personaje que recolecta el oro sobrante del banco de la banda guerrera"
 
 L["settings:none"] = "Ninguno"
 L["settings:always"] = "Siempre"
 
-L["msg:deposit"] = "Depositado %s en el Banco del Grupo de Guerra"
-L["msg:withdraw"] = "Retirado %s del Banco del Grupo de Guerra"
-L["msg:collect"] = "Recolectado %s del Banco del Grupo de Guerra"
-L["msg:noFunds"] = "El Banco del Grupo de Guerra no tiene fondos para retirar"
+L["msg:deposit"] = "Depositado %s en el banco de la banda guerrera"
+L["msg:withdraw"] = "Retirado %s del banco de la banda guerrera"
+L["msg:collect"] = "Recolectado %s del banco de la banda guerrera"
+L["msg:noFunds"] = "El banco de la banda guerrera no tiene fondos para retirar"

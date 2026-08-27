@@ -120,10 +120,12 @@ local function addDebugLines(candidate)
     GameTooltip:AddLine(("[OP] class %s / %s (%s/%s)"):format(
         tostring(itemType), tostring(itemSubType), tostring(classID), tostring(subClassID)),
         DEBUG_COLOR:GetRGB())
-    GameTooltip:AddLine(("[OP] priority %s (%d)  locked %s  cooldown %s  deferred %s"):format(
-        PriorityName(candidate.priority), candidate.priority,
-        tostring(candidate.locked), tostring(candidate.onCooldown),
-        tostring(candidate.deferred)), DEBUG_COLOR:GetRGB())
+    GameTooltip:AddLine(
+        ("[OP] priority %s (%d)  locked %s  slotLocked %s  cooldown %s  deferred %s"):format(
+            PriorityName(candidate.priority), candidate.priority,
+            tostring(candidate.locked), tostring(candidate.slotLocked),
+            tostring(candidate.onCooldown), tostring(candidate.deferred)),
+        DEBUG_COLOR:GetRGB())
 end
 
 -- What the open tooltip is describing. The post-call below fires for every item
@@ -432,7 +434,10 @@ function view.Init()
             -- help either, model.Rank being deterministic over bags that have
             -- not moved. The deferral is the state change that makes the next
             -- click reach a different item, and it leaves this one in the queue.
+            -- The mark is what holds the button through a cast-time use: the
+            -- scan a slot lock triggers mid-cast checks it before repainting.
             model.Defer(currentCandidate.itemID)
+            model.MarkInFlight(currentCandidate.itemID)
         elseif mouseButton == "RightButton" then
             if IsControlKeyDown() then
                 model.SetBlacklisted(currentCandidate.itemID, true)
