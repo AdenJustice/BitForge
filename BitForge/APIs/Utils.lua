@@ -1,11 +1,36 @@
 local AbbreviateNumbers = AbbreviateNumbers
+local format = string.format
+local C_AddOns = C_AddOns
+local GetBuildInfo = GetBuildInfo
+local GetLocale = GetLocale
+
+-- Every chat line the suite prints carries this tag, so it is wrapped once at
+-- file-read time rather than per call. CreateColor is SharedXMLBase and stands
+-- long before any addon loads.
+local PREFIX = CreateColor(0, 0.8, 1):WrapTextInColorCode("[BitForge]")
 
 function BitForge:Print(...)
-    print("|cff00ccff[BitForge]|r ", ...)
+    print(PREFIX, ...)
 end
 
 function BitForge:ShortValue(n)
     return AbbreviateNumbers(n)
+end
+
+--- The four lines every report opens with, so no module writes them twice.
+---
+--- The version is whatever the .toc carries. In a development checkout that is
+--- the literal @project-version@, which is correct information for a report
+--- rather than something to hide -- a report from an unreleased build should
+--- say so.
+---@param addonName string
+---@return string
+function BitForge:ReportHeader(addonName)
+    return format("addon = %s\nversion = %s\ninterface = %s\nlocale = %s",
+        addonName,
+        tostring(C_AddOns.GetAddOnMetadata(addonName, "Version")),
+        tostring(select(4, GetBuildInfo())),
+        GetLocale())
 end
 
 -- Distribute children width as evenly as possible
@@ -21,13 +46,11 @@ function BitForge:DistributeEvenly(n, k, g)
     local q = math.floor(S / k)
     local r = S % k
 
-    -- distribute base value
     local lengths = {}
     for i = 1, k do
         lengths[i] = q
     end
 
-    -- distribute risiduals
     local left = 1
     local right = k
     local count = 0

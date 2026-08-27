@@ -7,13 +7,9 @@ local UI = BitForge.UI
 ---@type BitForge.UI.Colors
 local colors = UI.Colors
 
--- =========================================================
--- Edge configuration per tab position
---
--- accent  = which edge gets the 2-px active line
--- open       = the content-adjacent edge (no border drawn)
--- sides      = the two edges that frame the tab button
--- =========================================================
+-- accent = which edge gets the 2-px active line
+-- open   = the content-adjacent edge (no border drawn)
+-- sides  = the two edges that frame the tab button
 
 local EDGE_CONFIG = {
     bottom = { accent = "BOTTOM", open = "TOP", sides = { "LEFT", "RIGHT" } },
@@ -21,10 +17,6 @@ local EDGE_CONFIG = {
     left = { accent = "TOP", open = "RIGHT", sides = { "LEFT", "BOTTOM" } },
     right = { accent = "TOP", open = "LEFT", sides = { "RIGHT", "BOTTOM" } },
 }
-
--- =========================================================
--- Helpers
--- =========================================================
 
 local function AnchorIndicator(accent, button, edge)
     accent:ClearAllPoints()
@@ -60,10 +52,6 @@ local function AnchorBorders(btn)
     btn.BorderRight:SetPoint("TOPRIGHT", btn, "TOPRIGHT", 0, 0)
     btn.BorderRight:SetPoint("BOTTOMRIGHT", btn, "BOTTOMRIGHT", 0, 0)
 end
-
--- =========================================================
--- TabButtonMixin — individual tab button
--- =========================================================
 
 ---@class BitForge.TabButtonMixin : CheckButton
 local TabButtonMixin = {}
@@ -110,7 +98,6 @@ do
     function TabButtonMixin:OnLoad()
         self:SetSize(80, 32)
 
-        -- Background fill
         local bg = self:CreateTexture(nil, "BACKGROUND")
         bg:SetTexture("Interface/Buttons/WHITE8X8")
         bg:SetAllPoints()
@@ -140,7 +127,6 @@ do
         accent:Hide()
         self.Accent = accent
 
-        -- Label
         local label = self:CreateFontString(nil, "OVERLAY", "BitForgeFontNormalOutline")
         label:SetJustifyH("CENTER")
         label:SetJustifyV("MIDDLE")
@@ -175,10 +161,6 @@ do
 end
 
 UI.Mixins.TabButton = TabButtonMixin
-
--- =========================================================
--- TabBarMixin — manages a row of tab buttons
--- =========================================================
 
 ---@class BitForge.TabBarMixin : Frame
 local TabBarMixin = {}
@@ -260,10 +242,6 @@ function TabBarMixin:SetTabSize(w, h)
 end
 
 UI.Mixins.TabBar = TabBarMixin
-
--- =========================================================
--- Factory
--- =========================================================
 
 ---@param parent any
 ---@return BitForge.TabBarMixin

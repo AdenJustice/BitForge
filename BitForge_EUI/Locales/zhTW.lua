@@ -1,0 +1,98 @@
+if GetLocale() ~= "zhTW" then return end
+---@class BitForge.EUI
+local ns = select(2, ...)
+local L = ns.locale
+
+-- Subcommand keywords (ui, apply, capture, list, reset, rl) are deliberately
+-- NOT translated. The player types them.
+
+L["cmd:help"] = "指令：ui、apply、capture、list、reset、rl"
+L["cmd:helpUi"] = "ui — 開啟版面編輯器"
+L["cmd:helpApply"] = "apply — 將已儲存的版面套用到 EllesmereUI"
+L["cmd:helpCapture"] = "capture — 儲存 EllesmereUI 目前的幾何資料"
+L["cmd:helpList"] = "list [-u] [文字] — 列出可定位的元素"
+L["cmd:helpListUnmanaged"] = "  -u — 僅列出已儲存版面未管理的元素"
+L["cmd:helpReset"] = "reset [anchors] — 捨棄已儲存的版面"
+L["cmd:deprecated"] = "/bfeui 已淘汰 -- 請改用 /bitforge eui"
+
+L["error:noEllesmere"] = "EllesmereUI 未載入"
+L["error:noRegistry"] = "無法取得 EllesmereUI 的元素清單"
+
+L["apply:applied"] = "已套用 %d 個，未變更 %d 個"
+L["apply:anchorOwned"] = "%d 個元素由錨點決定位置（座標已忽略）"
+L["apply:unknownKeys"] = "%d 個未知鍵名：%s"
+L["apply:unknownHint"] = "使用 'list' 查看已註冊的鍵名"
+L["apply:failedKeys"] = "%d 個失敗：%s"
+L["apply:badAnchors"] = "%d 個錨點未套用："
+L["apply:badAnchorLine"] = "  %s -> %s (%s)"
+L["apply:badAnchorHint"] = "錨點目標是元素鍵名。若要相對螢幕定位，請使用 point/relPoint"
+L["apply:resolved"] = "%d 個錨點由 BitForge 直接計算（EllesmereUI 無法表達）"
+
+L["reason:unknown"] = "目標不存在"
+L["reason:self"] = "錨定到自身"
+L["reason:cycle"] = "循環參照"
+L["reason:halfpair"] = "需要同時提供 point 與 relPoint"
+L["reason:badpoint"] = "不是錨點名稱"
+L["reason:notarget"] = "無法錨定到該元素"
+L["reason:noanchor"] = "該元素無法被錨定"
+L["reason:norect"] = "目標在螢幕上尚無位置"
+L["reason:notextended"] = "沒有可解析的 point 與 relPoint"
+
+L["list:none"] = "沒有符合的元素"
+L["list:count"] = "顯示 %d 個，未管理 %d/%d"
+L["list:unmanaged"] = "[未管理]"
+L["list:anchored"] = "[錨點 -> %s %s]"
+L["list:noPosition"] = "無位置"
+L["list:readFailed"] = "%s（讀取失敗）"
+
+L["capture:result"] = "已儲存 %d 個元素"
+L["capture:seeded"] = "首次執行：已儲存你目前的版面（%d 個元素）。沒有移動任何東西。"
+
+L["unlock:attachedWarning"] = "%d 個元素處於附著狀態。在此拖曳會解除附著。"
+L["unlock:noLongerAttached"] = "已解除附著：%s"
+
+L["reset:confirm"] = "此操作將捨棄已儲存的版面。輸入 'reset confirm' 繼續。"
+L["reset:done"] = "已捨棄儲存的版面。下次登入時將從 EllesmereUI 重新建立。"
+L["reset:anchorsConfirm"] = "此操作還會刪除你的錨點定義，且無法復原。輸入 'reset anchors confirm' 繼續。"
+L["reset:anchorsDone"] = "已捨棄儲存的版面與錨點定義。"
+
+L["anchor:badTable"] = "錨點 '%s' 不是一個表格"
+L["anchor:badSize"] = "錨點 '%s' 需要正的 w 與 h；沒有它們就沒有邊緣"
+L["anchor:collides"] = "錨點 '%s' 與既有的 EllesmereUI 元素（%s）衝突；請改名"
+
+L["ui:title"] = "BitForge 版面"
+L["ui:filter"] = "搜尋"
+L["ui:notReady"] = "仍在讀取你的版面 — 請稍後再試"
+L["ui:markAttachedEui"] = "[錨定]"
+L["ui:markAttachedBitForge"] = "[附著]"
+L["ui:markHidden"] = "[隱藏]"
+L["ui:anchorGroup"] = "錨點框體"
+L["ui:anchorNew"] = "+ 新增錨點框體"
+L["ui:target"] = "錨定到"
+L["ui:targetScreen"] = "螢幕"
+L["ui:myPoint"] = "我的角"
+L["ui:theirPoint"] = "對方的角"
+L["ui:offsetX"] = "X 偏移"
+L["ui:offsetY"] = "Y 偏移"
+L["ui:width"] = "寬度"
+L["ui:height"] = "高度"
+L["ui:label"] = "名稱"
+L["ui:key"] = "鍵名"
+L["ui:channelScreen"] = "相對螢幕定位"
+L["ui:channelEui"] = "EllesmereUI 錨點（side = %s）"
+L["ui:channelBitForge"] = "BitForge 錨點 — EllesmereUI 無法表達這組配對"
+L["ui:noResize"] = "此元素無法調整大小"
+L["ui:hiddenNote"] = "已註冊，但其框體目前未顯示"
+L["ui:pendingNone"] = "沒有未儲存的變更"
+L["ui:pending"] = "%d 項未儲存的變更"
+L["ui:save"] = "儲存並重新載入"
+L["ui:revert"] = "還原"
+L["ui:saveCombat"] = "戰鬥中無法重新載入"
+L["ui:invalid"] = "儲存前需要修正 %d 個問題"
+L["ui:anchorDelete"] = "刪除"
+L["ui:anchorDeleteConfirm"] = "刪除錨點框體 '%s'？錨點定義僅存在於此，且無法復原。"
+L["ui:anchorKeyEmpty"] = "錨點框體需要鍵名"
+L["ui:anchorKeyTaken"] = "已存在名為 '%s' 的錨點框體"
+
+L["apply:deferredCombat"] = "戰鬥中 — 離開戰鬥後將套用版面"
+L["apply:deferredDone"] = "戰鬥結束：已套用 %d 個，未變更 %d 個"

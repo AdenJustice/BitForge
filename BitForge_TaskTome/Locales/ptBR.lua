@@ -3,10 +3,8 @@ if GetLocale() ~= "ptBR" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
--- Widget
 L["status:widgetTitle"] = "Livro de Tarefas"
 
--- Config Frame
 L["settings:configTitle"] = "Livro de Tarefas — Configuração"
 L["btn:addRootTask"] = "Adicionar Tarefa Principal"
 L["btn:addChildTask"] = "Adicionar Subtarefa"
@@ -18,7 +16,6 @@ L["settings:warbandAssigned"] = "Atribuída a Todos os Personagens"
 L["settings:completionScope"] = "Escopo de Conclusão"
 L["settings:optState"] = "Minha Atribuição"
 
--- Dropdowns
 L["menu:resetNone"] = "Nenhum"
 L["menu:resetDaily"] = "Diário"
 L["menu:resetWeekly"] = "Semanal"
@@ -28,19 +25,16 @@ L["menu:optFollow"] = "Seguir Padrão"
 L["menu:optIn"] = "Sempre Mostrar"
 L["menu:optOut"] = "Sempre Ocultar"
 
--- Messages / Dialogs
 L["msg:deleteConfirm"] = "Excluir '%s' e todas as %d subtarefa(s)?"
 L["msg:deleteSingle"] = "Excluir '%s'?"
 L["btn:confirmDelete"] = "Excluir"
 L["btn:cancel"] = "Cancelar"
 L["msg:nameRequired"] = "O nome da tarefa não pode estar vazio."
 
--- Settings panel
 L["settings:taskTomePanel"] = "Livro de Tarefas"
 L["settings:config"] = "Configuração"
 L["settings:openConfig"] = "Abrir"
 
--- Widget modes
 L["group:accountWide"] = "Toda a Conta"
 L["tooltip:scopeMe"] = "Mostrando este personagem. Clique para mostrar todos os personagens."
 L["tooltip:scopeAll"] = "Mostrando todos os personagens. Clique para mostrar apenas este personagem."
@@ -50,6 +44,5 @@ L["tooltip:openConfig"] = "Abre a janela de configuração do Livro de Tarefas."
 L["tooltip:widgetLocked"] = "A janela está travada. Clique para destravá-la e poder movê-la e redimensioná-la."
 L["tooltip:widgetUnlocked"] = "A janela está destravada. Clique para travar sua posição e tamanho."
 
--- Config
 L["settings:editingFor"] = "Editando Para"
 L["settings:optStateFor"] = "Atribuição de %s"

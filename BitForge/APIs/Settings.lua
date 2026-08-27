@@ -8,18 +8,10 @@ local SettingsInbound = SettingsInbound
 local MinimalSliderWithSteppersMixin = MinimalSliderWithSteppersMixin
 local TextureKitConstants = TextureKitConstants
 
--- =========================================================
--- BitForge.Settings — WoW Settings API helpers for modules
--- =========================================================
-
 BitForge.Settings = {}
 local S = BitForge.Settings
 
 local PREFIX_LEN = #"BitForge_"
-
--- =========================================================
--- Handle Struct
--- =========================================================
 
 local Handle = {}
 Handle.__index = Handle
@@ -39,7 +31,7 @@ end
 --- a category handle for registering settings.
 ---@param addonName string  The addon's name from `...`, e.g. "BitForge_AutoBalance"
 ---@param title     string  Already-resolved display title for the subcategory
----@param L         table   The module's locale table (ns.L)
+---@param L         table   The module's locale table (ns.locale)
 ---@return table            Category handle
 function S.NewSubcategory(addonName, title, L)
     local prefix = upper(addonName:sub(PREFIX_LEN + 1))
@@ -47,10 +39,6 @@ function S.NewSubcategory(addonName, title, L)
         BitForge.settingsCategory, title)
     return setmetatable({ _prefix = prefix, _L = L, _cat = category, _layout = layout }, Handle)
 end
-
--- =========================================================
--- High-level helpers
--- =========================================================
 
 function Handle:AddCheckbox(name, getter, setter)
     local label, tooltip = ResolveLabel(self, name)
@@ -122,10 +110,6 @@ function Handle:AddColorPicker(name, getter, setter)
     return setting
 end
 
--- =========================================================
--- Low-level helpers
--- =========================================================
-
 --- Registers a proxy setting without creating a UI control. label is already-resolved.
 function Handle:RegisterProxy(name, varType, label, getter, setter)
     return Settings.RegisterProxySetting(
@@ -194,16 +178,11 @@ function Handle:AddExpandableSection(name, expanded)
     return initializer
 end
 
--- =========================================================
--- Escape hatches
--- =========================================================
---
--- There is deliberately no AddFrame helper. A subcategory's layout comes from
+-- Never add an AddFrame helper. A subcategory's layout comes from
 -- Settings.RegisterVerticalLayoutSubcategory, which returns a
--- SettingsVerticalLayoutMixin. That mixin accepts initializers only — it has no
--- AddLayoutChildren method, so a raw frame cannot be parented into the list.
--- An AddFrame that guarded on AddLayoutChildren lived here until it was removed:
--- the guard was never true, so it silently discarded every frame passed to it.
+-- SettingsVerticalLayoutMixin: it accepts initializers only and has no
+-- AddLayoutChildren method, so a helper guarding on that method carries a guard
+-- that is never true and silently discards every frame handed to it.
 --
 -- For custom UI, either wrap it in an initializer and pass that to AddInitializer,
 -- or put the content in a standalone window opened from a settings button. See

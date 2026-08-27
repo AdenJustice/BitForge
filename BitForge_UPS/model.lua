@@ -26,7 +26,7 @@ local DB_DEFAULTS = {
 
         -- [charKey] = { [recipeSpellID] = true }. Absent means "never scanned",
         -- which reads as "knows nothing" and biases toward depositing --
-        -- deliberately, see the design's 5.5.
+        -- deliberately, see the design (#55) 5.5.
         knownRecipes = {},
 
         -- [charKey] = { [skillLineID] = timestamp }. Exists so the curation
@@ -49,10 +49,6 @@ local db
 -- Item IDs already named by the 5.6 diagnostic below. Session-scoped, never
 -- persisted -- it is a development aid, not state the module reasons about.
 local reportedSpells = {}
-
--- =========================================================
--- retired keys
--- =========================================================
 
 -- Written by the module this one replaces. None appear in DB_DEFAULTS, so the
 -- core's logout prune -- which only removes values matching a default -- would
@@ -79,10 +75,6 @@ end)
 local model = ns.model
 local enum = ns.enum
 
--- =========================================================
--- char settings
--- =========================================================
-
 function model.IsEnabled() return db.char.enabled end
 
 function model.SetEnabled(value) db.char.enabled = value end
@@ -95,10 +87,6 @@ function model.GetOnlyWantedReagents() return db.char.onlyWantedReagents end
 
 function model.SetOnlyWantedReagents(value) db.char.onlyWantedReagents = value end
 
--- =========================================================
--- overrides
--- =========================================================
-
 function model.GetOverride(itemID)
     return db.global.overrides[itemID]
 end
@@ -110,10 +98,6 @@ end
 function model.ClearOverride(itemID)
     db.global.overrides[itemID] = nil
 end
-
--- =========================================================
--- recipe knowledge
--- =========================================================
 
 ---@param charKey string
 ---@param spellID number
@@ -189,7 +173,7 @@ end
 --- storage would only add a round trip.
 ---
 --- A character with the profession but no recipe scan has no records at all, so
---- every recipe for that profession reads as wanted. That is the design's 5.5
+--- every recipe for that profession reads as wanted. That is the design (#55) 5.5
 --- bias, and it is deliberate in this direction: over-depositing costs a bank
 --- slot until the recipe is vendored, where the opposite error strands a recipe
 --- an alt needs in the wrong character's bags.
@@ -202,7 +186,7 @@ function model.WantedByAlt(subClassID, itemID)
 
     -- Return 2 of 2 (ItemDocumentation.lua:948). Whether this is the recipe's
     -- own spellID or a separate teaching spell is unconfirmed in a live client
-    -- -- see the design's 5.6. If it is a teaching spell the lookup below never
+    -- -- see the design (#55) 5.6. If it is a teaching spell the lookup below never
     -- matches and the rule degrades to "any alt with the profession", which is
     -- the same safe direction as an unscanned alt.
     local spellID = select(2, C_Item.GetItemSpell(itemID))
@@ -229,10 +213,6 @@ function model.WantedByAlt(subClassID, itemID)
 
     return false
 end
-
--- =========================================================
--- resolver
--- =========================================================
 
 --- Where the rules alone would put an item, ignoring every override.
 ---
@@ -321,7 +301,7 @@ end
 
 --- Where one stack goes from where it currently is, or nil to leave it alone.
 ---
---- The design's 6.4 table in executable form, and the only place it exists. The
+--- The design (#55) 6.4 table in executable form, and the only place it exists. The
 --- planner calls it to emit descriptors and the executor calls it again
 --- immediately before each move, so "only what the user asked for moves" is a
 --- rule enforced at the point of action rather than a property assumed to have
@@ -392,10 +372,6 @@ function model.SetDestination(itemID, destination)
         db.global.overrides[itemID] = destination
     end
 end
-
--- =========================================================
--- private owners and targets
--- =========================================================
 
 --- A private override's owner set, or nil when the item is not private.
 ---@param itemID number
@@ -504,10 +480,6 @@ function model.SetTarget(itemID, target)
 
     override.target = target
 end
-
--- =========================================================
--- curation
--- =========================================================
 
 --- One curation row for one owned item.
 ---@param itemID number
@@ -662,10 +634,6 @@ function model.GetUnscannedCharacters()
 
     return unscanned
 end
-
--- =========================================================
--- planner
--- =========================================================
 
 --- Turns inventory snapshots into an ordered list of move descriptors.
 ---

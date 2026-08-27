@@ -42,10 +42,6 @@ local model = ns.model
 ---@type BitForge.TaskTome.Enum
 local enum = ns.enum
 
--- =========================================================
--- Task CRUD
--- =========================================================
-
 function model.GetTask(id)
     return db.global.tasks[id]
 end
@@ -83,10 +79,6 @@ function model.DeleteTask(id)
     db.global.tasks[id] = nil
 end
 
--- =========================================================
--- Tree Navigation
--- =========================================================
-
 local function taskSortComparator(a, b)
     return a.sortOrder < b.sortOrder
 end
@@ -102,10 +94,9 @@ function model.GetChildren(parentId)
     return children
 end
 
--- GetChildren(nil) already answers "the roots", so there is no GetRoots. There
--- was, and both cross-character builders reached for it because it read like the
--- entry point -- which is how a task nested under any parent came to be missing
--- from both of them. Removing it keeps that mistake from being convenient.
+-- Never add a GetRoots: GetChildren(nil) already answers "the roots". There was
+-- one, both cross-character builders reached for it because it read like the
+-- entry point, and every task nested under a parent went missing from both.
 
 function model.GetDescendantIds(id)
     local result = {}
@@ -142,14 +133,6 @@ function model.SetParent(id, newParentId)
         db.global.tasks[id].parentId = newParentId
     end
 end
-
--- =========================================================
--- Completions
--- =========================================================
---
--- Char-scoped completions are keyed by character in account-wide storage rather
--- than living in db.char, so that any session can read another character's
--- standing and the reset sweep can clear a character that is not logged in.
 
 local function charCompletionsFor(charKey)
     local all = db.global.charCompletions
@@ -200,13 +183,11 @@ function model.ClearCharCompleted(taskId)
     model.ClearCharCompletedFor(taskId, BitForge:GetCurrentCharacter())
 end
 
--- =========================================================
 -- Opt State
--- =========================================================
 --
--- Also keyed by character, and for a stronger reason than completions: the
--- config frame writes another character's opt state directly, so this is the
--- one cross-character write the UI performs.
+-- Keyed by character like completions, and for a stronger reason: the config
+-- frame writes another character's opt state directly, so this is the one
+-- cross-character write the UI performs.
 
 local function optStatesFor(charKey)
     local all = db.global.optStates
@@ -235,10 +216,6 @@ function model.SetOptState(taskId, state)
     model.SetOptStateFor(taskId, BitForge:GetCurrentCharacter(), state)
 end
 
--- =========================================================
--- Forgetting a task
--- =========================================================
-
 --- Erases every stored trace of `taskId` -- the warband completion, and every
 --- character's completion and opt state.
 ---
@@ -258,9 +235,7 @@ function model.ClearAllRecordsFor(taskId)
     end
 end
 
--- =========================================================
 -- Reset scheduling
--- =========================================================
 --
 -- Each stamp set clears exactly the completions it owns. Scoping them this way
 -- is what prevents a second character, logging in with a stale stamp, from
@@ -328,10 +303,6 @@ function model.IsWeeklyDue(storedStart, currentStart)
     return storedStart > 0 and storedStart ~= currentStart
 end
 
--- =========================================================
--- Widget State
--- =========================================================
-
 function model.IsWidgetVisible()
     return db.char.widgetVisible
 end
@@ -388,10 +359,6 @@ function model.SetConfigPos(x, y)
     db.char.configPos.x = x; db.char.configPos.y = y
 end
 
--- =========================================================
--- Visibility (computed, no WoW API)
--- =========================================================
-
 function model.IsTaskVisibleFor(taskId, charKey)
     local task = db.global.tasks[taskId]
     if not task then return false end
@@ -417,7 +384,6 @@ function model.GetVisibleTaskTreeFor(charKey)
         local result = {}
         for _, task in ipairs(children) do
             local subtree = buildSubtree(task.id)
-            -- one-time completed tasks are hidden
             if task.reset == enum.RESET_NONE and model.IsCompletedFor(task.id, charKey) then
                 -- skip: permanently completed one-time tasks are hidden
             elseif model.IsTaskVisibleFor(task.id, charKey) or #subtree > 0 then
@@ -433,9 +399,7 @@ function model.GetVisibleTaskTree()
     return model.GetVisibleTaskTreeFor(BitForge:GetCurrentCharacter())
 end
 
--- =========================================================
 -- Cross-character trees (pure)
--- =========================================================
 --
 -- Both builders carry doneCount/totalCount on every node. The counts are
 -- accumulated during the walk the builder already performs rather than
@@ -599,10 +563,6 @@ function model.GetTreeByTask()
     if accountWide then nodes[#nodes + 1] = accountWide end
     return nodes
 end
-
--- =========================================================
--- Stored data probe
--- =========================================================
 
 --- Whether this database holds anything a player would miss.
 ---

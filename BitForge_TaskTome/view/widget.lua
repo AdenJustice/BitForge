@@ -73,15 +73,9 @@ do
     -- Close button. Anchored first and the header buttons chained leftwards off
     -- each other from here, so adding or removing one does not mean recomputing
     -- an absolute offset for every button to its left.
-    --
-    -- NoScripts rather than the UIPanelCloseButton every other window in the
-    -- suite uses: that template's own OnClick hides its parent, which here is
-    -- the header rather than the widget. The atlas textures scale, so the
-    -- shared close art still sizes down to match the 16px icon buttons beside
-    -- it.
-    local closeBtn = CreateFrame("Button", nil, header, "UIPanelCloseButtonNoScripts")
-    closeBtn:SetSize(16, 16)
+    local closeBtn = UI.CreateCloseButton(header, 16)
     closeBtn:SetPoint("RIGHT", header, "RIGHT", -2, 0)
+    frame.closeButton = closeBtn
 
     -- Through widget.Hide, not frame:Hide: closing records the widget as hidden
     -- so it stays down across a reload, exactly as the minimap toggle does.
@@ -90,8 +84,8 @@ do
 
     --- The hover affordance shared by the header's icon buttons.
     ---
-    --- The close button brings its own from its template; the rest are a bare
-    --- texture on a plain Button, and a 16px icon that does not react to the
+    --- The close button brings its own from the shared widget; the rest are a
+    --- bare texture on a plain Button, and a 16px icon that does not react to the
     --- pointer does not read as something to click. That is how the gear -- the
     --- one way to the configuration window from here -- went unfound.
     ---@param button Button
@@ -99,7 +93,6 @@ do
         button:SetHighlightTexture("Interface/Buttons/UI-Common-MouseHilight", "ADD")
     end
 
-    -- Lock button
     local lockBtn = CreateFrame("Button", nil, header)
     lockBtn:SetSize(16, 16)
     lockBtn:SetPoint("RIGHT", closeBtn, "LEFT", -2, 0)
@@ -107,7 +100,6 @@ do
     local lockIcon = lockBtn:CreateTexture(nil, "ARTWORK")
     lockIcon:SetAllPoints()
 
-    -- Gear button (opens Config)
     local gearBtn = CreateFrame("Button", nil, header)
     gearBtn:SetSize(16, 16)
     gearBtn:SetPoint("RIGHT", lockBtn, "LEFT", -2, 0)
@@ -268,8 +260,6 @@ do
         end
     end
 
-    -- Task Tree (ScrollBoxListTreeListView)
-
     local scrollBox = CreateFrame("Frame", nil, frame, "WowScrollBoxList")
     scrollBox:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, -32)
     scrollBox:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -22, 8)
@@ -327,23 +317,19 @@ do
 
     treeView:SetElementFactory(function(factory, node)
         factory("Frame", function(rowFrame, elementData)
-            -- One-time frame setup
             if not rowFrame._initialized then
                 rowFrame._initialized = true
 
-                -- Collapse arrow
                 rowFrame.arrow = rowFrame:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
                 rowFrame.arrow:SetPoint("LEFT", rowFrame, "LEFT", 2, 0)
                 rowFrame.arrow:SetWidth(12)
 
-                -- Task name
                 rowFrame.nameText = rowFrame:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
                 rowFrame.nameText:SetPoint("LEFT", rowFrame.arrow, "RIGHT", 2, 0)
                 rowFrame.nameText:SetPoint("RIGHT", rowFrame, "RIGHT", -28, 0)
                 rowFrame.nameText:SetJustifyH("LEFT")
                 rowFrame.nameText:SetWordWrap(false)
 
-                -- Checkbox
                 rowFrame.checkbox = UI.CreateCheckButton(nil, rowFrame, nil, true)
                 rowFrame.checkbox:SetSize(20, 20)
                 rowFrame.checkbox:SetPoint("RIGHT", rowFrame, "RIGHT", -4, 0)
@@ -356,14 +342,13 @@ do
                 rowFrame:SetScript("OnMouseDown", OnRowMouseDown)
             end
 
-            -- Data bind. A row is a (task, character) pair: in "me" mode the
+            -- A row is a (task, character) pair: in "me" mode the
             -- character is always the current one, and only then is the
             -- checkbox interactive. Cross-character rows report; they do not
             -- edit, so a mis-click cannot tick a chore off on an alt.
             local data = elementData:GetData()
             rowFrame._elementData = elementData
 
-            -- Arrow
             if elementData:GetSize() > 0 then
                 rowFrame.arrow:SetText(elementData:IsCollapsed() and "▶" or "▼")
                 rowFrame.arrow:Show()

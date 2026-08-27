@@ -15293,15 +15293,14 @@ enum.CLASS_PREFS = {
         Armor = { Enum.ItemArmorSubclass.Mail },
         Shield = false,
         Holdable = false,
+        -- One-handers are proficiencies a hunter has and no hunter wants: Beast
+        -- Mastery and Marksmanship fight at range, and Survival is two-handed.
+        -- This table is preference, not proficiency, so they are absent.
         Weapons = {
-            Enum.ItemWeaponSubclass.Axe1H,
             Enum.ItemWeaponSubclass.Axe2H,
-            Enum.ItemWeaponSubclass.Sword1H,
             Enum.ItemWeaponSubclass.Sword2H,
             Enum.ItemWeaponSubclass.Polearm,
             Enum.ItemWeaponSubclass.Staff,
-            Enum.ItemWeaponSubclass.Dagger,
-            Enum.ItemWeaponSubclass.Unarmed,
             Enum.ItemWeaponSubclass.Bows,
             Enum.ItemWeaponSubclass.Crossbow,
             Enum.ItemWeaponSubclass.Guns,
@@ -15454,14 +15453,21 @@ local SLOT_MAP = {
     INVTYPE_CLOAK = 15,
     INVTYPE_TABARD = 19,
     INVTYPE_WEAPON = 16,
-    INVTYPE_SHIELD = 17,
     INVTYPE_2HWEAPON = 16,
+    -- The ranged slot is gone: bows (RANGED) and guns, crossbows and wands
+    -- (RANGEDRIGHT) all equip to the main hand now. Pointed at 18 they are
+    -- compared against a slot nothing can occupy, which reads as no opinion and
+    -- never sells them.
+    INVTYPE_RANGED = 16,
+    INVTYPE_RANGEDRIGHT = 16,
     INVTYPE_WEAPONMAINHAND = 16,
+    INVTYPE_SHIELD = 17,
     INVTYPE_WEAPONOFFHAND = 17,
     INVTYPE_HOLDABLE = 17,
-    INVTYPE_RANGED = 18,
+    -- Thrown weapons and relics were deleted rather than rehomed, so legacy
+    -- items still carrying these equip nowhere. 18 -- permanently empty -- is
+    -- the no-opinion answer that suits them.
     INVTYPE_THROWN = 18,
-    INVTYPE_RANGEDRIGHT = 18,
     INVTYPE_RELIC = 18,
 }
 

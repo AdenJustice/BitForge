@@ -1,9 +1,8 @@
+if GetLocale() ~= "ruRU" then return end
 ---@class BitForge.Openables
 local ns = select(2, ...)
-if GetLocale() ~= "ruRU" then return end
 local L = ns.locale
 
--- Settings panel
 L["panel:title"] = "Открываемое"
 L["settings:enabled"] = "Включить «Открываемое»"
 L["settings:enabledTooltip"] = "Показывать кнопку для следующего открываемого или используемого предмета в сумках"
@@ -18,19 +17,19 @@ L["settings:showCooldownTooltip"] = "Показывать время восст�
 L["settings:resetPosition"] = "Сбросить положение"
 L["settings:manageBlacklist"] = "Управление списком исключений"
 
--- Button tooltip
 L["tooltip:use"] = "Левый щелчок — открыть или использовать."
 L["tooltip:skip"] = "Правый щелчок — пропустить до конца сеанса."
 L["tooltip:blacklist"] = "Ctrl + правый щелчок — исключить навсегда."
+L["tooltip:report"] = "Shift + Alt + правый щелчок — сообщить об этом решении."
 L["tooltip:drag"] = "Alt + перетащите, чтобы переместить."
 
--- Blacklist
+L["report:blurb"] = "Этот отчёт содержит предмет, то, как BitForge его классифицировал, текст его подсказки и какие профессии знает этот персонаж. Здесь не упоминаются ваш персонаж, сервер, гильдия или фракция."
+
 L["blacklist:windowTitle"] = "Исключённые предметы"
 L["blacklist:empty"] = "Нет исключённых предметов."
 L["blacklist:remove"] = "Убрать"
 L["blacklist:clearAll"] = "Очистить всё"
 L["blacklist:unknownItem"] = "Предмет %d"
 
--- Key bindings
 L["binding:header"] = "BitForge Открываемое"
 L["binding:use"] = "Использовать открываемый предмет"

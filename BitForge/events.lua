@@ -12,10 +12,6 @@ local error = error
 local pairs = pairs
 local tostring = tostring
 
--- ================================================================================
--- Event Bus
--- ================================================================================
---
 -- Modules never register frame events themselves. Every entry in
 -- BitForge.Events is either published by core or relayed from the identically
 -- named WoW frame event, and every one of them reaches a module through
@@ -25,10 +21,15 @@ local bus = CreateFromMixins(CallbackRegistryMixin)
 bus:OnLoad()
 bus:SetUndefinedEventsAllowed(true)
 
--- Published by core rather than relayed from a frame event.
+-- Published by core rather than relayed from a frame event. Every entry core
+-- publishes belongs here: AcquireRelay short-circuits on this table alone, so
+-- an omission sends the first subscriber off to register a frame event that
+-- does not exist.
 local corePublished = {
-    [coreEvents.CORE_LOADED]  = true,
-    [coreEvents.PLAYER_READY] = true,
+    [coreEvents.CORE_LOADED]    = true,
+    [coreEvents.PLAYER_READY]   = true,
+    [coreEvents.MODULE_COMMAND] = true,
+    [coreEvents.MODULE_DUMP]    = true,
 }
 
 -- Derived from the enum so there is no second list to drift. Subscribing to a
@@ -43,6 +44,10 @@ end
 -- the payload-free lifecycle events on purpose: replaying a stale relay payload
 -- would describe a world that has already moved on, and retaining one would
 -- hold a value past the scope it was delivered in.
+--
+-- Never add MODULE_COMMAND or MODULE_DUMP here. They are published by core like
+-- the two below, but a command is an instruction rather than a state: replaying
+-- one would run it a second time for a module that subscribed afterwards.
 local stickyEvents = {
     [coreEvents.CORE_LOADED]  = true,
     [coreEvents.PLAYER_READY] = true,
@@ -60,10 +65,6 @@ function control.TriggerEvent(event, ...)
     bus:TriggerEvent(event, ...)
 end
 
--- ================================================================================
--- Relays
--- ================================================================================
---
 -- A relay's bus key is the raw WoW event name, so the name to register is the
 -- event itself. Registration is refcounted by distinct owner: core listens to
 -- MERCHANT_SHOW only while something is subscribed to it.
@@ -115,10 +116,6 @@ local function ReleaseRelay(event, owner)
         relayHandles[event] = nil
     end
 end
-
--- ================================================================================
--- Public API
--- ================================================================================
 
 --- Subscribes to a BitForge.Events entry. The callback receives exactly the
 --- payload WoW sent -- no owner ID, no padding.

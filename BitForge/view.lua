@@ -4,6 +4,10 @@ local ns = select(2, ...)
 local view = ns.view
 ---@type BitForge.Core.Locale
 local locale = ns.locale
+---@type BitForge.Core.Model
+local model = ns.model
+
+local UI = BitForge.UI
 
 local ipairs = ipairs
 
@@ -47,10 +51,6 @@ function view:Register(modules, callbacks)
         Settings.CreateCheckbox(category, setting, title)
     end
 end
-
--- =========================================================
--- Minimap button
--- =========================================================
 
 ---@class BitForge.Core.View.MinimapButton
 local minimapButton = {}
@@ -139,9 +139,9 @@ local PRESS_INSET = 0.05
 -- allows, since SetTexCoord is rejected once a texture carries a mask.
 local PRESS_SIZE = ICON_SIZE / (1 - 2 * PRESS_INSET)
 
--- TODO: replace with a real BitForge suite icon when one exists. See section 6
--- of the design doc -- BitForge.toc's IconTexture points at a file that has
--- never been added.
+-- Stands in for a suite icon of BitForge's own, which does not exist yet:
+-- BitForge.toc's IconTexture already names a file that has never been added.
+-- See section 6 of the design (#58).
 local PLACEHOLDER_ICON = "Interface\\Icons\\Trade_Engineering"
 
 local button
@@ -272,8 +272,9 @@ function minimapButton.SetPosition(angle)
     if not button then return end
 
     -- GetMinimapShape is a convention other UI addons publish, not a Blizzard
-    -- API -- it appears nowhere in wow-ui-source -- so it cannot be whitelisted
-    -- in .luarc.json and is read off _G instead of referenced as a bare global.
+    -- API -- it appears nowhere in wow-ui-source -- so it is read off _G with a
+    -- guard rather than as a bare global: whichever addon defines it may not be
+    -- installed at all.
     local shape = _G.GetMinimapShape and _G.GetMinimapShape() or "ROUND"
     local x, y = minimapButton.ComputeOffset(
         angle, Minimap:GetWidth(), Minimap:GetHeight(), EDGE_RADIUS, shape)
@@ -283,3 +284,169 @@ function minimapButton.SetPosition(angle)
 end
 
 view.minimapButton = minimapButton
+
+-- One window, reused. Two modules open this, and a second instance would leave
+-- the first on screen carrying another module's item.
+local reportWindow
+
+--- Shows a module's report, focused and selected, ready for the player's Ctrl+C.
+---
+--- Core owns the window because modules never call siblings. It owns nothing
+--- else: the payload and the sentence about what that payload discloses both
+--- arrive from the caller, because BatchSell sends an item link -- which states
+--- the character's level and specialization in its own fields -- and Openables
+--- sends no link at all.
+---@param body  string  the report text
+---@param blurb string  the calling module's own sentence about what it discloses
+function BitForge:ShowReport(body, blurb)
+    if not reportWindow then
+        reportWindow = UI.CreateTextWindow({
+            title         = locale["report:windowTitle"],
+            lead          = locale["report:howTo"],
+            link          = ns.enum.REPORT_URL,
+            footnote      = blurb,
+            name          = "BitForgeReportWindow",
+            selectOnOpen  = true,
+            buttons       = {
+                {
+                    text = locale["report:selectAll"],
+                    onClick = function(self) self:SelectAll() end,
+                },
+            },
+        })
+    end
+
+    reportWindow:SetText(body)
+    reportWindow:SetFootnote(blurb)
+    reportWindow:Open()
+end
+
+---@class BitForge.Core.View.ReleaseNotes
+local releaseNotes = {}
+
+local notesWindow
+
+-- How each separator the changelog can write between a bold lead and the rest
+-- of a bullet is rendered. build_release_notes.py consumes the character out of
+-- the text and records it as the item's `sep`, so this is a lookup of what the
+-- source said and never an inference: "**BatchSell** — now asks" and
+-- "**BatchSell** now asks" reach here as identical lead/text pairs, and the
+-- second wants no dash at all.
+local SEPARATOR_RENDERINGS = {
+    ["—"] = " — ",
+    [":"] = ": ",
+}
+
+--- What to put between a bullet's lead and its text.
+---@param item table  one entry of a release section's `items`
+---@return string
+local function leadSeparator(item)
+    local rendered = item.sep and SEPARATOR_RENDERINGS[item.sep]
+    if rendered then return rendered end
+    -- No separator in the source. Punctuation the generator left glued to
+    -- `text` (a leading comma, deliberately kept -- see
+    -- build_release_notes.py's LEAD_SEPARATORS comment) attaches to the lead
+    -- with no space of its own; a leading quote is not punctuation of that
+    -- kind and is deliberately not in the set.
+    if item.text:match("^[,;:.]") then return "" end
+    return " "
+end
+
+--- The notes as one string: each release's heading, then each section's, then
+--- each bullet.
+---
+--- A bullet's bold prefix is coloured here rather than in the data, because the
+--- generated table is plain text and colour belongs to the view. WoW edit boxes
+--- render colour escapes, so the leads stay scannable without the widget
+--- knowing anything about where they came from.
+---@param releases table
+---@return string
+local function renderNotes(releases)
+    local lines = {}
+    for releaseIndex, release in ipairs(releases) do
+        if releaseIndex > 1 then
+            lines[#lines + 1] = ""
+        end
+        lines[#lines + 1] = locale["whatsNew:version"]:format(release.version, release.date)
+        for _, section in ipairs(release.sections) do
+            -- Before EVERY section, not only the first: a Changed or Fixed
+            -- heading flush against the last bullet of the section above it
+            -- reads as one more bullet.
+            lines[#lines + 1] = ""
+            lines[#lines + 1] = section.heading
+            for _, item in ipairs(section.items) do
+                if item.lead then
+                    lines[#lines + 1] = "- " .. UI.Colors.point:WrapTextInColorCode(item.lead)
+                        .. leadSeparator(item) .. item.text
+                else
+                    lines[#lines + 1] = "- " .. item.text
+                end
+            end
+        end
+    end
+    return table.concat(lines, "\n")
+end
+
+-- Below DIALOG: a release that also resets a module's schema queues
+-- BITFORGE_SCHEMA_RESET from PLAYER_READY, ahead of PLAYER_ENTERING_WORLD, and
+-- that acknowledge-only popup has to stay on top of this window, not behind it.
+local WINDOW_STRATA = "MEDIUM"
+
+--- Builds the window on first use and shows `releases` in it.
+---@param releases table
+local function openWindow(releases)
+    if not notesWindow then
+        notesWindow = UI.CreateTextWindow({
+            title   = locale["whatsNew:windowTitle"],
+            name    = "BitForgeReleaseNotesWindow",
+            buttons = {
+                {
+                    text = locale["whatsNew:close"],
+                    onClick = function(self) self:Hide() end,
+                },
+            },
+        })
+        notesWindow:SetFrameStrata(WINDOW_STRATA)
+    end
+
+    notesWindow:SetText(renderNotes(releases))
+    notesWindow:Open()
+end
+
+-- The span ShowIfNew last raised, for this session only. Writing
+-- lastSeenVersion on show is deliberate, and it means ReleaseNotesSince
+-- answers {} from the moment the window appears -- so without this, a player
+-- shown three releases at login and reopening them from the slash command
+-- would get the newest one alone, which is precisely the case the command
+-- exists for. Session-scoped rather than stored: next login it is history.
+local raisedThisSession
+
+--- Raises the notes for everything the player has not seen, and records that
+--- they have now seen it.
+---
+--- Recorded on show rather than on close: someone who logs out from the window
+--- has seen it, and /bitforge core whatsnew is how they get it back.
+function releaseNotes.ShowIfNew()
+    local running = model.GetAddonVersion()
+    local unseen = model.ReleaseNotesSince(model.ReadDatabase("lastSeenVersion"), running)
+    if #unseen == 0 then return end
+
+    raisedThisSession = unseen
+    openWindow(unseen)
+    model.UpdateDatabase("lastSeenVersion", running)
+end
+
+--- Raises the notes unconditionally, for the slash command.
+---
+--- Re-renders whatever ShowIfNew raised this session, so a player who
+--- dismissed several releases unread gets all of them back rather than the
+--- newest of them.
+---
+--- Falls back to the newest release when nothing was raised -- a reload, or a
+--- running version that is unreadable, which is the case in every development
+--- checkout and is how this is seen in-game before it is ever released.
+function releaseNotes.Show()
+    openWindow(raisedThisSession or { model.NewestRelease() })
+end
+
+view.releaseNotes = releaseNotes

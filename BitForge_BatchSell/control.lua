@@ -4,6 +4,8 @@ local ADDON_NAME, ns = ...
 local ipairs = ipairs
 local huge = math.huge
 local format = string.format
+local concat = table.concat
+local wipe = table.wipe
 
 local ClearCursor = ClearCursor
 local GetCursorInfo = GetCursorInfo
@@ -13,17 +15,20 @@ local SpellIsTargeting = SpellIsTargeting
 
 local C_Container = C_Container
 local C_EquipmentSet = C_EquipmentSet
+local C_HousingCatalog = C_HousingCatalog
 local C_Item = C_Item
 local C_MerchantFrame = C_MerchantFrame
+local C_MountJournal = C_MountJournal
 local C_SpellBook = C_SpellBook
 local C_TooltipInfo = C_TooltipInfo
 local C_TradeSkillUI = C_TradeSkillUI
+local C_TransmogCollection = C_TransmogCollection
 
 local enum = ns.enum
 local model = ns.model
 local view = ns.view
-local L = ns.locale
-local E = BitForge.Events
+local locale = ns.locale
+local events = BitForge.Events
 
 ---@class BitForge.BatchSell.Control
 local control = ns.control
@@ -36,12 +41,15 @@ function ns:Unsubscribe(event)
     BitForge.Unsubscribe(event, self)
 end
 
+--- Subscribes to one of core's two command events. Separate from ns:Subscribe
+--- because core also has to be told which addon is answering: the bus knows
+--- only an owner table, and /bitforge's roster names modules.
+function ns:SubscribeCommand(event, callback)
+    BitForge.SubscribeCommand(ADDON_NAME, event, callback, self)
+end
+
 local merchantOpen = false
 
--- ================================================================================
--- Scanner
--- ================================================================================
---
 -- The only code that reads item state from the game. It produces plain fact
 -- tables; model.Decide consumes them and never touches an API. Anything that
 -- needs only data — class equippability, disenchantability, expansion age —
@@ -49,16 +57,29 @@ local merchantOpen = false
 
 local scanner = {}
 
---- The equipped items occupying the slots this item could fill, or nil when the
---- item is not equippable at all. Rings and trinkets yield up to two entries.
----
---- Deliberately returns the raw list rather than reducing it: the comparison is
---- existential over slots, and model.CompareToEquipped owns that loop where it
---- can be unit-tested. Reducing here -- to a max or a min -- would move the one
---- piece of real logic into the one file that cannot be tested.
----
---- Quality travels with the level because the comparison's tolerance depends on
---- the gap between the candidate's quality and the equipped one's.
+-- Timewalking gear carries the difficulty it dropped at as a tooltip subtext,
+-- immediately under the item name. Nothing in the item APIs reports it:
+-- C_Item.GetItemInfo has no such field, and "timewalking" exists elsewhere only
+-- as an instance difficulty. DifficultyUtil maps both DungeonTimewalker and
+-- RaidTimewalker to this one string, so it covers dungeon and raid alike.
+--
+-- Matched against the constant rather than its text, the same way the disenchant
+-- probe below reads its two lines: one comparison covers all eleven locales and
+-- survives Blizzard rewording it.
+--
+-- Chromie Time levelling gear is deliberately NOT caught by this. It carries no
+-- difficulty subtext, so it is judged on item level like any other past
+-- expansion piece -- which is the right answer anyway, since it scales into the
+-- current band and therefore competes on level without needing the exemption.
+local function isTimewalkingSlot(inventorySlotID)
+    local data = C_TooltipInfo.GetInventoryItem("player", inventorySlotID)
+    if not data or not data.lines then return false end
+    for _, line in ipairs(data.lines) do
+        if line.leftText == PLAYER_DIFFICULTY_TIMEWALKER then return true end
+    end
+    return false
+end
+
 local function equippedItems(equipLoc)
     local slots = enum.SLOT_LOOKUP[equipLoc]
     if not slots then return nil end
@@ -68,9 +89,16 @@ local function equippedItems(equipLoc)
         local equippedLink = GetInventoryItemLink("player", slotID)
         if equippedLink then
             local equippedLevel = C_Item.GetDetailedItemLevelInfo(equippedLink)
-            local equippedQuality = select(3, C_Item.GetItemInfo(equippedLink))
+            local equippedInfo = { C_Item.GetItemInfo(equippedLink) }
+            local equippedQuality = equippedInfo[3]
+            local equippedExpac = equippedInfo[15]
             if equippedLevel and equippedQuality then
-                items[#items + 1] = { level = equippedLevel, quality = equippedQuality }
+                items[#items + 1] = {
+                    level         = equippedLevel,
+                    quality       = equippedQuality,
+                    expacID       = equippedExpac or 0,
+                    isTimewalking = isTimewalkingSlot(slotID),
+                }
             else
                 -- Something occupies the slot but its item data has not arrived
                 -- yet (right after login, or a /reload at a vendor) -- unlike a
@@ -97,10 +125,163 @@ local function isRefundable(bagIndex, slotIndex)
         or (info.currencyCount or 0) > 0
 end
 
---- Gathers one slot's facts, or nil when the slot is empty or its item data has
---- not arrived yet. Uncached items are requested and rescanned; see Events.
----@return table|nil facts
----@return number|nil pendingItemID  set when the slot was skipped pending a load
+--- Whether this item binds to the account rather than to one character.
+---
+--- C_Item.IsItemBindToAccount is the authority -- it is what Blizzard's own UI
+--- reads for isWarbandItem, and it answers for warband, Battle.net account and
+--- the until-equipped variant without the caller knowing their numbers. The
+--- bindType fallback stands in only where there is no item to ask about, which
+--- is why enum.BIND_TYPE_ACCOUNT exists at all.
+---
+--- IsItemBindToAccount is SecretArguments = "AllowedWhenUntainted" and can
+--- decline to answer, the same as C_Item.IsBound below. Returned unwrapped, not
+--- `== true`: a decline must reach facts.isBindOnAccount as nil, or the gear
+--- ladder's `facts.isBindOnAccount == nil` guard folds an unread answer into
+--- "not account bound" and condemns gear on evidence that never arrived. The
+--- bindType fallback below is not this kind of call -- it is a plain table
+--- lookup on an already-resolved number, never a secret, so it stays a
+--- definite boolean.
+---
+--- Gathered here rather than derived inside Decide, which makes no API calls.
+---@param itemInfo string|number|nil  item link or ID
+---@param bindType number|nil
+---@return boolean|nil
+local function isBindOnAccount(itemInfo, bindType)
+    if itemInfo then return C_Item.IsItemBindToAccount(itemInfo) end
+    return enum.BIND_TYPE_ACCOUNT[bindType] == true
+end
+
+-- A per-visit reuse cache, keyed by "itemID:marker" -- not a claim that these
+-- answers cannot change while a vendor is open. A recipe or a pet can be
+-- learned mid-visit, so this only saves five copies of one recipe from
+-- costing five tooltip reads instead of one; it is not a guarantee the sixth
+-- read within the same visit would still agree. Cleared on both MERCHANT_SHOW
+-- and MERCHANT_CLOSED, so a stale answer never survives past the visit that
+-- produced it -- view.lua's debug tooltip can call scanner.Explain, and
+-- therefore this, while no vendor is open at all. Only the two tooltip
+-- lookups go through this -- they are the only expensive reads here.
+local visitMemo = {}
+
+function scanner.ClearVisitMemo() wipe(visitMemo) end
+
+--- Whether already-fetched tooltip data carries a line equal to `marker`.
+--- nil when the tooltip has not arrived, which is unknown, not false. An empty
+--- lines array is not evidence either: a tooltip whose data has not finished
+--- loading looks exactly like one the client had nothing to append, and a
+--- genuinely loaded item tooltip always carries at least its name line.
+---@return boolean|nil
+local function linesContain(data, marker)
+    if not data or not data.lines or #data.lines == 0 then return nil end
+    for _, line in ipairs(data.lines) do
+        if line.leftText == marker then return true end
+    end
+    return false
+end
+
+--- Whether a tooltip for this item carries a line equal to `marker`, read from
+--- a bag slot. nil when the tooltip has not arrived, which is unknown, not
+--- false. Not memoized when unresolved, for the same reason linesContain
+--- returns nil rather than false for it: nil here means "ask again," not "the
+--- marker is absent."
+---@return boolean|nil
+local function tooltipSays(bagIndex, slotIndex, itemID, marker)
+    local memoKey = itemID .. ":" .. marker
+    local cached = visitMemo[memoKey]
+    if cached ~= nil then return cached end
+
+    local found = linesContain(C_TooltipInfo.GetBagItem(bagIndex, slotIndex), marker)
+    if found == nil then return nil end
+    visitMemo[memoKey] = found
+    return found
+end
+
+--- The same fact, read from the item's ID alone rather than a bag slot -- used
+--- by GatherByID, which has no slot to ask. Shares visitMemo with tooltipSays:
+--- the cache key is already "itemID:marker" with no slot in it, so the two
+--- agree on the same item within one visit rather than each keeping a private
+--- answer.
+---@return boolean|nil
+local function tooltipSaysByID(itemID, marker)
+    local memoKey = itemID .. ":" .. marker
+    local cached = visitMemo[memoKey]
+    if cached ~= nil then return cached end
+
+    local found = linesContain(C_TooltipInfo.GetItemByID(itemID), marker)
+    if found == nil then return nil end
+    visitMemo[memoKey] = found
+    return found
+end
+
+-- Named MISC_SUBCLASS in rules.lua too. One set of numbers, one name, so the
+-- two files cannot drift apart.
+local MISC_SUBCLASS = {
+    REAGENT = 1,
+    PET = 2,
+    HOLIDAY = 3,
+    OTHER = 4,
+    MOUNT = 5,
+    MOUNT_EQUIPMENT = 6
+}
+
+local HOUSING_SUBCLASS = { DECOR = 0 }
+
+--- The facts only some classes need. Gathered per class rather than for every
+--- slot: a weapon has no reason to pay for a pet journal lookup.
+---
+--- readTooltip is the one lookup that needs a bag slot at all -- everything
+--- else here is already answerable from the item's ID and link alone, which is
+--- why scanner.Gather and scanner.GatherByID can share this whole function and
+--- differ only in what they pass for it.
+---@param facts table
+---@param readTooltip fun(itemID: number, marker: string): boolean|nil
+local function supplement(facts, readTooltip)
+    local classID, sub = facts.classID, facts.subclassID
+
+    -- Outside the class chain below, and that is the whole of #32: cosmetic is
+    -- not a class or a subclass. Both items in the report are filed under real
+    -- weapon classes and both answer IsCosmeticItem true, so a lookup scoped to
+    -- Armor's Cosmetic (5) never ran for them, appearanceCollected stayed nil,
+    -- and an uncollected appearance was sold. There is no cosmetic weapon
+    -- subclass to widen the gate to -- the item's own flag is the only thing
+    -- that answers.
+    if facts.isCosmetic then
+        local _, modifiedAppearanceID = C_TransmogCollection.GetItemInfo(facts.itemLink)
+        if modifiedAppearanceID then
+            local hasAppearance =
+                C_TransmogCollection.PlayerHasTransmogItemModifiedAppearance
+            facts.appearanceCollected = hasAppearance(modifiedAppearanceID)
+        end
+    end
+
+    if classID == Enum.ItemClass.Miscellaneous then
+        if sub == MISC_SUBCLASS.MOUNT then
+            local mountID = C_MountJournal.GetMountFromItem(facts.itemID)
+            if mountID then
+                facts.mountCollected = select(11, C_MountJournal.GetMountInfoByID(mountID))
+            end
+        elseif sub == MISC_SUBCLASS.PET then
+            facts.petCollected = readTooltip(facts.itemID, ITEM_PET_KNOWN)
+        end
+    elseif classID == Enum.ItemClass.Recipe then
+        facts.recipeKnown = readTooltip(facts.itemID, ITEM_SPELL_KNOWN)
+
+        -- nil for a subclass RECIPE_SUBCLASS_PROFESSION has no entry for
+        -- (Book, 0), which is what the criterion abstains on: a generic
+        -- pattern belongs to no one profession, so there is nothing to judge
+        -- the recipe against.
+        facts.recipeProfession = enum.RECIPE_SUBCLASS_PROFESSION[sub]
+    elseif classID == Enum.ItemClass.Housing then
+        if sub == HOUSING_SUBCLASS.DECOR then
+            local info = C_HousingCatalog.GetCatalogEntryInfoByItem(facts.itemLink)
+            if info then
+                facts.decorCollected = (info.totalNumStored or 0) > 0
+                    or (info.totalNumPlaced or 0) > 0
+                    or (info.remainingRedeemable or 0) > 0
+            end
+        end
+    end
+end
+
 function scanner.Gather(bagIndex, slotIndex)
     local slotInfo = C_Container.GetContainerItemInfo(bagIndex, slotIndex)
     if not slotInfo or not slotInfo.itemID then return nil, nil end
@@ -116,46 +297,62 @@ function scanner.Gather(bagIndex, slotIndex)
     -- item, so it can succeed while GetItemInfo on this specific hyperlink does
     -- not; requesting a load would resolve immediately, clear the pending entry,
     -- rescan, and land right back here — an unbounded loop for as long as the
-    -- merchant is open. The pre-renovation code also dropped the item here.
+    -- merchant is open.
     if not name then return nil, nil end
 
     local resolvedLink = itemLink or hyperlink
     local listStatus = model.GetEffectiveStatus(slotInfo.itemID)
 
-    return {
-        bagIndex       = bagIndex,
-        slotIndex      = slotIndex,
-        itemID         = slotInfo.itemID,
-        itemLink       = resolvedLink,
-        name           = name,
-        quality        = quality,
-        sellPrice      = sellPrice or 0,
-        stackCount     = slotInfo.stackCount or 1,
-        level          = C_Item.GetDetailedItemLevelInfo(resolvedLink) or 0,
-        equipLoc       = equipLoc,
-        classID        = classID,
-        subclassID     = subclassID,
-        bindType       = bindType,
-        expacID        = expacID or 0,
-        isCraftingReagent = isCraftingReagent == true,
+    local facts = {
+        bagIndex           = bagIndex,
+        slotIndex          = slotIndex,
+        itemID             = slotInfo.itemID,
+        itemLink           = resolvedLink,
+        name               = name,
+        quality            = quality,
+        sellPrice          = sellPrice or 0,
+        stackCount         = slotInfo.stackCount or 1,
+        level              = C_Item.GetDetailedItemLevelInfo(resolvedLink) or 0,
+        equipLoc           = equipLoc,
+        classID            = classID,
+        subclassID         = subclassID,
+        bindType           = bindType,
+        isBindOnAccount    = isBindOnAccount(resolvedLink, bindType),
+        -- Whether THIS instance is bound, which bindType cannot answer: a
+        -- looted BoE is not bound, the same BoE once equipped is. Ladder step 4
+        -- asks the second question. A secret value that did not resolve stays
+        -- nil, so the ladder abstains rather than condemning.
+        isBound            = C_Item.IsBound(ItemLocation:CreateFromBagAndSlot(bagIndex, slotIndex)),
+        expacID            = expacID or 0,
+        isCraftingReagent  = isCraftingReagent == true,
+        -- Deliberately unwrapped, unlike isCraftingReagent above: the result is
+        -- Nilable and the call is SecretArguments = "AllowedWhenUntainted", so
+        -- a decline has to arrive as nil. Coercing it with == true would read
+        -- "could not tell" as "not cosmetic", which is exactly the direction
+        -- that sells an appearance (#32).
+        isCosmetic         = C_Item.IsCosmeticItem(resolvedLink),
         -- Which professions want this as a reagent, or nil for an item the
-        -- catalogue has no entry for. Gathered here because model.Decide is
-        -- pure and cannot ask core itself.
+        -- catalogue has no entry for. Gathered here because model.Decide makes
+        -- no API calls and cannot ask core itself.
         reagentProfessions = BitForge:GetReagentProfessions(slotInfo.itemID),
 
-        isLocked       = slotInfo.isLocked == true,
-        inEquipmentSet = model.IsInEquipmentSet(format("%d:%d", bagIndex, slotIndex)),
-        isRefundable   = isRefundable(bagIndex, slotIndex),
-        equippedItems  = equippedItems(equipLoc),
+        isLocked           = slotInfo.isLocked == true,
+        inEquipmentSet     = model.IsInEquipmentSet(format("%d:%d", bagIndex, slotIndex)),
+        isRefundable       = isRefundable(bagIndex, slotIndex),
+        equippedItems      = equippedItems(equipLoc),
 
-        isProhibited   = listStatus == enum.LIST_STATUS.BLACKLIST,
-        isEnforced     = listStatus == enum.LIST_STATUS.WHITELIST,
-        isTempExcluded = model.IsTempExcluded(resolvedLink),
-        isTempIncluded = model.IsTempIncluded(resolvedLink),
+        isProhibited       = listStatus == enum.LIST_STATUS.BLACKLIST,
+        isEnforced         = listStatus == enum.LIST_STATUS.WHITELIST,
+        isTempExcluded     = model.IsTempExcluded(resolvedLink),
+        isTempIncluded     = model.IsTempIncluded(resolvedLink),
 
         -- Read by the merchant panel only; model.Decide never consults it.
-        isCharOverride = model.HasCharOverride(slotInfo.itemID),
+        isCharOverride     = model.HasCharOverride(slotInfo.itemID),
     }
+    supplement(facts, function(itemID, marker)
+        return tooltipSays(bagIndex, slotIndex, itemID, marker)
+    end)
+    return facts
 end
 
 --- Re-reads the mutable fields before selling. Returns false when the slot no
@@ -194,15 +391,25 @@ function scanner.Scan()
     local settings = model.GetSettingsSnapshot()
     local items = {}
 
-    -- BACKPACK_CONTAINER..NUM_TOTAL_EQUIPPED_BAG_SLOTS includes the reagent bag,
-    -- which a hardcoded 0..4 silently skipped.
+    -- BACKPACK_CONTAINER..NUM_TOTAL_EQUIPPED_BAG_SLOTS includes the reagent bag.
     for bagIndex = BACKPACK_CONTAINER, NUM_TOTAL_EQUIPPED_BAG_SLOTS do
         local numSlots = C_Container.GetContainerNumSlots(bagIndex)
         for slotIndex = 1, numSlots do
             local facts, pendingItemID = scanner.Gather(bagIndex, slotIndex)
             if facts then
-                if model.Decide(facts, settings) == enum.DECISION.SELL then
-                    items[#items + 1] = facts
+                -- One item's decision throwing must not cost the rest of the
+                -- bags their scan -- model.Decide is pure and should never
+                -- raise, but "should never" is not a guarantee an unforeseen
+                -- fact shape cannot break, and the whole manifest going blank
+                -- over one bad item is a worse failure than that one item
+                -- being silently skipped and reported.
+                local ok, verdict = pcall(model.Decide, facts, settings)
+                if ok then
+                    if verdict == enum.DECISION.SELL then
+                        items[#items + 1] = facts
+                    end
+                else
+                    CallErrorHandler(verdict)
                 end
             elseif pendingItemID then
                 scanner.RequestLoad(pendingItemID)
@@ -217,17 +424,26 @@ end
 --- One item's facts from its ID alone, with no bag slot behind it, or nil when
 --- the client has not cached the item yet.
 ---
---- Everything the decision actually reads is answerable from an ID, including
---- the equipped items in the slots this one could fill -- which is the half of
---- the comparison a bag-only gather loses the moment the item leaves the bags,
---- and the half a report after the fact needs most.
+--- Everything else the class criteria read is answerable from an ID: the
+--- equipped items in the slots this one could fill -- which is the half of the
+--- comparison a bag-only gather loses the moment the item leaves the bags --
+--- and the same collection-state facts supplement() gathers for a bag slot
+--- (mount, pet, transmog, housing and recipe state), read here from the
+--- item's ID and link instead of a tooltip pinned to a slot.
 ---
---- The bag-slot fields have no answer here: whether this copy is locked, in an
---- equipment set, or inside its refund window are all questions about a
---- particular copy, and an ID names a kind of item rather than a copy. Each is
---- reported false rather than guessed, which is the same answer the gates would
---- reach for an unencumbered item, so a verdict from here matches the one a bag
---- slot would produce for anything the player has not locked or bought back.
+--- isBound is the one fact genuinely out of reach: whether THIS copy is bound
+--- is a property of a specific instance, not of the item, and no by-ID call
+--- can answer it. It is left nil, which the class criteria read as unknown
+--- rather than unbound -- so a piece already condemned or kept on its own
+--- merits (an upgrade, or a stale bar it beats) still reports that verdict,
+--- but a piece the ladder would only sell after asking whether it is bound
+--- abstains instead of guessing, and reaches the global KEEP.
+---
+--- The bag-slot fields have no answer here either: whether this copy is
+--- locked, in an equipment set, or inside its refund window are all questions
+--- about a particular copy, and an ID names a kind of item rather than a copy.
+--- Each is reported false rather than guessed, which is the same answer the
+--- hard gates would reach for an unencumbered item.
 ---@param itemID number
 ---@return table|nil facts
 function scanner.GatherByID(itemID)
@@ -242,33 +458,38 @@ function scanner.GatherByID(itemID)
 
     local listStatus = model.GetEffectiveStatus(itemID)
 
-    return {
-        itemID         = itemID,
-        itemLink       = itemLink,
-        name           = name,
-        quality        = quality,
-        sellPrice      = sellPrice or 0,
-        stackCount     = 1,
-        level          = C_Item.GetDetailedItemLevelInfo(itemLink) or 0,
-        equipLoc       = equipLoc,
-        classID        = classID,
-        subclassID     = subclassID,
-        bindType       = bindType,
-        expacID        = expacID or 0,
-        isCraftingReagent = isCraftingReagent == true,
+    local facts = {
+        itemID             = itemID,
+        itemLink           = itemLink,
+        name               = name,
+        quality            = quality,
+        sellPrice          = sellPrice or 0,
+        stackCount         = 1,
+        level              = C_Item.GetDetailedItemLevelInfo(itemLink) or 0,
+        equipLoc           = equipLoc,
+        classID            = classID,
+        subclassID         = subclassID,
+        bindType           = bindType,
+        isBindOnAccount    = isBindOnAccount(itemLink or itemID, bindType),
+        expacID            = expacID or 0,
+        isCraftingReagent  = isCraftingReagent == true,
+        -- Unwrapped, for the reason scanner.Gather's own copy gives.
+        isCosmetic         = C_Item.IsCosmeticItem(itemLink or itemID),
         reagentProfessions = BitForge:GetReagentProfessions(itemID),
 
-        isLocked       = false,
-        inEquipmentSet = false,
-        isRefundable   = false,
-        equippedItems  = equippedItems(equipLoc),
+        isLocked           = false,
+        inEquipmentSet     = false,
+        isRefundable       = false,
+        equippedItems      = equippedItems(equipLoc),
 
-        isProhibited   = listStatus == enum.LIST_STATUS.BLACKLIST,
-        isEnforced     = listStatus == enum.LIST_STATUS.WHITELIST,
-        isTempExcluded = model.IsTempExcluded(itemLink),
-        isTempIncluded = model.IsTempIncluded(itemLink),
-        isCharOverride = model.HasCharOverride(itemID),
+        isProhibited       = listStatus == enum.LIST_STATUS.BLACKLIST,
+        isEnforced         = listStatus == enum.LIST_STATUS.WHITELIST,
+        isTempExcluded     = model.IsTempExcluded(itemLink),
+        isTempIncluded     = model.IsTempIncluded(itemLink),
+        isCharOverride     = model.HasCharOverride(itemID),
     }
+    supplement(facts, tooltipSaysByID)
+    return facts
 end
 
 --- The full decision one slot would receive: the facts, the settings they were
@@ -313,10 +534,6 @@ end
 
 control.scanner = scanner
 
--- ================================================================================
--- Seller
--- ================================================================================
-
 local seller = {}
 
 --- Vendors the manifest, up to the merchant's per-batch limit when enabled.
@@ -336,10 +553,6 @@ end
 
 control.seller = seller
 
--- ================================================================================
--- Manifest Drop
--- ================================================================================
---
 -- Dragging a bag item onto the manifest includes it in this merchant visit's
 -- sale, overriding rules that merely did not select it. The item never moves:
 -- the cursor is cleared immediately, before anything else can fail, so the
@@ -404,23 +617,19 @@ function control.AcceptManifestDrop()
 
     local blockingRule = model.CanTempInclude(facts)
     if blockingRule then
-        BitForge:Print(format(L["msg:dropRefused"], itemLink, L["reason:" .. blockingRule]))
+        BitForge:Print(format(locale["msg:dropRefused"], itemLink, locale["reason:" .. blockingRule]))
         return
     end
 
     if model.IsTempExcluded(itemLink) then
         model.RemoveTempExclude(itemLink)
-        BitForge:Print(format(L["msg:dropUnexcluded"], itemLink))
+        BitForge:Print(format(locale["msg:dropUnexcluded"], itemLink))
     end
 
     model.AddTempInclude(itemLink)
     scanner.Scan()
 end
 
--- ================================================================================
--- Disenchant probe
--- ================================================================================
---
 -- Disenchantability is inferred everywhere else in this module -- uncommon or
 -- better, armour or a weapon, absent from a crawled table of exceptions. The
 -- client knows the real answer and will say so, but only about the item under
@@ -479,6 +688,13 @@ local function readSlot(bagIndex, slotIndex)
     -- The second fence. Quality and class are the part of the prediction that
     -- is not in doubt -- the crawled table is the doubtful part -- so screening
     -- on them costs no truth and keeps a pending Prospecting out of the data.
+    --
+    -- Quality can come back secret in 12.0+, the same fact model.Decide guards
+    -- before its own quality comparisons. This one runs over every bag slot
+    -- each time Disenchant is raised, with no pcall around the dispatch that
+    -- calls it, so an unread quality has to abstain here rather than crash the
+    -- handler outright.
+    if type(facts.quality) ~= "number" then return nil, nil end
     if facts.quality < Enum.ItemQuality.Uncommon then return nil, nil end
     if facts.classID ~= Enum.ItemClass.Armor and facts.classID ~= Enum.ItemClass.Weapon then
         return nil, nil
@@ -557,10 +773,6 @@ end
 
 control.disenchantProbe = disenchantProbe
 
--- ================================================================================
--- Caches
--- ================================================================================
-
 local function buildEquipmentSetCache()
     local cache = {}
     for _, setID in ipairs(C_EquipmentSet.GetEquipmentSetIDs()) do
@@ -574,24 +786,28 @@ local function buildEquipmentSetCache()
     model.SetEquipmentSetCache(cache)
 end
 
+--- GetProfessions returns spellbook skill-line INDICES, not skill line IDs, so
+--- the ID has to be converted before it can be compared -- the same conversion
+--- Blizzard's own WorldMapFrame does. Comparing the two directly never matches,
+--- which reads as "nobody is an enchanter" rather than as an error.
+---
+--- GetSkillLineIndexByID answers nil for a line the player does not have, so
+--- the prof1/prof2 test is what confirms it is one of the two primary slots
+--- rather than some other tracked line.
 local function detectEnchanting()
-    local enchantingLineID = C_TradeSkillUI.GetProfessionSkillLineID(Enum.Profession.Enchanting)
-    for _, lineID in ipairs(C_TradeSkillUI.GetAllProfessionTradeSkillLines()) do
-        if lineID == enchantingLineID then
-            model.SetIsEnchanter(true)
-            return
-        end
-    end
-    model.SetIsEnchanter(false)
+    local lineID = C_TradeSkillUI.GetProfessionSkillLineID(Enum.Profession.Enchanting)
+    local index = lineID and C_SpellBook.GetSkillLineIndexByID(lineID)
+    local prof1, prof2 = GetProfessions()
+    model.SetIsEnchanter(index ~= nil and (index == prof1 or index == prof2))
 end
-
--- ================================================================================
--- Events
--- ================================================================================
 
 local function onMerchantShow()
     merchantOpen = true
-    if model.GetSellJunk() and C_MerchantFrame.IsSellAllJunkEnabled() then
+    -- A fresh visit gets a fresh memo: what this caches -- the pet and recipe
+    -- tooltip answers -- is a property of this visit, not of the item, and the
+    -- player may have learned either since the last one.
+    scanner.ClearVisitMemo()
+    if model.GetRule("junk").sell and C_MerchantFrame.IsSellAllJunkEnabled() then
         C_MerchantFrame.SellAllJunkItems()
     end
     -- Unconditional, and not an alternative to the sweep above. Leaving the
@@ -612,6 +828,11 @@ end
 
 local function onMerchantClosed()
     merchantOpen = false
+    -- Cleared here too, not only on the next MERCHANT_SHOW: view.lua's debug
+    -- tooltip calls scanner.Explain away from a vendor, and without this a
+    -- recipe learned right after closing would still read the stale answer
+    -- memoized during the visit, until the player opened a vendor again.
+    scanner.ClearVisitMemo()
     model.ClearTempExcludes()
     model.ClearTempIncludes()
     -- The manifest is this visit's decisions, not a durable record: leaving it
@@ -659,7 +880,6 @@ local function onCurrentSpellCastChanged()
 end
 
 -- Learning or unlearning Enchanting changes what counts as disenchantable.
--- Detection previously ran once at login and never again.
 local function onSkillLinesChanged()
     detectEnchanting()
     if merchantOpen then
@@ -750,25 +970,79 @@ local function onPlayerReady()
             [5] = function(moduleDB)
                 moduleDB.char.ilvlMarginRatio = nil
             end,
+            -- The rule tree is warband-wide, and the whole of the old
+            -- char-scoped block is retired with the three-bucket
+            -- classification it configured.
+            --
+            -- Nothing is carried forward, and that is deliberate rather than
+            -- lazy. Promoting one character's tuning to govern the account has
+            -- no correct source: this step is char-scoped, so the answer would
+            -- be whoever happened to log in when the version was stamped.
+            -- Seeding the defaults is honest; promoting an arbitrary character
+            -- silently is not. limitBatchTo12 keeps its old default of true in
+            -- its new home, so the batch stays capped either way.
+            [6] = function(moduleDB)
+                moduleDB.char.limitBatchTo12 = nil
+                moduleDB.char.sellJunk = nil
+                moduleDB.char.sellEquipment = nil
+                moduleDB.char.materialsMode = nil
+                moduleDB.char.materialsExpansion = nil
+                moduleDB.char.otherMode = nil
+                moduleDB.char.ilvlMargin = nil
+                moduleDB.char.emphasizeQuality = nil
+                moduleDB.char.keepBindOnAccount = nil
+                moduleDB.char.keepBindOnAccountPastExpac = nil
+                moduleDB.char.keepDisenchantables = nil
+                moduleDB.char.keepUsedReagents = nil
+                moduleDB.char.keepDisenchantablesPastExpac = nil
+            end,
+            -- Two rule-tree keys retire together.
+            --
+            -- housing.sellLearnedDyes governed a branch that could never fire:
+            -- a dye is a one-time consumable, so nothing is ever collected or
+            -- learned for one. Its successor, housing.keepTradeableDyes, asks
+            -- whether the copy still has somewhere to go, which is a question
+            -- about a consumable.
+            --
+            -- armor.keepUncollectedCosmetic moves to a rules.cosmetics of its
+            -- own, because the rule it governs stopped being an armor rule: a
+            -- cosmetic is not a class or a subclass, and the two items in #32
+            -- are weapons. The protection now reaches them.
+            --
+            -- Neither value is carried across. Both successors ship on, which
+            -- is where anyone who left the defaults alone already was. The step
+            -- exists only because the logout prune visits the keys DB_DEFAULTS
+            -- declares, so a retired one left behind would sit in the saved
+            -- variables forever. Assigning nil unconditionally is idempotent,
+            -- which matters because a step that throws is re-invoked from the
+            -- top.
+            [7] = function(moduleDB)
+                local rules = moduleDB.global.rules
+                rules.housing.sellLearnedDyes = nil
+                rules.armor.keepUncollectedCosmetic = nil
+            end,
+            -- The decor rule ships off. Nothing ever chose the old default --
+            -- no control reaches it -- so a stored true is a seed rather than
+            -- a preference, and rewriting it is the only way the new default
+            -- reaches a database that already carries the key. Idempotent for
+            -- the same reason step 7 is.
+            [8] = function(moduleDB)
+                moduleDB.global.rules.housing.sellCollectedDecor = false
+            end,
         },
     }, startModule)
 end
 
-ns:Subscribe(E.MERCHANT_SHOW, onMerchantShow)
-ns:Subscribe(E.MERCHANT_CLOSED, onMerchantClosed)
-ns:Subscribe(E.BAG_UPDATE_DELAYED, onBagUpdateDelayed)
-ns:Subscribe(E.EQUIPMENT_SETS_CHANGED, onEquipmentSetsChanged)
-ns:Subscribe(E.ITEM_DATA_LOAD_RESULT, onItemDataLoaded)
-ns:Subscribe(E.SKILL_LINES_CHANGED, onSkillLinesChanged)
-ns:Subscribe(E.CURRENT_SPELL_CAST_CHANGED, onCurrentSpellCastChanged)
-ns:Subscribe(E.PLAYER_READY, onPlayerReady)
+ns:Subscribe(events.MERCHANT_SHOW, onMerchantShow)
+ns:Subscribe(events.MERCHANT_CLOSED, onMerchantClosed)
+ns:Subscribe(events.BAG_UPDATE_DELAYED, onBagUpdateDelayed)
+ns:Subscribe(events.EQUIPMENT_SETS_CHANGED, onEquipmentSetsChanged)
+ns:Subscribe(events.ITEM_DATA_LOAD_RESULT, onItemDataLoaded)
+ns:Subscribe(events.SKILL_LINES_CHANGED, onSkillLinesChanged)
+ns:Subscribe(events.CURRENT_SPELL_CAST_CHANGED, onCurrentSpellCastChanged)
+ns:Subscribe(events.PLAYER_READY, onPlayerReady)
 
-
--- ================================================================================
--- Debug dump
--- ================================================================================
---
--- /bfsdump <itemID> captures a whole verdict -- the item, what is equipped in
+-- /bfdump b <itemID> captures a whole verdict -- the item, what is equipped in
 -- the slot it would fill, the settings that judged the pair, and the rule that
 -- decided -- into the module's debug container, where it survives the session.
 --
@@ -778,11 +1052,11 @@ ns:Subscribe(E.PLAYER_READY, onPlayerReady)
 -- resolves the candidate from the client's cache and the equipped side from the
 -- slots its equip location maps to, so neither has to still be in your bags.
 --
--- Guarded at file scope, as Openables' is, so a profile with diagnostics off
--- defines none of this. model.lua runs before this file and core before either,
--- so the flag is readable here; toggling it mid-session needs a reload to reach
--- this command, though the live checks elsewhere pick it up immediately.
-if model.IsDebug() then
+-- Never gate this block on model.IsDebug(), as it once was. The flag is read
+-- live everywhere else, so switching it on mid-session reached every check in
+-- the pipeline and not the command that reports them. The refusal belongs where
+-- GetDebugDump already puts it: at call time.
+do
     -- Every field is flattened with tostring. Item data can carry secret values
     -- in 12.0, the record has to survive being written to a SavedVariable, and
     -- it is meant to be pasted into an issue verbatim.
@@ -825,14 +1099,14 @@ if model.IsDebug() then
     -- Only the settings the gear comparison consults. The whole snapshot would
     -- bury them, and these are the ones that explain a surprising verdict.
     local function DecidingSettings(settings)
+        local gear = settings.rules and settings.rules.gear or {}
         return {
-            ilvlMargin            = Flatten(settings.ilvlMargin),
-            emphasizeQuality      = Flatten(settings.emphasizeQuality),
-            sellEquipment         = Flatten(settings.sellEquipment),
-            keepBindOnAccount     = Flatten(settings.keepBindOnAccount),
-            keepDisenchantables   = Flatten(settings.keepDisenchantables),
-            playerClass           = Flatten(settings.playerClass),
-            isEnchanter           = Flatten(settings.isEnchanter),
+            ilvlMargin         = Flatten(gear.ilvlMargin),
+            emphasizeQuality   = Flatten(gear.emphasizeQuality),
+            spareBindOnAccount = Flatten(gear.spareBindOnAccount),
+            keepForDisenchant  = Flatten(gear.keepForDisenchant),
+            playerClass        = Flatten(settings.playerClass),
+            isEnchanter        = Flatten(settings.isEnchanter),
         }
     end
 
@@ -849,8 +1123,7 @@ if model.IsDebug() then
             bindType   = Flatten(facts.bindType),
             expacID    = Flatten(facts.expacID),
             sellPrice  = Flatten(facts.sellPrice),
-            listStatus = ("blacklisted=%s whitelisted=%s"):format(
-                Flatten(facts.isProhibited), Flatten(facts.isEnforced)),
+            listStatus = ("blacklisted=%s whitelisted=%s"):format(Flatten(facts.isProhibited), Flatten(facts.isEnforced)),
             equipped   = EquippedPairs(facts),
             verdict    = Flatten(report.verdict),
             rule       = Flatten(report.rule),
@@ -858,11 +1131,67 @@ if model.IsDebug() then
         }
     end
 
+    -- Fixed here rather than taken from pairs: a report whose lines shuffle
+    -- between two players is a report nobody can diff.
+    local DUMP_FIELDS = {
+        "itemID", "name", "link", "quality", "level", "equipLoc", "class",
+        "bindType", "expacID", "sellPrice", "listStatus", "verdict", "rule",
+    }
+
+    local EQUIPPED_FIELDS = { "slot", "link", "level", "quality", "qualityGap", "itemGap" }
+
+    local SETTING_FIELDS = {
+        "ilvlMargin", "emphasizeQuality", "spareBindOnAccount", "keepForDisenchant",
+        "playerClass", "isEnchanter",
+    }
+
+    --- One item's whole verdict as text a player can select and paste.
+    ---
+    --- The record /bfdump b <id> files, rendered rather than stored -- so it carries
+    --- no debug gate, writes nothing and needs no /reload. BuildDump has already
+    --- flattened every value with tostring, which is what makes an item's secret
+    --- values safe to put in front of a player in 12.0.
+    ---@param bagIndex number
+    ---@param slotIndex number
+    ---@return string|nil  nil when the slot is empty or its item data has not arrived
+    function control.ReportText(bagIndex, slotIndex)
+        local report = scanner.Explain(bagIndex, slotIndex)
+        if not report then return nil end
+
+        local dump = BuildDump(report)
+        local lines = {
+            "BitForge BatchSell -- item report",
+            BitForge:ReportHeader(ADDON_NAME),
+            "",
+        }
+
+        for _, field in ipairs(DUMP_FIELDS) do
+            lines[#lines + 1] = format("%s = %s", field, dump[field])
+        end
+
+        -- Absent for an item that fills no slot, which is most of them.
+        if dump.equipped then
+            lines[#lines + 1] = ""
+            for index, entry in ipairs(dump.equipped) do
+                for _, field in ipairs(EQUIPPED_FIELDS) do
+                    lines[#lines + 1] = format("equipped[%d] %s = %s", index, field, entry[field])
+                end
+            end
+        end
+
+        lines[#lines + 1] = ""
+        for _, field in ipairs(SETTING_FIELDS) do
+            lines[#lines + 1] = format("settings.%s = %s", field, dump.settings[field])
+        end
+
+        return concat(lines, "\n")
+    end
+
     --- Capture one item's verdict into the debug container.
     ---@param itemID number|nil
     function control.DumpItem(itemID)
         if not itemID then
-            BitForge:Print("BatchSell: /bfsdump <itemID>")
+            BitForge:Print("BatchSell: /bfdump batchsell <itemID> | disenchant")
             return
         end
 
@@ -880,28 +1209,18 @@ if model.IsDebug() then
         end
 
         dump[tostring(itemID)] = BuildDump(report)
-        BitForge:Print(("BatchSell: dumped item %d (%s / %s). /reload, then read"
-            .. " BitForgeDB.modules.BatchSell.debug.dump"):format(
+        BitForge:ReportDump(ADDON_NAME, format("dumped item %d (%s / %s)",
             itemID, tostring(report.verdict), tostring(report.rule)))
     end
 
-    SLASH_BITFORGEBATCHSELLDUMP1 = "/bfsdump"
-    SlashCmdList["BITFORGEBATCHSELLDUMP"] = function(input)
-        control.DumpItem(tonumber(input and input:match("%d+")))
-    end
-
-    -- ----------------------------------------------------------------------
-    -- /bfsde -- what the client says about disenchanting, in one shot
-    -- ----------------------------------------------------------------------
+    -- The disenchant probe is scaffolding for one open question: which signal
+    -- distinguishes an item the player can disenchant from one they cannot. The
+    -- obvious candidate was wrong -- C_Spell.TargetSpellChecksItemCondition is
+    -- false with a disenchant pending, so the item-condition system the bag
+    -- slots use does not cover it -- and the answer turns out to be an ordinary
+    -- tooltip line the server adds while the spell waits for a target.
     --
-    -- Scaffolding for one open question: which signal actually distinguishes an
-    -- item the player can disenchant from one they cannot. The obvious
-    -- candidate was wrong -- C_Spell.TargetSpellChecksItemCondition is false
-    -- with a disenchant pending, so the item-condition system the bag slots use
-    -- does not cover it -- and the answer turns out to be an ordinary tooltip
-    -- line the server adds while the spell waits for a target.
-    --
-    -- Everything needed to pin that down is captured in a single command
+    -- Everything needed to pin that down is captured in a single subcommand
     -- deliberately. The state under investigation is destroyed by the act of
     -- investigating it any other way: a pending spell does not survive being
     -- studied one pasted line at a time, and a bag does not hold still between
@@ -995,12 +1314,22 @@ if model.IsDebug() then
             items = items,
         }
 
-        BitForge:Print(("BatchSell: captured %d item(s) with targeting=%s."
-            .. " Run again in the other state, then /reload"):format(seen, tostring(targeting)))
+        BitForge:ReportDump(ADDON_NAME,
+            format("captured %d item(s) with targeting=%s -- run again in the other state",
+                seen, tostring(targeting)))
     end
 
-    SLASH_BITFORGEBATCHSELLDE1 = "/bfsde"
-    SlashCmdList["BITFORGEBATCHSELLDE"] = function()
-        control.ScanDisenchant()
-    end
+    -- One handler, two subcommands. `disenchant` carries no digits and an item
+    -- ID carries nothing else, so the word is matched first and the remainder
+    -- reads as an ID -- the same order Openables matches `all` in.
+    ns:SubscribeCommand(events.MODULE_DUMP, function(addon, argument)
+        if addon ~= ADDON_NAME then return end
+
+        local subcommand = argument:match("%S+")
+        if subcommand and subcommand:lower() == "disenchant" then
+            control.ScanDisenchant()
+            return
+        end
+        control.DumpItem(tonumber(subcommand and subcommand:match("%d+")))
+    end)
 end

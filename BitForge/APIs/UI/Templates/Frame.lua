@@ -6,10 +6,6 @@ local PixelUtil = PixelUtil
 local UI = BitForge.UI
 local colors = UI.Colors
 
--- =========================================================
--- Backdrop config — MD card style
--- =========================================================
-
 local BACKDROP_CONFIG = {
     bgFile = "Interface/Buttons/WHITE8X8",
     edgeFile = "Interface/Buttons/WHITE8X8",
@@ -20,10 +16,6 @@ local BACKDROP_CONFIG = {
 }
 
 local BACKDROP_ALPHA = 0.5
-
--- =========================================================
--- FrameMixin — MD card-style backdrop frame
--- =========================================================
 
 ---@class BitForge.FrameMixin : BackdropTemplate
 local FrameMixin = {}
@@ -67,19 +59,21 @@ end
 
 UI.Mixins.Frame = FrameMixin
 
--- =========================================================
--- Factory
--- =========================================================
-
 --- Create an MD card-style frame.
 ---@param parent any
 ---@param title  string?  Optional title bar text.
+---@param name   string?  Optional global frame name, for a window UISpecialFrames
+---                        must find by name to close on Escape. Every caller before
+---                        this one built an anonymous frame and reached for
+---                        `_G[name] = frame` on its own -- correct for `_G`, but
+---                        `GetName()` answered nil, because a frame's name is set at
+---                        creation and nothing since offers a second chance.
 ---@return BitForge.FrameMixin
-function UI.CreateFrame(parent, title)
+function UI.CreateFrame(parent, title, name)
     local isTitle = title and type(title) == "string" and trim(title) ~= ""
 
     ---@class BitForge.FrameMixin
-    local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    local frame = CreateFrame("Frame", name, parent, "BackdropTemplate")
     Mixin(frame, FrameMixin)
     frame:OnLoad(isTitle)
     if isTitle then
@@ -87,10 +81,6 @@ function UI.CreateFrame(parent, title)
     end
     return frame
 end
-
--- =========================================================
--- Utilities
--- =========================================================
 
 --- Adds a faint 1px dark shadow just outside the frame for a floating appearance.
 --- Sets frame.Shadow to the created shadow frame.

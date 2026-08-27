@@ -17,10 +17,6 @@ local locale = ns.locale
 ---@field configFrame   BitForge.TaskTome.View.ConfigFrame
 local view = ns.view
 
--- =============================================================================
---  Settings Panel
--- =============================================================================
-
 do
     ---@class BitForge.TaskTome.View.SettingsPanel
     local settingsPanel = {}

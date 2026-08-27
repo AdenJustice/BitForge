@@ -47,26 +47,25 @@ local enum = {
     -- and stop. It exists for the debug dump, which is otherwise left asking why
     -- an item that plainly looks openable never reaches the button.
     REJECTED = {
-        BLACKLIST      = "BLACKLIST",      -- permanently blacklisted by the player
-        SESSION_SKIP   = "SESSION_SKIP",   -- right-clicked away for this session
-        DENY_LIST      = "DENY_LIST",      -- hand-listed in ItemData.lua
-        SHORT_STACK    = "SHORT_STACK",    -- STACK_GATED, and fewer carried than the threshold
-        QUEST_TAKEN    = "QUEST_TAKEN",    -- QUEST_GATED, and the quest is on or completed
-        NO_UNLOCK      = "NO_UNLOCK",      -- a locked box, but no unlock spell is known
-        REJECT_LINE    = "REJECT_LINE",    -- a typed line said it cannot be used; detail is that line
-        UNUSABLE       = "UNUSABLE",       -- a requirement line, and IsUsableItem agrees it is unmet
-        DENIED_CLASS   = "DENIED_CLASS",   -- whole item class is never openable
-        ON_USE_ARMOR   = "ON_USE_ARMOR",   -- on-use armor accepted on a plain Use: line
-        ON_USE_MISC    = "ON_USE_MISC",    -- Miscellaneous/Other accepted on a plain Use: line
-        HOLIDAY        = "HOLIDAY",        -- Miscellaneous/Holiday
-        QUESTLESS_ITEM = "QUESTLESS_ITEM", -- a quest item that starts no quest
-        NO_EVIDENCE    = "NO_EVIDENCE",    -- nothing accepted it: no typed line, no usable spell
+        BLACKLIST       = "BLACKLIST",       -- permanently blacklisted by the player
+        SESSION_SKIP    = "SESSION_SKIP",    -- right-clicked away for this session
+        DENY_LIST       = "DENY_LIST",       -- hand-listed in ItemData.lua
+        SHORT_STACK     = "SHORT_STACK",     -- STACK_GATED, and fewer carried than the threshold
+        QUEST_TAKEN     = "QUEST_TAKEN",     -- QUEST_GATED, and the quest is on or completed
+        NO_UNLOCK       = "NO_UNLOCK",       -- a locked box, but no unlock spell is known
+        REJECT_LINE     = "REJECT_LINE",     -- a typed line said it cannot be used; detail is that line
+        UNUSABLE        = "UNUSABLE",        -- a requirement line, and IsUsableItem agrees it is unmet
+        DENIED_CLASS    = "DENIED_CLASS",    -- whole item class is never openable
+        ON_USE_ARMOR    = "ON_USE_ARMOR",    -- on-use armor accepted on a plain Use: line
+        ON_USE_MISC     = "ON_USE_MISC",     -- Miscellaneous/Other accepted on a plain Use: line
+        PROFESSION_TOOL = "PROFESSION_TOOL", -- Consumable/Other used under a met trade skill
+        HOLIDAY         = "HOLIDAY",         -- Miscellaneous/Holiday
+        QUESTLESS_ITEM  = "QUESTLESS_ITEM",  -- a quest item that starts no quest
+        NO_EVIDENCE     = "NO_EVIDENCE",     -- nothing accepted it: no typed line, no usable spell
     },
 
     -- Spells that can open a locked container.
-    -- verify in-game: /run print(IsPlayerSpell(1804))
     SPELL_PICK_LOCK = 1804,
-    -- verify in-game: Mechagnome lockbox racial. Confirm the ID on a Mechagnome character.
     SPELL_SKELETON_PINKIE = 312370,
 
     BUTTON_SIZE_MIN = 24,

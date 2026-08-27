@@ -1,10 +1,12 @@
 ---@type string, BitForge.Openables
 local ADDON_NAME, ns = ...
-local E = BitForge.Events
+local events = BitForge.Events
 
 local ipairs = ipairs
 local pairs = pairs
 local wipe = table.wipe
+local format = string.format
+local concat = table.concat
 
 local C_Container = C_Container
 local C_Item = C_Item
@@ -32,9 +34,12 @@ function ns:Unsubscribe(event)
     BitForge.Unsubscribe(event, self)
 end
 
--- ================================================================================
--- Detector
--- ================================================================================
+--- Subscribes to one of core's two command events. Separate from ns:Subscribe
+--- because core also has to be told which addon is answering: the bus knows
+--- only an owner table, and /bitforge's roster names modules.
+function ns:SubscribeCommand(event, callback)
+    BitForge.SubscribeCommand(ADDON_NAME, event, callback, self)
+end
 
 local detector = {}
 
@@ -94,6 +99,13 @@ local function isRecipe(itemID)
     return classID == Enum.ItemClass.Recipe
 end
 
+-- Housing decor, dyes and room customizations. Learned on use and then no longer
+-- needed, so the class answers the learn question outright the way Recipe does.
+local function isHousing(itemID)
+    local classID = select(6, C_Item.GetItemInfoInstant(itemID))
+    return classID == Enum.ItemClass.Housing
+end
+
 -- Whole classes an accept branch cannot tell from a genuine openable:
 --   Key -- answers both GetItemSpell and IsUsableItem.
 --   ItemEnhancement -- enchanting scrolls carry ItemSpellTriggerOnUse as a recipe
@@ -127,6 +139,15 @@ local DENIED_SUBCLASSES = {
 -- bag slot, and the answer changes only when a profession is learned or dropped.
 local professionNames = {}
 
+--- Records one name at the highest rank seen for it. A parent name covers every
+--- expansion's line, so the best of them is what it can honestly claim.
+local function recordProfession(name, skillLevel)
+    if not name then return end
+    if not professionNames[name] or professionNames[name] < skillLevel then
+        professionNames[name] = skillLevel
+    end
+end
+
 --- Re-reads the character's professions. Called at startup and whenever the
 --- skill lines change, so learning a profession makes its knowledge items
 --- appear without a reload.
@@ -143,10 +164,9 @@ function detector.RefreshProfessions()
     for _, skillLineID in ipairs(skillLines) do
         local info = C_TradeSkillUI.GetProfessionInfoBySkillLineID(skillLineID)
         if info then
-            if info.professionName then professionNames[info.professionName] = true end
-            if info.parentProfessionName then
-                professionNames[info.parentProfessionName] = true
-            end
+            local skillLevel = info.skillLevel or 0
+            recordProfession(info.professionName, skillLevel)
+            recordProfession(info.parentProfessionName, skillLevel)
         end
     end
 end
@@ -167,16 +187,55 @@ end
 --
 -- An empty set matches nothing, so a character with no professions is not
 -- handed every Miscellaneous/Other item in their bags.
+--
+-- The name alone is not the whole requirement, though. "Requires Dragon Isles
+-- Mining (25)" names a rank as well, and a character who has the line at rank 1
+-- does not meet it -- C_Item.IsUsableItem answers true for these regardless, so
+-- nothing else catches it. The rank is digits in parentheses, which every locale
+-- prints the same way, and its absence reads as no rank required.
+local function requiredRank(text)
+    return tonumber(text:match("%((%d+)%)")) or 0
+end
+
 local function requiresKnownProfession(data)
     if not (data and data.lines) then return false end
     for _, line in ipairs(data.lines) do
         if line.type == LINE_TYPE.UsageRequirement and type(line.leftText) == "string" then
-            for name in pairs(professionNames) do
-                if line.leftText:find(name, 1, true) then return true end
+            -- Longest match wins. The requirement names the expansion's own line
+            -- ("Dragon Isles Mining") and the base name ("Mining") is a
+            -- substring of it, so answering on whichever matched first would let
+            -- a maxed classic profession satisfy a current-expansion rank.
+            local matchedName, matchedRank
+            for name, skillLevel in pairs(professionNames) do
+                if line.leftText:find(name, 1, true)
+                    and (not matchedName or #name > #matchedName) then
+                    matchedName, matchedRank = name, skillLevel
+                end
+            end
+            if matchedName then
+                return matchedRank >= requiredRank(line.leftText)
             end
         end
     end
     return false
+end
+
+-- A met trade skill requirement makes an item knowledge only in the class pair
+-- knowledge items actually occupy. Miscellaneous/Other is that pair -- it is the
+-- shape isRejectedByClass discards and the requirement exists to rescue. Plenty
+-- of other things are gated on a profession without teaching anything: a
+-- Consumable/Other skinning bait requires Khaz Algar Skinning and is a thing you
+-- use, not a thing you study, and promoting it to LEARN parked it above every
+-- genuine learnable in the bags. isRejectedByClass turns that pair away before
+-- this runs now, leaving this the second line of defence rather than the only
+-- one.
+local function isProfessionKnowledge(itemID, data)
+    local classID, subClassID = select(6, C_Item.GetItemInfoInstant(itemID))
+    if classID ~= Enum.ItemClass.Miscellaneous
+        or subClassID ~= Enum.ItemMiscellaneousSubclass.Other then
+        return false
+    end
+    return requiresKnownProfession(data)
 end
 
 -- True when the weakest evidence accepted the item: a plain Use: line, or the
@@ -205,6 +264,9 @@ end
 --   indistinguishable from them, which is why DENIED_CLASSES has to turn
 --   ItemEnhancement away by class rather than by line.
 --
+--   Housing items. Enum.ItemClass.Housing is the same shape as Recipe -- every
+--   subclass of it so far is learned on use, on nothing but a plain Use: line.
+--
 --   Profession knowledge items. Miscellaneous/Other with a plain Use: line is
 --   exactly the shape isRejectedByClass discards, and the trade skill gating it
 --   is the only thing that tells one from a firecracker. That same requirement
@@ -214,7 +276,8 @@ end
 local function learnVerdict(itemID, acceptedLine, data)
     if not acceptedOnPlainUse(acceptedLine) then return enum.PRIORITY.LEARN end
     if isRecipe(itemID) then return enum.PRIORITY.LEARN end
-    if requiresKnownProfession(data) then return enum.PRIORITY.LEARN end
+    if isHousing(itemID) then return enum.PRIORITY.LEARN end
+    if isProfessionKnowledge(itemID, data) then return enum.PRIORITY.LEARN end
     return enum.PRIORITY.USE
 end
 
@@ -260,7 +323,34 @@ local function isRejectedByClass(bag, slot, itemID, acceptedLine, data)
         return true, REJECTED.ON_USE_MISC
     end
 
+    -- The mirror of the branch above. There a met trade skill rescues the item:
+    -- Miscellaneous/Other is where knowledge lives, and studying is what the
+    -- requirement gates. Here the same evidence condemns it -- Consumable/Other
+    -- holds bait and lures, where a met trade skill gates a tool you use out in
+    -- the world, which a plain Use: line cannot tell from an openable. The
+    -- conduits and reputation tokens sharing this pair are gated on nothing and
+    -- never reach here.
+    if classID == Enum.ItemClass.Consumable
+        and subClassID == Enum.ItemConsumableSubclass.Other
+        and acceptedOnPlainUse(acceptedLine)
+        and requiresKnownProfession(data) then
+        return true, REJECTED.PROFESSION_TOOL
+    end
+
     return false
+end
+
+-- The tail both accept branches share. Never re-inline it: the two differ only
+-- in the reason they report, and while each spelled the call out for itself the
+-- fallback branch quietly stopped handing over the tooltip, leaving every rule
+-- that reads a usage requirement to answer on no evidence.
+local function acceptedVerdict(bag, slot, itemID, acceptedLine, data, reason)
+    if isContainer(itemID) then
+        return enum.PRIORITY.OPEN, false, reason, acceptedLine
+    end
+    local rejected, why = isRejectedByClass(bag, slot, itemID, acceptedLine, data)
+    if rejected then return nil, why end
+    return learnVerdict(itemID, acceptedLine, data), false, reason, acceptedLine
 end
 
 -- Accepted: priority, isLocked, reason (enum.REASON), detail.
@@ -312,10 +402,14 @@ function detector.Classify(bag, slot, itemID, data)
         if C_QuestLog.IsOnQuest(questID) or C_QuestLog.IsQuestFlaggedCompleted(questID) then
             return nil, REJECTED.QUEST_TAKEN
         end
-        return enum.PRIORITY.QUEST, false, REASON.QUEST_GATE, questID
+        -- Which of the two sources answered, reported separately from the gate
+        -- itself. Only the client's questInfo means the item *offers* a quest;
+        -- a QUEST_GATED entry is an item some quest consumes, which earns the
+        -- same priority and none of the exclamation mark.
+        local startsQuest = questInfo ~= nil and questInfo.questID ~= nil
+        return enum.PRIORITY.QUEST, false, REASON.QUEST_GATE, questID, startsQuest
     end
 
-    -- Fetched once and shared with IsLockedBox.
     data = data or C_TooltipInfo.GetBagItem(bag, slot)
 
     local locked = detector.IsLockedBox(bag, slot, data)
@@ -363,33 +457,20 @@ function detector.Classify(bag, slot, itemID, data)
     end
 
     if acceptedLine then
-        if isContainer(itemID) then
-            return enum.PRIORITY.OPEN, false, REASON.TOOLTIP_LINE, acceptedLine
-        end
-        local rejected, why = isRejectedByClass(bag, slot, itemID, acceptedLine, data)
-        if rejected then return nil, why end
-        return learnVerdict(itemID, acceptedLine, data), false,
-            REASON.TOOLTIP_LINE, acceptedLine
+        return acceptedVerdict(bag, slot, itemID, acceptedLine, data, REASON.TOOLTIP_LINE)
     end
 
     -- No typed line matched at all, so by acceptedOnPlainUse's own definition
     -- this is the merely-usable case -- unless the class or the requirement
     -- says otherwise.
     if C_Item.GetItemSpell(itemID) and C_Item.IsUsableItem(itemID) then
-        if isContainer(itemID) then return enum.PRIORITY.OPEN, false, REASON.ITEM_SPELL end
-        local rejected, why = isRejectedByClass(bag, slot, itemID)
-        if rejected then return nil, why end
-        return learnVerdict(itemID, nil, data), false, REASON.ITEM_SPELL
+        return acceptedVerdict(bag, slot, itemID, nil, data, REASON.ITEM_SPELL)
     end
 
     return nil, REJECTED.NO_EVIDENCE
 end
 
 control.detector = detector
-
--- ================================================================================
--- Scanner
--- ================================================================================
 
 local C_Timer = C_Timer
 
@@ -399,6 +480,19 @@ local current
 local ranked
 local scanQueued = false
 local pendingItems = {}
+
+--- Start an async load for an item's data, returning true when one was needed.
+---
+--- onItemDataLoaded discards any result whose itemID is not pending, so a
+--- caller that requests a load on its own never hears back about it.
+---@param itemID number
+---@return boolean started
+function scanner.RequestItemData(itemID)
+    if C_Item.IsItemDataCachedByID(itemID) then return false end
+    pendingItems[itemID] = true
+    C_Item.RequestLoadItemDataByID(itemID)
+    return true
+end
 
 function scanner.GetCurrent()
     return current
@@ -493,32 +587,32 @@ local function collectCandidates()
         local slots = C_Container.GetContainerNumSlots(bag)
         for slot = 1, slots do
             local info = C_Container.GetContainerItemInfo(bag, slot)
-            if info and info.itemID then
-                if not C_Item.IsItemDataCachedByID(info.itemID) then
-                    -- Ask the server and rescan when it answers.
-                    pendingItems[info.itemID] = true
-                    C_Item.RequestLoadItemDataByID(info.itemID)
-                else
-                    reviewAllowListEntry(bag, slot, info.itemID)
-                    reviewQuestGatedEntry(bag, slot, info.itemID)
+            if info and info.itemID and not scanner.RequestItemData(info.itemID) then
+                reviewAllowListEntry(bag, slot, info.itemID)
+                reviewQuestGatedEntry(bag, slot, info.itemID)
 
-                    local priority, locked, reason, detail =
-                        detector.Classify(bag, slot, info.itemID)
-                    if priority then
-                        local startTime, duration = C_Item.GetItemCooldown(info.itemID)
-                        candidates[#candidates + 1] = {
-                            itemID       = info.itemID,
-                            bag          = bag,
-                            slot         = slot,
-                            priority     = priority,
-                            stackCount   = info.stackCount or 1,
-                            onCooldown   = (startTime or 0) > 0 and (duration or 0) > 0,
-                            locked       = locked or false,
-                            -- Diagnostics for the debug tooltip; see enum.REASON.
-                            reason       = reason,
-                            reasonDetail = detail,
-                        }
-                    end
+                local priority, locked, reason, detail, startsQuest =
+                    detector.Classify(bag, slot, info.itemID)
+                if priority then
+                    local startTime, duration = C_Item.GetItemCooldown(info.itemID)
+                    candidates[#candidates + 1] = {
+                        itemID       = info.itemID,
+                        bag          = bag,
+                        slot         = slot,
+                        priority     = priority,
+                        stackCount   = info.stackCount or 1,
+                        onCooldown   = (startTime or 0) > 0 and (duration or 0) > 0,
+                        -- Rank's first key. Boolean, never nil -- see
+                        -- model.IsDeferred.
+                        deferred     = model.IsDeferred(info.itemID),
+                        locked       = locked or false,
+                        -- Drives the button's quest bang, so it is state the
+                        -- view reads rather than diagnostics.
+                        startsQuest  = startsQuest or false,
+                        -- Diagnostics for the debug tooltip; see enum.REASON.
+                        reason       = reason,
+                        reasonDetail = detail,
+                    }
                 end
             end
         end
@@ -560,10 +654,6 @@ end
 
 control.scanner = scanner
 
--- ================================================================================
--- Events
--- ================================================================================
-
 local function onBagUpdate()
     scanner.RequestScan()
 end
@@ -579,6 +669,20 @@ local function onItemDataLoaded(itemID, success)
     if view.blacklistFrame and view.blacklistFrame.Refresh then
         view.blacklistFrame.Refresh()
     end
+end
+
+-- Item data and tooltip data resolve through two separate caches, and
+-- collectCandidates only waits on the first: an item past the
+-- IsItemDataCachedByID guard can still hand Classify a sparse tooltip, which
+-- walks no lines and drops it as NO_EVIDENCE. ITEM_DATA_LOAD_RESULT cannot
+-- cover that -- the item data was already cached -- so the button stays stale
+-- until an unrelated bag change happens to fire BAG_UPDATE_DELAYED.
+--
+-- The payload's dataInstanceID is ignored: the scan retains no instance IDs to
+-- match it against, and a nil means "every tooltip" in any case. RequestScan
+-- debounces to one scan per frame, so a burst of resolutions costs one pass.
+local function onTooltipDataUpdate()
+    scanner.RequestScan()
 end
 
 local function onCooldownUpdate()
@@ -632,7 +736,6 @@ local function startModule()
 end
 
 local function Init()
-    -- Allocated under the full addon name, unlike every other module.
     BitForge:UpgradeModuleDB(ADDON_NAME, {
         version = enum.SCHEMA_VERSION,
         steps   = {
@@ -643,51 +746,43 @@ local function Init()
     }, startModule)
 end
 
-ns:Subscribe(E.BAG_UPDATE_DELAYED, onBagUpdate)
-ns:Subscribe(E.ITEM_DATA_LOAD_RESULT, onItemDataLoaded)
-ns:Subscribe(E.ACTIONBAR_UPDATE_COOLDOWN, onCooldownUpdate)
-ns:Subscribe(E.PLAYER_REGEN_ENABLED, onRegenEnabled)
-ns:Subscribe(E.QUEST_ACCEPTED, onQuestChanged)
-ns:Subscribe(E.QUEST_TURNED_IN, onQuestChanged)
-ns:Subscribe(E.QUEST_REMOVED, onQuestChanged)
-ns:Subscribe(E.PLAYER_LEVEL_UP, onLevelUp)
-ns:Subscribe(E.SKILL_LINES_CHANGED, onSkillLinesChanged)
-ns:Subscribe(E.CVAR_UPDATE, onCVarUpdate)
-ns:Subscribe(E.UPDATE_BINDINGS, onUpdateBindings)
-ns:Subscribe(E.PLAYER_READY, Init)
+ns:Subscribe(events.BAG_UPDATE_DELAYED, onBagUpdate)
+ns:Subscribe(events.ITEM_DATA_LOAD_RESULT, onItemDataLoaded)
+ns:Subscribe(events.TOOLTIP_DATA_UPDATE, onTooltipDataUpdate)
+ns:Subscribe(events.ACTIONBAR_UPDATE_COOLDOWN, onCooldownUpdate)
+ns:Subscribe(events.PLAYER_REGEN_ENABLED, onRegenEnabled)
+ns:Subscribe(events.QUEST_ACCEPTED, onQuestChanged)
+ns:Subscribe(events.QUEST_TURNED_IN, onQuestChanged)
+ns:Subscribe(events.QUEST_REMOVED, onQuestChanged)
+ns:Subscribe(events.PLAYER_LEVEL_UP, onLevelUp)
+ns:Subscribe(events.SKILL_LINES_CHANGED, onSkillLinesChanged)
+ns:Subscribe(events.CVAR_UPDATE, onCVarUpdate)
+ns:Subscribe(events.UPDATE_BINDINGS, onUpdateBindings)
+ns:Subscribe(events.PLAYER_READY, Init)
 
--- ================================================================================
 -- Debug dump
--- ================================================================================
 --
--- /bfodump [itemID] captures everything detector.Classify reads about an item
+-- /bfdump o [itemID] captures everything detector.Classify reads about an item
 -- into the SavedVariable, so a surprising decision can be inspected offline.
 -- With no argument it dumps whatever is on the button.
 --
--- /bfodump all captures the other half of the question. A single item's record
+-- /bfdump o all captures the other half of the question. A single item's record
 -- says why that item was accepted but not why it was the one shown: the button
 -- takes candidates[1] and the rest are discarded unseen, so a surprising pick
 -- reads as a verdict with nothing to compare it against. The field dump files
 -- the whole ranked list, winner first, which turns the pick back into a margin.
 --
--- Guarded at file scope, so a profile that has not set the module's debug flag
--- defines none of this. model.lua runs before this file and core is loaded
--- before either, so the flag is already readable here. Toggling it mid-session
--- therefore reaches the checks inside the pipeline but not this command; that
--- needs a reload.
+-- Never gate this block on model.IsDebug(). It used to be, and a flag switched
+-- on mid-session then reached every check inside the pipeline but not the
+-- command that reports them, so diagnostics appeared to be off until a reload.
+-- The refusal belongs where GetDebugDump already puts it: at call time.
 --
 -- It writes into the module's own debug container, beside the flag that gates
 -- it -- the same place BatchSell's dump goes. Core empties every module's dump
 -- on a fresh login, so what is on disk is one diagnostics session rather than
 -- an accumulation since the flag went on.
-if model.IsDebug() then
+do
 
-    -- Every field is flattened with tostring: tooltip data can carry secret
-    -- values in 12.0, and a SavedVariable has to survive serialization.
-    -- What the pipeline would decide if this item were not allow-listed. A
-    -- listed item otherwise hides whether its entry still earns its place, since
-    -- ALLOW_LIST answers first. The entry is restored immediately, through a
-    -- pcall so a Classify error cannot drop it.
     -- The names a usage requirement is matched against. Recorded so a report
     -- about an item that was or was not surfaced explains itself without
     -- another round trip in-game.
@@ -703,6 +798,10 @@ if model.IsDebug() then
         return #names > 0 and table.concat(names, ", ") or "none"
     end
 
+    -- What the pipeline would decide if this item were not allow-listed. A
+    -- listed item otherwise hides whether its entry still earns its place, since
+    -- ALLOW_LIST answers first. The entry is restored immediately, through a
+    -- pcall so a Classify error cannot drop it.
     local function ClassifyIgnoringAllowList(bag, slot, itemID)
         local listed = enum.ALLOW_LIST[itemID]
         if listed == nil then return "n/a, not allow-listed" end
@@ -722,6 +821,8 @@ if model.IsDebug() then
             :format(tostring(second), tostring(third))
     end
 
+    -- Every field is flattened with tostring: tooltip data can carry secret
+    -- values in 12.0, and a SavedVariable has to survive serialization.
     local function BuildDump(bag, slot, itemID)
         local _, itemType, itemSubType, _, _, classID, subClassID =
             C_Item.GetItemInfoInstant(itemID)
@@ -767,7 +868,57 @@ if model.IsDebug() then
         return dump
     end
 
-    -- Where /bfodump all files the field. Item records are filed under a numeric
+    -- The scalar keys BuildDump's table literal writes, excluding "lines" (that
+    -- one is rendered separately, as tooltip[n] rather than a field=value line).
+    -- Fixed here rather than read with pairs: a table literal's pairs() order is
+    -- unspecified, and a report has to render identically for every player who
+    -- copies one out, not reshuffle from one /reload to the next.
+    local DUMP_FIELDS = {
+        "itemID",
+        "name",
+        "where",
+        "class",
+        "isQuestItem",
+        "questID",
+        "isActive",
+        "hasSpell",
+        "isUsable",
+        "professions",
+        "verdict",
+        "allowList",
+    }
+
+    --- One item's classification as text a player can select and paste.
+    ---
+    --- The record /bfdump o <id> files, rendered rather than stored -- so it carries
+    --- no debug gate, writes nothing and needs no /reload.
+    ---@param bag number
+    ---@param slot number
+    ---@param itemID number
+    ---@return string
+    function control.ReportText(bag, slot, itemID)
+        local dump = BuildDump(bag, slot, itemID)
+        local lines = {
+            "BitForge Openables -- item report",
+            BitForge:ReportHeader(ADDON_NAME),
+            "",
+        }
+
+        for _, field in ipairs(DUMP_FIELDS) do
+            lines[#lines + 1] = format("%s = %s", field, tostring(dump[field]))
+        end
+
+        if #dump.lines > 0 then
+            lines[#lines + 1] = ""
+            for index, line in ipairs(dump.lines) do
+                lines[#lines + 1] = format("tooltip[%d] = %s", index, line)
+            end
+        end
+
+        return concat(lines, "\n")
+    end
+
+    -- Where /bfdump o all files the field. Item records are filed under a numeric
     -- string, so a word cannot collide with one.
     local FIELD_KEY = "rankedField"
 
@@ -789,7 +940,7 @@ if model.IsDebug() then
         local field = {}
         for index, candidate in ipairs(candidates) do
             field[index] = ("#%d %s [%s] priority=%s (%s) reason=%s detail=%s"
-                .. " bag=%s slot=%s stack=%s locked=%s onCooldown=%s"):format(
+                .. " bag=%s slot=%s stack=%s locked=%s onCooldown=%s deferred=%s"):format(
                 index,
                 tostring(C_Item.GetItemNameByID(candidate.itemID)),
                 tostring(candidate.itemID),
@@ -801,7 +952,8 @@ if model.IsDebug() then
                 tostring(candidate.slot),
                 tostring(candidate.stackCount),
                 tostring(candidate.locked),
-                tostring(candidate.onCooldown))
+                tostring(candidate.onCooldown),
+                tostring(candidate.deferred))
         end
         return field
     end
@@ -840,8 +992,7 @@ if model.IsDebug() then
         end
 
         dump[tostring(itemID)] = BuildDump(bag, slot, itemID)
-        BitForge:Print(("Openables: dumped item %d. /reload, then read"
-            .. " BitForgeDB.modules.Openables.debug.dump"):format(itemID))
+        BitForge:ReportDump(ADDON_NAME, ("dumped item %d"):format(itemID))
     end
 
     --- Files the whole ranked field from the last scan, winner first.
@@ -863,19 +1014,20 @@ if model.IsDebug() then
         end
 
         dump[FIELD_KEY] = BuildFieldDump(candidates)
-        BitForge:Print(("Openables: dumped %d ranked candidates. /reload, then read"
-            .. " BitForgeDB.modules.Openables.debug.dump.%s"):format(#candidates, FIELD_KEY))
+        BitForge:ReportDump(ADDON_NAME,
+            ("dumped %d ranked candidates under %s"):format(#candidates, FIELD_KEY))
     end
 
-    SLASH_BITFORGEOPENABLESDUMP1 = "/bfodump"
-    SlashCmdList["BITFORGEOPENABLESDUMP"] = function(input)
-        local argument = input and input:match("%S+")
+    ns:SubscribeCommand(events.MODULE_DUMP, function(addon, argument)
+        if addon ~= ADDON_NAME then return end
+
+        local subcommand = argument:match("%S+")
         -- Matched before the item ID, not after: "all" carries no digits, so the
         -- ID parse would silently read it as "no argument" and dump the button.
-        if argument and argument:lower() == "all" then
+        if subcommand and subcommand:lower() == "all" then
             control.DumpField()
             return
         end
-        control.DumpItem(tonumber(argument and argument:match("%d+")))
-    end
+        control.DumpItem(tonumber(subcommand and subcommand:match("%d+")))
+    end)
 end

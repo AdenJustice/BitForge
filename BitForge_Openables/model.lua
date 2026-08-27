@@ -32,9 +32,17 @@ local model = ns.model
 -- reload would be indistinguishable from a permanent blacklist.
 model.sessionSkip = {}
 
+-- Items already clicked this round. The back of the queue rather than out of
+-- it: model.Rank sorts a deferred item last instead of dropping it, so it comes
+-- back the moment nothing else is left. Not persisted, for the same reason
+-- session skips are not, and weaker still -- a deferral is meant to outlast one
+-- click, not one session.
+model.deferred = {}
+
 BitForge:AllocateModuleDB(ADDON_NAME, DB_DEFAULTS, function(moduleDB)
     db = moduleDB
     wipe(model.sessionSkip)
+    wipe(model.deferred)
 end)
 
 --- Whether this module's diagnostics are switched on for this profile.
@@ -125,6 +133,25 @@ function model.ClearSkips()
     wipe(model.sessionSkip)
 end
 
+--- Whether this item has already been clicked and sent to the back of the queue.
+---
+--- A real boolean, never nil: model.Rank compares this field between two
+--- candidates, and a field that is nil on some and false on others makes the
+--- comparator inconsistent -- table.sort raises on that rather than merely
+--- misordering.
+---@return boolean
+function model.IsDeferred(itemID)
+    return model.deferred[itemID] == true
+end
+
+function model.Defer(itemID)
+    model.deferred[itemID] = true
+end
+
+function model.ClearDeferred()
+    wipe(model.deferred)
+end
+
 -- Every hand-curated table in ItemData.lua is a standing bet that the API cannot
 -- answer something, and each is one patch away from being wrong. An entry stops
 -- earning its place the moment the client can supply what it hard-codes.
@@ -160,10 +187,19 @@ function model.SetPoint(point, relPoint, x, y)
     stored.point, stored.relPoint, stored.x, stored.y = point, relPoint, x, y
 end
 
--- Pure: no API calls, no frame access. Cooldown state arrives as a candidate field
--- so this stays testable outside the game.
+-- Pure: no API calls, no frame access. Cooldown and deferral state arrive as
+-- candidate fields so this stays testable outside the game.
 function model.Rank(candidates)
     sort(candidates, function(left, right)
+        -- Ahead of cooldown and priority both: a deferral is the click that
+        -- has already happened, and the whole point of it is that the next
+        -- click reaches something else. It rejects nothing -- once every
+        -- candidate is deferred the key is equal across the field, drops out of
+        -- the comparison, and the ordinary order resumes. That is the round
+        -- starting over, with no reset logic to run.
+        if left.deferred ~= right.deferred then
+            return not left.deferred
+        end
         if left.onCooldown ~= right.onCooldown then
             return not left.onCooldown
         end

@@ -1,6 +1,6 @@
 ---@type string, BitForge.TaskTome
 local ADDON_NAME, ns = ...
-local E = BitForge.Events
+local events = BitForge.Events
 
 local ipairs = ipairs
 local time = time
@@ -13,10 +13,6 @@ local view = ns.view
 ---@class BitForge.TaskTome.Control
 local control = ns.control
 
--- =========================================================
--- EventBus
--- =========================================================
-
 function ns:Subscribe(event, fn)
     BitForge.Subscribe(event, fn, self)
 end
@@ -25,9 +21,7 @@ function ns:Unsubscribe(event)
     BitForge.Unsubscribe(event, self)
 end
 
--- ================================================================================
 -- Resets
--- ================================================================================
 --
 -- The reset schedule is region-specific, so it comes from the client rather than
 -- from constants of our own. We still persist the expected reset time: asking
@@ -68,7 +62,7 @@ end
 --- the reconcile pass consults the client on every check, including during the
 --- PLAYER_ENTERING_WORLD loading screen, before the server has necessarily sent
 --- time data. Nothing here can bound a wrong-but-plausible reading -- that is
---- design-doc item 8, and it needs a live client to settle.
+--- the design (#59) 8, and it needs a live client to settle.
 local function clientNextReset(resetType)
     local seconds = secondsUntil(resetType)
     if not seconds or seconds <= 0 or seconds > RESET_PERIOD[resetType] then
@@ -213,9 +207,9 @@ function resets.Check()
     --
     -- RefreshTree is the one left outside the xpcall because it ends in
     -- SetDataProvider, which rebuilds the row frames. A reset landing mid-drag would
-    -- pull those out from under the drag behaviour installed at view.lua:369-377 --
-    -- not the re-entrancy view.lua:203-204 warns about, which needs a Refresh nested
-    -- inside the frame factory and cannot happen from a timer in single-threaded Lua.
+    -- pull those out from under the widget's OnDragStart/OnDragStop handlers -- not
+    -- the re-entrancy widget.Refresh warns about, which needs a Refresh nested inside
+    -- the frame factory and cannot happen from a timer in single-threaded Lua.
     --
     -- xpcall with CallErrorHandler rather than pcall and a re-raise: the handler runs
     -- before the stack unwinds, so the error reaches BugSack attributed to the line
@@ -238,10 +232,6 @@ function resets.Check()
         view.configFrame.RefreshTree()
     end
 end
-
--- ================================================================================
--- Tasks
--- ================================================================================
 
 local tasks = {}
 
@@ -306,10 +296,8 @@ end
 -- newSortOrder: insertion point among siblings (1-based).
 -- Shifts existing siblings' sortOrders to make room.
 function tasks.MoveTask(id, newParentId, newSortOrder)
-    -- Guard: cannot move onto self
     if newParentId == id then return end
 
-    -- Guard: cannot move onto own descendant (cycle)
     if newParentId ~= nil then
         local descendants = model.GetDescendantIds(id)
         for _, did in ipairs(descendants) do
@@ -328,7 +316,6 @@ function tasks.MoveTask(id, newParentId, newSortOrder)
         end
     end
 
-    -- Update parent
     model.SetParent(id, newParentId)
 
     -- Insert into new siblings: shift up all siblings with sortOrder >= newSortOrder
@@ -345,9 +332,7 @@ end
 control.resets = resets
 control.tasks = tasks
 
--- ================================================================================
 -- Events
--- ================================================================================
 --
 -- The timer is the primary mechanism, but a daily reset can be up to 24 hours
 -- out and whether C_Timer survives an OS suspend with its deadline intact is not
@@ -400,12 +385,12 @@ local function onPlayerReady()
         steps   = {
             -- The pre-cross-character shape stored completions per character in
             -- a layout with no warband equivalent; there is nothing to map it
-            -- onto. See the design doc's 5.3.
+            -- onto. See the design (#59) 5.3.
             [1] = BitForge.SCHEMA_RESET,
         },
     }, startModule)
 end
 
-ns:Subscribe(E.PLAYER_ENTERING_WORLD, onEnteringWorld)
-ns:Subscribe(E.PLAYER_FLAGS_CHANGED, onPlayerFlagsChanged)
-ns:Subscribe(E.PLAYER_READY, onPlayerReady)
+ns:Subscribe(events.PLAYER_ENTERING_WORLD, onEnteringWorld)
+ns:Subscribe(events.PLAYER_FLAGS_CHANGED, onPlayerFlagsChanged)
+ns:Subscribe(events.PLAYER_READY, onPlayerReady)

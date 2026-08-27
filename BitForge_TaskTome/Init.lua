@@ -1,10 +1,6 @@
 ---@class BitForge.TaskTome
 local ns = select(2, ...)
 
--- =========================================================
--- Enums / Constants
--- =========================================================
-
 ---@class BitForge.TaskTome.Enum
 local enum = {
     -- Opt State
@@ -27,7 +23,7 @@ local enum = {
     -- a persistent fault should report about once a minute, not stream.
     RESET_ERROR_DELAY = 60, -- seconds
     -- Bumped whenever the stored shape changes incompatibly. A database below
-    -- this version is reset rather than migrated; see the design doc §5.3.
+    -- this version is reset rather than migrated; see the design (#59) 5.3.
     SCHEMA_VERSION    = 1,
     -- Widget view modes. Persisted in db.char; do not change the values.
     SCOPE_ME          = "me",
@@ -37,16 +33,10 @@ local enum = {
 }
 ns.enum = enum
 
--- =========================================================
--- Locale
--- =========================================================
-
 ---@class BitForge.TaskTome.Locale
 ns.locale = {}
 
--- =========================================================
 -- Namespace
--- =========================================================
 --
 -- Declared here so later files populate these tables rather than replacing
 -- them. view.lua captures ns.control at file-read time, so a replacement would

@@ -6,10 +6,6 @@ local UI = BitForge.UI
 ---@type BitForge.UI.Colors
 local colors = UI.Colors
 
--- =========================================================
--- SliderMixin — MD horizontal slider with fill track
--- =========================================================
-
 ---@class BitForge.SliderMixin : Slider
 local SliderMixin = {}
 
@@ -24,7 +20,6 @@ function SliderMixin:OnLoad()
     self:SetSize(200, 20)
     self:SetOrientation("HORIZONTAL")
 
-    -- Track (background bar)
     local track = self:CreateTexture(nil, "BACKGROUND")
     PixelUtil.SetHeight(track, 4, 1)
     PixelUtil.SetPoint(track, "LEFT", self, "LEFT", 3, 0)
@@ -32,14 +27,12 @@ function SliderMixin:OnLoad()
     track:SetColorTexture(colors.edge:GetRGB())
     self.Track = track
 
-    -- Fill (coloured portion up to thumb)
     local fill = self:CreateTexture(nil, "BACKGROUND")
     PixelUtil.SetSize(fill, 1, 4, 1, 1)
     PixelUtil.SetPoint(fill, "LEFT", self, "LEFT", 3, 0)
     fill:SetColorTexture(colors.point:GetRGB())
     self.Fill = fill
 
-    -- Thumb
     self:SetThumbTexture("Interface/Buttons/WHITE8X8")
     self.Thumb = self:GetThumbTexture()
     self.Thumb:SetSize(6, 18)
@@ -67,10 +60,6 @@ function SliderMixin:SetOnChange(fn)
 end
 
 UI.Mixins.Slider = SliderMixin
-
--- =========================================================
--- Factory
--- =========================================================
 
 ---@param parent any
 ---@return BitForge.SliderMixin

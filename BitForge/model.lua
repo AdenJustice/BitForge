@@ -1,12 +1,13 @@
----@type BitForge.Core
-local ns = select(2, ...)
+---@type string, BitForge.Core
+local ADDON_NAME, ns = ...
 
 local ipairs = ipairs
 local next = next
 local pairs = pairs
 local setmetatable = setmetatable
-local sub = string.sub
+local tostring = tostring
 local type = type
+local sub = string.sub
 local wipe = table.wipe
 
 ---@class BitForge.Core.Model
@@ -34,16 +35,44 @@ local PREFIX_LEN = #PREFIX
 --- rather than having each module hand over a second, hand-written short name
 --- is what keeps the two from ever drifting apart.
 ---
---- A name without the prefix passes through unchanged: the public entry points
---- are callable with an arbitrary string, and a caller that names a module core
---- has never seen should reach the same "no such module" path either way.
+--- Core is the one name that is stated rather than derived. It answers /bfdump
+--- beside the modules, so it needs a name in their namespace, and it has no
+--- prefix to strip and no BitForgeDB.modules entry to agree with. The obvious
+--- derivation -- its own addon name -- shares a first letter with a module and
+--- would lengthen an abbreviation players already type.
+---
+--- Any other name without the prefix passes through unchanged: the public entry
+--- points are callable with an arbitrary string, and a caller that names a
+--- module core has never seen should reach the same "no such module" path
+--- either way.
 ---@param addonName string
 ---@return string
 local function ModuleKey(addonName)
+    if addonName == ADDON_NAME then
+        return ns.enum.CORE_KEY
+    end
     if sub(addonName, 1, PREFIX_LEN) == PREFIX then
         return sub(addonName, PREFIX_LEN + 1)
     end
     return addonName
+end
+
+-- Published so the slash-command surface can name a module the same way its
+-- saved data is keyed. A second copy of this strip would be the one place the
+-- roster and the storage key could disagree.
+model.ModuleKey = ModuleKey
+
+--- Where an addon's diagnostics dump is read back from in the saved variables.
+---
+--- Core's is the database root: it has no BitForgeDB.modules entry, so the one
+--- place that prints the path is the one place that has to know the difference.
+---@param addonName string  the addon's name from `...`
+---@return string
+function model.DumpPath(addonName)
+    if addonName == ADDON_NAME then
+        return "BitForgeDB.debug.dump"
+    end
+    return "BitForgeDB.modules." .. ModuleKey(addonName) .. ".debug.dump"
 end
 
 local function SeedDefaults(tbl, src)
@@ -68,9 +97,9 @@ local function SeedDefaults(tbl, src)
     end
 end
 
---- The module's stored diagnostics value, normalized to a container.
+--- A stored diagnostics value, normalized to a container.
 ---
---- The shape a module reads is `{ enabled = <boolean>, dump = <table> }`, but
+--- The shape a caller reads is `{ enabled = <boolean>, dump = <table> }`, but
 --- the value in the saved file is hand-written, so it arrives in whatever shape
 --- a developer typed. The documented one-liner is still a bare
 --- `/run BitForgeDB.modules.UPS.debug = true`, and indexing that scalar for
@@ -79,16 +108,20 @@ end
 --- way, so nothing downstream has to check whether dump exists.
 ---
 --- The upgrade is a write during a read, which is what keeps the flag live: the
---- container the module ends up holding is the one in the saved file, so a dump
+--- container the caller ends up holding is the one in the saved file, so a dump
 --- written into it persists rather than landing in a copy.
----@param module table  The module's raw saved container.
+---
+--- Takes the table the flag hangs off rather than a module name, because core's
+--- own flag is a sibling of BitForgeDB.global exactly as a module's is a sibling
+--- of its own -- one shape, one normalizer, two places it hangs.
+---@param owner table  the raw saved table carrying a `debug` field.
 ---@return table|nil
-local function DebugContainer(module)
-    local stored = module.debug
+local function DebugContainer(owner)
+    local stored = owner.debug
     if not stored then return nil end
     if type(stored) ~= "table" then
         stored = { enabled = true }
-        module.debug = stored
+        owner.debug = stored
     end
     if stored.dump == nil then
         stored.dump = {}
@@ -170,26 +203,92 @@ function model.InitializeDatabase()
     SeedDefaults(BitForgeDB.global, ns.enum.DB_DEFAULTS.global)
     db = BitForgeDB
 
+    -- The retired reagent scan's store. It held what the old shipped catalogue
+    -- lacked, keyed to the interface it was recorded against; the catalogue is
+    -- now generated from the client's own recipe lists and nothing reads this.
+    -- Unconditional so a profile that has not been opened in a year is still
+    -- cleared on its next login.
+    db.global.reagentScan = nil
+
     for _, req in ipairs(pendingAllocations) do
         Allocate(req.name, req.defaults, req.callback)
     end
     pendingAllocations = {}
 end
 
---- Reads a value from the Core global settings.
 ---@param key string
 ---@return any
 function model.ReadDatabase(key)
     return db and db.global[key]
 end
 
---- Writes a value to the Core global settings.
 ---@param key string
 ---@param value any
 function model.UpdateDatabase(key, value)
     if db then
         db.global[key] = value
     end
+end
+
+local VERSION_PATTERN = "^v%d+%.%d+%.%d+%.%d+$"
+
+--- The running addon's version, or nil when the .toc's token was never
+--- substituted.
+---
+--- BitForge.toc carries `## Version: @project-version@`, which the CurseForge
+--- packager replaces from the tag. A development checkout has the literal, and
+--- a literal is not a version -- so it reads as nil here rather than being
+--- compared against release numbers it can never match.
+---@return string|nil
+function model.GetAddonVersion()
+    local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
+    if type(version) ~= "string" or not version:match(VERSION_PATTERN) then
+        return nil
+    end
+    return version
+end
+
+--- The releases a player has not seen, newest first.
+---
+--- Compared by identity rather than by arithmetic: the changelog skips a
+--- revision, repeats dates across adjacent releases and is not monotonic in the
+--- gaps between them, so the shipped table's own order is the only ordering
+--- that holds.
+---
+--- A fresh install gets the newest release alone. Handing someone their first
+--- five releases of history would be an archive, not news.
+---@param seenVersion string|nil
+---@param runningVersion string|nil
+---@return table  a new array; never the shipped table
+function model.ReleaseNotesSince(seenVersion, runningVersion)
+    local notes = ns.enum.RELEASE_NOTES
+    if not runningVersion or not notes or #notes == 0 then return {} end
+    if seenVersion == runningVersion then return {} end
+
+    if not seenVersion or seenVersion == "" then
+        return { notes[1] }
+    end
+
+    local unseen = {}
+    for _, release in ipairs(notes) do
+        if release.version == seenVersion then
+            return unseen
+        end
+        unseen[#unseen + 1] = release
+    end
+    -- seenVersion never matched an entry: it is older than anything shipped
+    -- (or a stray value), and falling off the end here having collected every
+    -- release is deliberate, not a miss -- it is the "not in the shipped
+    -- list" row of the rule.
+    return unseen
+end
+
+--- The newest shipped release, for the slash command's fallback when nothing
+--- is unseen (or the running version is unreadable, so ReleaseNotesSince
+--- never returns anything at all).
+---@return table
+function model.NewestRelease()
+    return ns.enum.RELEASE_NOTES[1]
 end
 
 --- The schema version stored for a module.
@@ -287,30 +386,54 @@ local function PruneMatchingDefaults(realTbl, src)
 end
 
 
---- Empties every module's debug dump, in place.
+--- Empties one diagnostics dump, in place.
 ---
---- A dump is a within-session scratch table: it holds what a developer captured
---- while chasing one problem, and carrying last session's records into this one
---- makes it harder to read, not easier.
----
---- Cleared at the start of a play session rather than at logout, because a
---- /reload runs the same logout path -- and a reload is precisely how a dump
---- reaches disk to be read at all. Clearing it there would empty every dump on
---- the way to looking at it.
----
---- Emptied in place rather than replaced, so a module holding the table from
+--- Emptied in place rather than replaced, so whoever is holding the table from
 --- earlier in the session goes on writing into the one that is stored.
 ---
---- Reaches the raw containers rather than DebugContainer, so a module whose
+--- Reaches the raw container rather than DebugContainer, so a profile whose
 --- diagnostics have not been read yet this session is swept too, without
 --- normalizing a container into existence for one that has none.
+---@param owner table  the raw saved table carrying a `debug` field.
+local function WipeDump(owner)
+    local diagnostics = owner.debug
+    if type(diagnostics) == "table" and type(diagnostics.dump) == "table" then
+        wipe(diagnostics.dump)
+    end
+end
+
+--- Empties core's debug dump and every module's, in place.
 function model.WipeDebugDumps()
     if not db then return end
+    WipeDump(db)
     for _, module in pairs(db.modules) do
-        local diagnostics = module.debug
-        if type(diagnostics) == "table" and type(diagnostics.dump) == "table" then
-            wipe(diagnostics.dump)
-        end
+        WipeDump(module)
+    end
+end
+
+--- Drops a diagnostics container that is no longer carrying anything.
+---
+--- A debug flag is hand-written, never defaulted, so there is no default for it
+--- to match and the prune above never reaches it. It does have to keep its own
+--- container alive, though: a profile flagged for diagnostics but otherwise left
+--- at defaults would lose the flag on logout if an empty global and char were
+--- enough to drop the whole entry.
+---
+--- The container earns that only while it carries something. Switched off with
+--- nothing dumped it says exactly what an absent one says, and because any table
+--- is truthy, one left behind would pin its entry in the saved file forever. The
+--- empty dump goes first -- reading the flag next session recreates it -- and a
+--- container left holding neither an enabled flag nor a dump goes with it.
+---@param owner table  the raw saved table carrying a `debug` field.
+local function PruneDebugContainer(owner)
+    local diagnostics = owner.debug
+    if type(diagnostics) ~= "table" then return end
+
+    if diagnostics.dump and not next(diagnostics.dump) then
+        diagnostics.dump = nil
+    end
+    if not diagnostics.enabled and not diagnostics.dump then
+        owner.debug = nil
     end
 end
 
@@ -319,6 +442,7 @@ end
 --- logout, so there is nothing to run ahead of this.
 function model.CleanupDatabase()
     if not db then return end
+    PruneDebugContainer(db)
     for name, moduleDefaults in pairs(moduleDefaultsRegistry) do
         local module = db.modules[name]
         if module then
@@ -339,29 +463,7 @@ function model.CleanupDatabase()
                     module.char = nil
                 end
             end
-            -- A debug flag is hand-written, never defaulted, so there is no
-            -- default for it to match and nothing above prunes it. It does have
-            -- to keep its container alive on its own, though: a module flagged
-            -- for diagnostics but otherwise left at defaults would lose the
-            -- flag on logout if an empty global and char were enough to drop
-            -- the whole entry.
-            --
-            -- The diagnostics container earns that only while it carries
-            -- something. Switched off with nothing dumped it says exactly what
-            -- an absent one says, and because any table is truthy, leaving it
-            -- behind would pin the module's whole entry in the saved file
-            -- forever. The empty dump goes first -- reading the flag next
-            -- session recreates it -- and a container left holding neither an
-            -- enabled flag nor a dump goes with it.
-            local diagnostics = module.debug
-            if type(diagnostics) == "table" then
-                if diagnostics.dump and not next(diagnostics.dump) then
-                    diagnostics.dump = nil
-                end
-                if not diagnostics.enabled and not diagnostics.dump then
-                    module.debug = nil
-                end
-            end
+            PruneDebugContainer(module)
 
             if not module.global and not module.char and not module.debug then
                 db.modules[name] = nil
@@ -534,10 +636,6 @@ StaticPopupDialogs["BITFORGE_SCHEMA_RESET"] = {
 --- character forever. A step touching char data is responsible for its own
 --- per-character bookkeeping if it needs every alt converted.
 ---
---- onReady runs on every path that leaves the database usable, and does not run
---- at all when the chain is broken -- a module must never start against a shape
---- nothing converted.
----
 --- A step runs against a database into which the CURRENT target-version
 --- defaults have already been deep-merged -- Allocate seeds them at file-read
 --- time, long before PLAYER_READY reaches this function. A step therefore
@@ -691,119 +789,56 @@ function BitForge:RegisterCharacter()
     known[#known + 1] = key
 end
 
--- ================================================================================
--- Reagent catalogue
--- ================================================================================
---
 -- enum.REAGENT_PROFESSIONS maps an item ID to a bitmask of the professions that
--- consume it, generated into ReagentData.lua by Scripts/scrape_reagents.py. It
--- answers one question -- does anyone want this item as a crafting reagent? --
--- so a consumer can decline to vendor something an alt needs.
---
--- The shipped table is not complete and cannot be. It carries one item ID per
--- reagent slot, so the other quality tiers of a reagent are absent, and no
--- optional or finishing reagents at all, because Wowhead exposes those only as
--- modified-crafting category IDs. What an open profession window shows is
--- exact, so control.lua records the difference and this folds it back on top.
+-- consume it, generated from the game client's own recipe lists -- see
+-- ReagentData.lua for how and when. It answers one question -- does anyone
+-- want this item as a crafting reagent? -- so a consumer can decline to vendor
+-- something an alt needs.
 --
 -- ABSENCE MEANS "NOT KNOWN", NEVER "NOBODY WANTS THIS". A consumer that reads
 -- nil as a no would sell the very items this exists to protect, and would do it
 -- silently. Fall through to your own rules instead.
 
-local band, bor, lshift = bit.band, bit.bor, bit.lshift
+local bor, lshift = bit.bor, bit.lshift
 
--- db.global.reagentScan once the merge has run, nil before it. Held here so the
--- recording path cannot write into a store that was never reconciled with the
--- shipped table's version.
-local reagentScan
-
---- Folds previously recorded scan results into the shipped catalogue in memory.
----
---- One-way and in-memory on purpose: the shipped table is a Lua literal rebuilt
---- from source every session, so nothing accumulates across logins except the
---- scan store itself.
-function model.MergeReagentScan()
-    local catalogue = ns.enum.REAGENT_PROFESSIONS
-    if not (db and catalogue) then return end
-
-    local stored = db.global.reagentScan
-
-    -- A newly shipped catalogue supersedes everything recorded against the old
-    -- one: either it now holds those reagents outright, or the game changed
-    -- under them. Reset rather than prune entry by entry, which cannot tell
-    -- those two apart and would keep stale credits alive forever.
-    if not stored or stored.interface ~= ns.enum.REAGENT_DATA_INTERFACE then
-        stored = {
-            interface = ns.enum.REAGENT_DATA_INTERFACE,
-            professions = {},
-            reagents = {},
-        }
-        db.global.reagentScan = stored
-    end
-
-    for itemID, mask in pairs(stored.reagents) do
-        catalogue[itemID] = bor(catalogue[itemID] or 0, mask)
-    end
-
-    reagentScan = stored
-end
-
---- Whether a profession has already been scanned against the shipped catalogue.
----
---- Recorded account-wide rather than per session: a profession's recipe list
---- only gains entries when the game patches, and a patch moves the interface
---- the catalogue is stamped with, which resets this along with everything else.
----@param profession number  Enum.Profession
----@return boolean
-function model.HasScannedProfession(profession)
-    return reagentScan ~= nil and reagentScan.professions[profession] == true
-end
-
---- Records the reagents a profession window showed that the catalogue lacked.
----
---- Only the difference is stored. After a good scrape most professions add
---- nothing, and storing the whole window would put tens of thousands of entries
---- in every player's saved variables to restate what is already shipped.
----@param profession number    Enum.Profession
----@param itemIDs    number[]  every reagent the window's recipes consume
----@return number added  reagents newly credited to this profession
-function model.RecordReagentScan(profession, itemIDs)
-    local catalogue = ns.enum.REAGENT_PROFESSIONS
-    if not (reagentScan and catalogue) then return 0 end
-
-    reagentScan.professions[profession] = true
-
-    local professionBit = lshift(1, profession)
-    local added = 0
-
-    for _, itemID in ipairs(itemIDs) do
-        local known = catalogue[itemID] or 0
-        if band(known, professionBit) == 0 then
-            catalogue[itemID] = bor(known, professionBit)
-            reagentScan.reagents[itemID] =
-                bor(reagentScan.reagents[itemID] or 0, professionBit)
-            added = added + 1
-        end
-    end
-
-    return added
-end
-
---- Whether core's own diagnostics are switched on.
+--- Core's own diagnostics container, normalized, or nil while it has never been
+--- flagged.
 ---
 --- Hand-written into the saved variables -- `/run BitForgeDB.debug = true` --
---- and read live, so it takes effect on the next check without a reload. Core's
---- flag is a plain boolean rather than the { enabled, dump } container a module
---- gets: nothing in core writes diagnostics out to be shared.
+--- and read live, so it takes effect on the next check without a reload. It is
+--- the same `{ enabled, dump }` shape a module gets, hanging off the database
+--- root instead of a module entry, so core's own flag carries the same shape
+--- and goes through the same normalize / wipe / prune path a module's does.
+---@return table|nil
+local function CoreDiagnostics()
+    if not db then return nil end
+    return DebugContainer(db)
+end
+
 ---@return boolean
 function model.IsDebug()
-    return db ~= nil and db.debug ~= nil and db.debug ~= false
+    local diagnostics = CoreDiagnostics()
+    return (diagnostics and diagnostics.enabled) and true or false
+end
+
+--- Core's debug scratch table, or nil while diagnostics are off.
+---
+--- Handed out rather than written through: a caller assembles its whole record
+--- and drops it in. The container is the stored one, so anything filed here
+--- reaches the saved variables and survives the session that produced it.
+---@return table|nil
+function model.GetDebugDump()
+    local diagnostics = CoreDiagnostics()
+    if not (diagnostics and diagnostics.enabled) then return nil end
+    return diagnostics.dump
 end
 
 --- Whether the shipped catalogue predates the running client.
 ---
---- Recipes added by a patch are missing until a profession window is opened on
---- them, so this is a prompt to re-run the update_wowhead skill, not a fault.
+--- It will, from the first patch after the last capture: the captures behind the
+--- catalogue are each one client at one build, and a rebuild means retaking
+--- them all on a current client and shipping the result again -- nothing in the
+--- addon does that on its own.
 ---@return boolean
 function model.IsReagentDataStale()
     local stamped = ns.enum.REAGENT_DATA_INTERFACE
@@ -822,10 +857,6 @@ function BitForge:GetReagentProfessions(itemID)
     return catalogue and catalogue[itemID]
 end
 
--- ================================================================================
--- Profession registry
--- ================================================================================
---
 -- GetProfessions() only ever answers for the character who is logged in, so the
 -- account-wide picture has to be accumulated one login at a time. It lives in
 -- core because two modules ask the same question of it -- BatchSell to decide
@@ -899,5 +930,26 @@ function BitForge:GetAccountProfessions()
     end
 
     accountProfessionMask = mask
+    return mask
+end
+
+--- The same mask for one character alone.
+---
+--- A bound item can never reach an alt, so the account-wide mask cannot vouch
+--- for one: a consumer holding a soulbound reagent has to ask whether *this*
+--- character's professions want it. Folded here rather than in the consumer
+--- because the bit encoding is core's -- a module folding the array itself
+--- would be a second copy of it, free to drift.
+---@param charKey string
+---@return number  test against enum.REAGENT_PROFESSION_BIT
+function BitForge:GetCharacterProfessionMask(charKey)
+    local recorded = db and db.global.professions[charKey]
+    if not recorded then return 0 end
+
+    local mask = 0
+    for _, profession in ipairs(recorded) do
+        mask = bor(mask, lshift(1, profession))
+    end
+
     return mask
 end

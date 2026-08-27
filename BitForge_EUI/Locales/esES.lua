@@ -1,0 +1,98 @@
+if GetLocale() ~= "esES" then return end
+---@class BitForge.EUI
+local ns = select(2, ...)
+local L = ns.locale
+
+-- Subcommand keywords (ui, apply, capture, list, reset, rl) are deliberately
+-- NOT translated. The player types them.
+
+L["cmd:help"] = "Comandos: ui, apply, capture, list, reset, rl"
+L["cmd:helpUi"] = "ui -- abrir el editor de diseño"
+L["cmd:helpApply"] = "apply -- aplicar el diseño guardado a EllesmereUI"
+L["cmd:helpCapture"] = "capture -- guardar la geometría actual de EllesmereUI"
+L["cmd:helpList"] = "list [-u] [texto] -- listar los elementos posicionables"
+L["cmd:helpListUnmanaged"] = "  -u -- solo los elementos que el diseño guardado no gestiona"
+L["cmd:helpReset"] = "reset [anchors] -- descartar el diseño guardado"
+L["cmd:deprecated"] = "/bfeui está obsoleto -- usa /bitforge eui en su lugar"
+
+L["error:noEllesmere"] = "EllesmereUI no está cargado"
+L["error:noRegistry"] = "La lista de elementos de EllesmereUI no está disponible"
+
+L["apply:applied"] = "%d aplicados, %d sin cambios"
+L["apply:anchorOwned"] = "%d elemento(s) posicionados por un anclaje (se ignoran las coordenadas)"
+L["apply:unknownKeys"] = "%d clave(s) desconocida(s): %s"
+L["apply:unknownHint"] = "Usa 'list' para ver las claves registradas"
+L["apply:failedKeys"] = "%d fallidos: %s"
+L["apply:badAnchors"] = "%d anclaje(s) sin aplicar:"
+L["apply:badAnchorLine"] = "  %s -> %s (%s)"
+L["apply:badAnchorHint"] = "El objetivo de un anclaje es una clave de elemento. Para colocarlo respecto a la pantalla usa point/relPoint"
+L["apply:resolved"] = "%d anclaje(s) resueltos por BitForge (EllesmereUI no puede expresarlos)"
+
+L["reason:unknown"] = "no existe ese objetivo"
+L["reason:self"] = "anclado a sí mismo"
+L["reason:cycle"] = "referencia circular"
+L["reason:halfpair"] = "necesita point y relPoint"
+L["reason:badpoint"] = "no es un nombre de punto de anclaje"
+L["reason:notarget"] = "nada puede anclarse a ese elemento"
+L["reason:noanchor"] = "ese elemento no puede anclarse"
+L["reason:norect"] = "el objetivo aún no tiene posición en pantalla"
+L["reason:notextended"] = "no hay point ni relPoint que resolver"
+
+L["list:none"] = "No hay elementos coincidentes"
+L["list:count"] = "%d mostrados, %d/%d sin gestionar"
+L["list:unmanaged"] = "[sin gestionar]"
+L["list:anchored"] = "[anclaje -> %s %s]"
+L["list:noPosition"] = "sin posición"
+L["list:readFailed"] = "%s (fallo de lectura)"
+
+L["capture:result"] = "%d elemento(s) capturados"
+L["capture:seeded"] = "Primera ejecución: se guardó tu diseño actual (%d elementos). No se movió nada."
+
+L["unlock:attachedWarning"] = "%d elemento(s) están adjuntos. Arrastrarlos aquí los desvinculará."
+L["unlock:noLongerAttached"] = "Ya no está(n) adjunto(s): %s"
+
+L["reset:confirm"] = "Esto descarta tu diseño guardado. Ejecuta 'reset confirm' para continuar."
+L["reset:done"] = "Diseño guardado descartado. Se reconstruirá desde EllesmereUI en el próximo inicio de sesión."
+L["reset:anchorsConfirm"] = "Esto también borra tus definiciones de anclaje, que NO se pueden recuperar. Ejecuta 'reset anchors confirm' para continuar."
+L["reset:anchorsDone"] = "Diseño guardado y definiciones de anclaje descartados."
+
+L["anchor:badTable"] = "el anclaje '%s' no es una tabla"
+L["anchor:badSize"] = "el anclaje '%s' necesita un w y un h positivos; sin ellos no tiene bordes"
+L["anchor:collides"] = "el anclaje '%s' choca con un elemento existente de EllesmereUI (%s); renómbralo"
+
+L["ui:title"] = "Diseño de BitForge"
+L["ui:filter"] = "Buscar"
+L["ui:notReady"] = "Aún se está leyendo tu diseño -- inténtalo de nuevo en un momento"
+L["ui:markAttachedEui"] = "[anclado]"
+L["ui:markAttachedBitForge"] = "[adjunto]"
+L["ui:markHidden"] = "[oculto]"
+L["ui:anchorGroup"] = "Marcos de anclaje"
+L["ui:anchorNew"] = "+ Nuevo marco de anclaje"
+L["ui:target"] = "Anclar a"
+L["ui:targetScreen"] = "Pantalla"
+L["ui:myPoint"] = "Mi esquina"
+L["ui:theirPoint"] = "Su esquina"
+L["ui:offsetX"] = "Desplazamiento X"
+L["ui:offsetY"] = "Desplazamiento Y"
+L["ui:width"] = "Anchura"
+L["ui:height"] = "Altura"
+L["ui:label"] = "Etiqueta"
+L["ui:key"] = "Clave"
+L["ui:channelScreen"] = "Posicionado respecto a la pantalla"
+L["ui:channelEui"] = "Anclaje de EllesmereUI (side = %s)"
+L["ui:channelBitForge"] = "Anclaje de BitForge -- EllesmereUI no puede expresar este par"
+L["ui:noResize"] = "Este elemento no se puede redimensionar"
+L["ui:hiddenNote"] = "Registrado, pero su marco no se muestra actualmente"
+L["ui:pendingNone"] = "Sin cambios sin guardar"
+L["ui:pending"] = "%d cambio(s) sin guardar"
+L["ui:save"] = "Guardar y recargar"
+L["ui:revert"] = "Revertir"
+L["ui:saveCombat"] = "No se puede recargar en combate"
+L["ui:invalid"] = "%d problema(s) que corregir antes de guardar"
+L["ui:anchorDelete"] = "Eliminar"
+L["ui:anchorDeleteConfirm"] = "¿Eliminar el marco de anclaje '%s'? Las definiciones de anclaje solo existen aquí y NO se pueden recuperar."
+L["ui:anchorKeyEmpty"] = "Un marco de anclaje necesita una clave"
+L["ui:anchorKeyTaken"] = "Ya existe un marco de anclaje llamado '%s'"
+
+L["apply:deferredCombat"] = "En combate -- el diseño se aplicará cuando salgas de él"
+L["apply:deferredDone"] = "Combate terminado: %d aplicados, %d sin cambios"

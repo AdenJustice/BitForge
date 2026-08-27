@@ -7,18 +7,10 @@ local UI = BitForge.UI
 local colors = UI.Colors
 local skin = UI.Skin
 
--- =========================================================
--- Shared constants
--- =========================================================
-
 local BAR_TEXTURE = "Interface/Buttons/WHITE8X8"
 local DEFAULT_WIDTH = 200
 local DEFAULT_HEIGHT = 8
 
--- =========================================================
--- BarMixin -- flat horizontal progress bar
--- =========================================================
---
 -- A native StatusBar rather than a pair of hand-resized textures, because the
 -- widget already owns the two things a hand-rolled bar has to re-derive on
 -- every update: it clamps SetValue into the range, and it renders a fill of
@@ -106,10 +98,6 @@ function BarMixin:SetProgress(value, maxValue)
 end
 
 UI.Mixins.Bar = BarMixin
-
--- =========================================================
--- Factory
--- =========================================================
 
 --- Create a flat horizontal progress bar.
 ---@param parent any

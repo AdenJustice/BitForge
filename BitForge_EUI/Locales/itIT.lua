@@ -1,0 +1,98 @@
+if GetLocale() ~= "itIT" then return end
+---@class BitForge.EUI
+local ns = select(2, ...)
+local L = ns.locale
+
+-- Subcommand keywords (ui, apply, capture, list, reset, rl) are deliberately
+-- NOT translated. The player types them.
+
+L["cmd:help"] = "Comandi: ui, apply, capture, list, reset, rl"
+L["cmd:helpUi"] = "ui -- apre l'editor del layout"
+L["cmd:helpApply"] = "apply -- applica il layout salvato a EllesmereUI"
+L["cmd:helpCapture"] = "capture -- salva la geometria attuale di EllesmereUI"
+L["cmd:helpList"] = "list [-u] [testo] -- elenca gli elementi posizionabili"
+L["cmd:helpListUnmanaged"] = "  -u -- solo gli elementi che il layout salvato non gestisce"
+L["cmd:helpReset"] = "reset [anchors] -- scarta il layout salvato"
+L["cmd:deprecated"] = "/bfeui è obsoleto -- usa invece /bitforge eui"
+
+L["error:noEllesmere"] = "EllesmereUI non è caricato"
+L["error:noRegistry"] = "L'elenco degli elementi di EllesmereUI non è disponibile"
+
+L["apply:applied"] = "%d applicati, %d invariati"
+L["apply:anchorOwned"] = "%d elemento/i posizionati da un'ancora (coordinate ignorate)"
+L["apply:unknownKeys"] = "%d chiavi sconosciute: %s"
+L["apply:unknownHint"] = "Usa 'list' per vedere le chiavi registrate"
+L["apply:failedKeys"] = "%d falliti: %s"
+L["apply:badAnchors"] = "%d ancora/e non applicate:"
+L["apply:badAnchorLine"] = "  %s -> %s (%s)"
+L["apply:badAnchorHint"] = "Il bersaglio di un'ancora è una chiave di elemento. Per il posizionamento rispetto allo schermo usa point/relPoint"
+L["apply:resolved"] = "%d ancora/e risolte da BitForge (EllesmereUI non può esprimerle)"
+
+L["reason:unknown"] = "bersaglio inesistente"
+L["reason:self"] = "ancorato a sé stesso"
+L["reason:cycle"] = "riferimento circolare"
+L["reason:halfpair"] = "servono sia point sia relPoint"
+L["reason:badpoint"] = "non è un nome di punto di ancoraggio"
+L["reason:notarget"] = "nulla può ancorarsi a quell'elemento"
+L["reason:noanchor"] = "quell'elemento non può essere ancorato"
+L["reason:norect"] = "il bersaglio non ha ancora una posizione sullo schermo"
+L["reason:notextended"] = "nessun point e relPoint da risolvere"
+
+L["list:none"] = "Nessun elemento corrispondente"
+L["list:count"] = "%d mostrati, %d/%d non gestiti"
+L["list:unmanaged"] = "[non gestito]"
+L["list:anchored"] = "[ancora -> %s %s]"
+L["list:noPosition"] = "nessuna posizione"
+L["list:readFailed"] = "%s (lettura fallita)"
+
+L["capture:result"] = "%d elemento/i catturati"
+L["capture:seeded"] = "Prima esecuzione: il tuo layout attuale è stato salvato (%d elementi). Nulla è stato spostato."
+
+L["unlock:attachedWarning"] = "%d elemento/i sono agganciati. Trascinarli qui li sgancerà."
+L["unlock:noLongerAttached"] = "Non più agganciato/i: %s"
+
+L["reset:confirm"] = "Questo scarta il layout salvato. Esegui 'reset confirm' per procedere."
+L["reset:done"] = "Layout salvato scartato. Verrà ricostruito da EllesmereUI al prossimo accesso."
+L["reset:anchorsConfirm"] = "Questo elimina anche le tue definizioni di ancora, che NON possono essere recuperate. Esegui 'reset anchors confirm' per procedere."
+L["reset:anchorsDone"] = "Layout salvato e definizioni di ancora scartati."
+
+L["anchor:badTable"] = "l'ancora '%s' non è una tabella"
+L["anchor:badSize"] = "l'ancora '%s' richiede w e h positivi; senza di essi non ha bordi"
+L["anchor:collides"] = "l'ancora '%s' va in conflitto con un elemento EllesmereUI esistente (%s); rinominala"
+
+L["ui:title"] = "Layout BitForge"
+L["ui:filter"] = "Cerca"
+L["ui:notReady"] = "Sto ancora leggendo il tuo layout -- riprova tra un momento"
+L["ui:markAttachedEui"] = "[ancorato]"
+L["ui:markAttachedBitForge"] = "[agganciato]"
+L["ui:markHidden"] = "[nascosto]"
+L["ui:anchorGroup"] = "Riquadri di ancoraggio"
+L["ui:anchorNew"] = "+ Nuovo riquadro di ancoraggio"
+L["ui:target"] = "Ancorato a"
+L["ui:targetScreen"] = "Schermo"
+L["ui:myPoint"] = "Il mio angolo"
+L["ui:theirPoint"] = "Il suo angolo"
+L["ui:offsetX"] = "Scostamento X"
+L["ui:offsetY"] = "Scostamento Y"
+L["ui:width"] = "Larghezza"
+L["ui:height"] = "Altezza"
+L["ui:label"] = "Etichetta"
+L["ui:key"] = "Chiave"
+L["ui:channelScreen"] = "Posizionato rispetto allo schermo"
+L["ui:channelEui"] = "Ancora di EllesmereUI (side = %s)"
+L["ui:channelBitForge"] = "Ancora di BitForge -- EllesmereUI non può esprimere questa coppia"
+L["ui:noResize"] = "Questo elemento non può essere ridimensionato"
+L["ui:hiddenNote"] = "Registrato, ma il suo riquadro non è attualmente visibile"
+L["ui:pendingNone"] = "Nessuna modifica non salvata"
+L["ui:pending"] = "%d modifiche non salvate"
+L["ui:save"] = "Salva e ricarica"
+L["ui:revert"] = "Ripristina"
+L["ui:saveCombat"] = "Impossibile ricaricare in combattimento"
+L["ui:invalid"] = "%d problema/i da correggere prima di salvare"
+L["ui:anchorDelete"] = "Elimina"
+L["ui:anchorDeleteConfirm"] = "Eliminare il riquadro di ancoraggio '%s'? Le definizioni di ancora esistono solo qui e NON possono essere recuperate."
+L["ui:anchorKeyEmpty"] = "Un riquadro di ancoraggio richiede una chiave"
+L["ui:anchorKeyTaken"] = "Esiste già un riquadro di ancoraggio chiamato '%s'"
+
+L["apply:deferredCombat"] = "In combattimento -- il layout verrà applicato quando ne uscirai"
+L["apply:deferredDone"] = "Combattimento terminato: %d applicati, %d invariati"

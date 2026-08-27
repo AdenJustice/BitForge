@@ -1,0 +1,98 @@
+if GetLocale() ~= "frFR" then return end
+---@class BitForge.EUI
+local ns = select(2, ...)
+local L = ns.locale
+
+-- Subcommand keywords (ui, apply, capture, list, reset, rl) are deliberately
+-- NOT translated. The player types them.
+
+L["cmd:help"] = "Commandes : ui, apply, capture, list, reset, rl"
+L["cmd:helpUi"] = "ui -- ouvrir l'éditeur de disposition"
+L["cmd:helpApply"] = "apply -- appliquer la disposition enregistrée à EllesmereUI"
+L["cmd:helpCapture"] = "capture -- enregistrer la géométrie actuelle d'EllesmereUI"
+L["cmd:helpList"] = "list [-u] [texte] -- lister les éléments positionnables"
+L["cmd:helpListUnmanaged"] = "  -u -- uniquement les éléments que la disposition enregistrée ne gère pas"
+L["cmd:helpReset"] = "reset [anchors] -- effacer la disposition enregistrée"
+L["cmd:deprecated"] = "/bfeui est obsolète -- utilisez /bitforge eui à la place"
+
+L["error:noEllesmere"] = "EllesmereUI n'est pas chargé"
+L["error:noRegistry"] = "La liste des éléments d'EllesmereUI est indisponible"
+
+L["apply:applied"] = "%d appliqué(s), %d inchangé(s)"
+L["apply:anchorOwned"] = "%d élément(s) positionné(s) par une ancre (coordonnées ignorées)"
+L["apply:unknownKeys"] = "%d clé(s) inconnue(s) : %s"
+L["apply:unknownHint"] = "Utilisez 'list' pour voir les clés enregistrées"
+L["apply:failedKeys"] = "%d échec(s) : %s"
+L["apply:badAnchors"] = "%d ancre(s) non appliquée(s) :"
+L["apply:badAnchorLine"] = "  %s -> %s (%s)"
+L["apply:badAnchorHint"] = "La cible d'une ancre est une clé d'élément. Pour un placement relatif à l'écran, utilisez point/relPoint"
+L["apply:resolved"] = "%d ancre(s) résolue(s) par BitForge (EllesmereUI ne peut pas les exprimer)"
+
+L["reason:unknown"] = "cible inexistante"
+L["reason:self"] = "ancré à lui-même"
+L["reason:cycle"] = "référence circulaire"
+L["reason:halfpair"] = "nécessite point et relPoint"
+L["reason:badpoint"] = "n'est pas un nom de point d'ancrage"
+L["reason:notarget"] = "rien ne peut s'ancrer à cet élément"
+L["reason:noanchor"] = "cet élément ne peut pas être ancré"
+L["reason:norect"] = "la cible n'a pas encore de position à l'écran"
+L["reason:notextended"] = "aucun point ni relPoint à résoudre"
+
+L["list:none"] = "Aucun élément correspondant"
+L["list:count"] = "%d affiché(s), %d/%d non géré(s)"
+L["list:unmanaged"] = "[non géré]"
+L["list:anchored"] = "[ancre -> %s %s]"
+L["list:noPosition"] = "aucune position"
+L["list:readFailed"] = "%s (échec de lecture)"
+
+L["capture:result"] = "%d élément(s) capturé(s)"
+L["capture:seeded"] = "Première exécution : votre disposition actuelle a été enregistrée (%d éléments). Rien n'a été déplacé."
+
+L["unlock:attachedWarning"] = "%d élément(s) sont attachés. Les faire glisser ici les détachera."
+L["unlock:noLongerAttached"] = "Plus attaché(s) : %s"
+
+L["reset:confirm"] = "Ceci efface votre disposition enregistrée. Lancez 'reset confirm' pour continuer."
+L["reset:done"] = "Disposition enregistrée effacée. Elle sera reconstruite depuis EllesmereUI à la prochaine connexion."
+L["reset:anchorsConfirm"] = "Ceci supprime aussi vos définitions d'ancre, qui sont IRRÉCUPÉRABLES. Lancez 'reset anchors confirm' pour continuer."
+L["reset:anchorsDone"] = "Disposition enregistrée et définitions d'ancre effacées."
+
+L["anchor:badTable"] = "l'ancre '%s' n'est pas une table"
+L["anchor:badSize"] = "l'ancre '%s' nécessite un w et un h positifs ; sans eux elle n'a pas de bords"
+L["anchor:collides"] = "l'ancre '%s' entre en conflit avec un élément EllesmereUI existant (%s) ; renommez-la"
+
+L["ui:title"] = "Disposition BitForge"
+L["ui:filter"] = "Recherche"
+L["ui:notReady"] = "Lecture de votre disposition en cours -- réessayez dans un instant"
+L["ui:markAttachedEui"] = "[ancré]"
+L["ui:markAttachedBitForge"] = "[attaché]"
+L["ui:markHidden"] = "[masqué]"
+L["ui:anchorGroup"] = "Cadres d'ancrage"
+L["ui:anchorNew"] = "+ Nouveau cadre d'ancrage"
+L["ui:target"] = "Ancrer à"
+L["ui:targetScreen"] = "Écran"
+L["ui:myPoint"] = "Mon coin"
+L["ui:theirPoint"] = "Son coin"
+L["ui:offsetX"] = "Décalage X"
+L["ui:offsetY"] = "Décalage Y"
+L["ui:width"] = "Largeur"
+L["ui:height"] = "Hauteur"
+L["ui:label"] = "Libellé"
+L["ui:key"] = "Clé"
+L["ui:channelScreen"] = "Positionné par rapport à l'écran"
+L["ui:channelEui"] = "Ancre EllesmereUI (side = %s)"
+L["ui:channelBitForge"] = "Ancre BitForge -- EllesmereUI ne peut pas exprimer cette paire"
+L["ui:noResize"] = "Cet élément ne peut pas être redimensionné"
+L["ui:hiddenNote"] = "Enregistré, mais son cadre n'est pas affiché actuellement"
+L["ui:pendingNone"] = "Aucune modification non enregistrée"
+L["ui:pending"] = "%d modification(s) non enregistrée(s)"
+L["ui:save"] = "Enregistrer et recharger"
+L["ui:revert"] = "Rétablir"
+L["ui:saveCombat"] = "Impossible de recharger en combat"
+L["ui:invalid"] = "%d problème(s) à corriger avant d'enregistrer"
+L["ui:anchorDelete"] = "Supprimer"
+L["ui:anchorDeleteConfirm"] = "Supprimer le cadre d'ancrage '%s' ? Les définitions d'ancre n'existent qu'ici et sont IRRÉCUPÉRABLES."
+L["ui:anchorKeyEmpty"] = "Un cadre d'ancrage a besoin d'une clé"
+L["ui:anchorKeyTaken"] = "Un cadre d'ancrage nommé '%s' existe déjà"
+
+L["apply:deferredCombat"] = "En combat -- la disposition sera appliquée dès que vous en sortirez"
+L["apply:deferredDone"] = "Combat terminé : %d appliqué(s), %d inchangé(s)"

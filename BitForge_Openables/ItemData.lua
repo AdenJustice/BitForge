@@ -196,6 +196,12 @@ enum.ALLOW_LIST = {
 -- reached for to open a cache would teleport them out of wherever they are.
 enum.DENY_LIST = {
     [6948] = true, -- Hearthstone
+    -- Consumable/Other with a plain Use: line and nothing else to go on -- the
+    -- shape the class rules deliberately let through, since that pair also holds
+    -- conduits and reputation tokens. It is spent on a Wildseed at a Night Fae
+    -- Queen's Conservatory node, so away from that node the button offers a
+    -- click that does nothing, and no API says so.
+    [178880] = true, -- Superior Loyal Spirit
 }
 
 -- [itemID] = minimum stack size. Some items do nothing until enough of them
@@ -341,6 +347,8 @@ enum.STACK_GATED = {
     [140767] = 5,   -- Pile of Bits and Bones
     [146757] = 10,  -- Prepared Ingredients
     [151653] = 10,  -- Broken Isles Recipe Scrap
+    [169491] = 5,   -- Focused Life Essence; observed in play, the Use: line
+                    -- names the threshold ("combine 5 to create ...")
     [174657] = 6,   -- unknown to wowhead; observed in play
     [174756] = 6,   -- Aqir Relic Fragment
     [190198] = 5,   -- Sandworn Chest Key Fragment

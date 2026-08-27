@@ -3,10 +3,8 @@ if GetLocale() ~= "ruRU" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
--- Widget
 L["status:widgetTitle"] = "Книга заданий"
 
--- Config Frame
 L["settings:configTitle"] = "Книга заданий — Настройки"
 L["btn:addRootTask"] = "Добавить главное задание"
 L["btn:addChildTask"] = "Добавить подзадание"
@@ -18,7 +16,6 @@ L["settings:warbandAssigned"] = "Назначено всем персонажа�
 L["settings:completionScope"] = "Область выполнения"
 L["settings:optState"] = "Моё назначение"
 
--- Dropdowns
 L["menu:resetNone"] = "Нет"
 L["menu:resetDaily"] = "Ежедневно"
 L["menu:resetWeekly"] = "Еженедельно"
@@ -28,19 +25,16 @@ L["menu:optFollow"] = "По умолчанию"
 L["menu:optIn"] = "Всегда показывать"
 L["menu:optOut"] = "Всегда скрывать"
 
--- Messages / Dialogs
 L["msg:deleteConfirm"] = "Удалить «%s» и все %d подзадание/подзадания?"
 L["msg:deleteSingle"] = "Удалить «%s»?"
 L["btn:confirmDelete"] = "Удалить"
 L["btn:cancel"] = "Отмена"
 L["msg:nameRequired"] = "Название задания не может быть пустым."
 
--- Settings panel
 L["settings:taskTomePanel"] = "Книга заданий"
 L["settings:config"] = "Настройки"
 L["settings:openConfig"] = "Открыть"
 
--- Widget modes
 L["group:accountWide"] = "Для всего аккаунта"
 L["tooltip:scopeMe"] = "Показан этот персонаж. Нажмите, чтобы показать всех персонажей."
 L["tooltip:scopeAll"] = "Показаны все персонажи. Нажмите, чтобы показать только этого персонажа."
@@ -50,6 +44,5 @@ L["tooltip:openConfig"] = "Открывает окно настроек Книг
 L["tooltip:widgetLocked"] = "Окно закреплено. Нажмите, чтобы открепить его для перемещения и изменения размера."
 L["tooltip:widgetUnlocked"] = "Окно откреплено. Нажмите, чтобы закрепить его положение и размер."
 
--- Config
 L["settings:editingFor"] = "Редактирование для"
 L["settings:optStateFor"] = "Назначение для %s"

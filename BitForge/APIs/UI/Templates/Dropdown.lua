@@ -7,10 +7,6 @@ local colors = UI.Colors
 
 local DropdownButtonMixin = DropdownButtonMixin
 
--- =========================================================
--- Constants
--- =========================================================
-
 local DROPDOWN_HEIGHT = 32
 local ARROW_SIZE = 14
 local H_PADDING = 10
@@ -20,10 +16,6 @@ local BORDER_BACKDROP = {
     edgeSize = UI.GetPixel(),
     insets = { left = 1, right = 1, top = 1, bottom = 1 },
 }
-
--- =========================================================
--- DropdownMixin — MD-style dropdown backed by DropdownButtonMixin
--- =========================================================
 
 ---@class BitForge.DropdownMixin : Button, BackdropTemplate, DropdownButtonMixin
 local DropdownMixin = CreateFromMixins(DropdownButtonMixin)
@@ -45,14 +37,12 @@ function DropdownMixin:OnLoad()
     self:SetBackdrop(BORDER_BACKDROP)
     self:SetBackdropBorderColor(P.edge.r, P.edge.g, P.edge.b, P.edge.a)
 
-    -- Background fill
     local bg = self:CreateTexture(nil, "BACKGROUND")
     bg:SetTexture("Interface/Buttons/WHITE8X8")
     bg:SetAllPoints()
     bg:SetVertexColor(P.bg.r, P.bg.g, P.bg.b, P.bg.a)
     self.Bg = bg
 
-    -- Selected-item label
     local label = self:CreateFontString(nil, "OVERLAY", "BitForgeFontNormalOutline")
     label:SetJustifyH("LEFT")
     label:SetJustifyV("MIDDLE")
@@ -63,7 +53,6 @@ function DropdownMixin:OnLoad()
     label:SetPoint("BOTTOM", self, "BOTTOM", 0, 0)
     self.Label = label
 
-    -- Arrow indicator
     local arrow = self:CreateTexture(nil, "OVERLAY")
     arrow:SetSize(ARROW_SIZE, ARROW_SIZE)
     arrow:SetPoint("RIGHT", self, "RIGHT", -H_PADDING, 0)
@@ -131,10 +120,6 @@ function DropdownMixin:SetPlaceholder(text)
 end
 
 UI.Mixins.Dropdown = DropdownMixin
-
--- =========================================================
--- Factory
--- =========================================================
 
 --- Create a styled dropdown widget.
 ---

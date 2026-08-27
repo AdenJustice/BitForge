@@ -1,0 +1,98 @@
+if GetLocale() ~= "deDE" then return end
+---@class BitForge.EUI
+local ns = select(2, ...)
+local L = ns.locale
+
+-- Subcommand keywords (ui, apply, capture, list, reset, rl) are deliberately
+-- NOT translated. The player types them.
+
+L["cmd:help"] = "Befehle: ui, apply, capture, list, reset, rl"
+L["cmd:helpUi"] = "ui -- den Layout-Editor öffnen"
+L["cmd:helpApply"] = "apply -- das gespeicherte Layout an EllesmereUI übergeben"
+L["cmd:helpCapture"] = "capture -- die aktuelle Geometrie von EllesmereUI speichern"
+L["cmd:helpList"] = "list [-u] [Text] -- positionierbare Elemente auflisten"
+L["cmd:helpListUnmanaged"] = "  -u -- nur Elemente, die das gespeicherte Layout nicht verwaltet"
+L["cmd:helpReset"] = "reset [anchors] -- das gespeicherte Layout verwerfen"
+L["cmd:deprecated"] = "/bfeui ist veraltet -- benutze stattdessen /bitforge eui"
+
+L["error:noEllesmere"] = "EllesmereUI ist nicht geladen"
+L["error:noRegistry"] = "Die Elementliste von EllesmereUI ist nicht verfügbar"
+
+L["apply:applied"] = "%d angewendet, %d unverändert"
+L["apply:anchorOwned"] = "%d Element(e) werden von einem Anker positioniert (Koordinaten ignoriert)"
+L["apply:unknownKeys"] = "%d unbekannte(r) Schlüssel: %s"
+L["apply:unknownHint"] = "Mit 'list' die registrierten Schlüssel anzeigen"
+L["apply:failedKeys"] = "%d fehlgeschlagen: %s"
+L["apply:badAnchors"] = "%d Anker nicht angewendet:"
+L["apply:badAnchorLine"] = "  %s -> %s (%s)"
+L["apply:badAnchorHint"] = "Ein Ankerziel ist ein Elementschlüssel. Für bildschirmrelative Platzierung point/relPoint verwenden"
+L["apply:resolved"] = "%d Anker von BitForge aufgelöst (EllesmereUI kann sie nicht ausdrücken)"
+
+L["reason:unknown"] = "kein solches Ziel"
+L["reason:self"] = "an sich selbst verankert"
+L["reason:cycle"] = "zirkulärer Verweis"
+L["reason:halfpair"] = "benötigt point und relPoint"
+L["reason:badpoint"] = "kein Ankerpunktname"
+L["reason:notarget"] = "an diesem Element darf nichts verankert werden"
+L["reason:noanchor"] = "dieses Element kann nicht verankert werden"
+L["reason:norect"] = "das Ziel hat noch keine Position auf dem Bildschirm"
+L["reason:notextended"] = "kein point und relPoint zum Auflösen"
+
+L["list:none"] = "Keine passenden Elemente"
+L["list:count"] = "%d angezeigt, %d/%d unverwaltet"
+L["list:unmanaged"] = "[unverwaltet]"
+L["list:anchored"] = "[Anker -> %s %s]"
+L["list:noPosition"] = "keine Position"
+L["list:readFailed"] = "%s (Lesen fehlgeschlagen)"
+
+L["capture:result"] = "%d Element(e) erfasst"
+L["capture:seeded"] = "Erster Start: dein aktuelles Layout wurde gespeichert (%d Elemente). Es wurde nichts verschoben."
+
+L["unlock:attachedWarning"] = "%d Element(e) sind angeheftet. Sie hier zu ziehen löst die Anheftung."
+L["unlock:noLongerAttached"] = "Nicht mehr angeheftet: %s"
+
+L["reset:confirm"] = "Dies verwirft dein gespeichertes Layout. Führe 'reset confirm' aus, um fortzufahren."
+L["reset:done"] = "Gespeichertes Layout verworfen. Es wird beim nächsten Anmelden aus EllesmereUI neu aufgebaut."
+L["reset:anchorsConfirm"] = "Dies löscht auch deine Ankerdefinitionen, die NICHT wiederhergestellt werden können. Führe 'reset anchors confirm' aus, um fortzufahren."
+L["reset:anchorsDone"] = "Gespeichertes Layout und Ankerdefinitionen verworfen."
+
+L["anchor:badTable"] = "Anker '%s' ist keine Tabelle"
+L["anchor:badSize"] = "Anker '%s' benötigt ein positives w und h; ohne sie hat er keine Kanten"
+L["anchor:collides"] = "Anker '%s' kollidiert mit einem vorhandenen EllesmereUI-Element (%s); benenne ihn um"
+
+L["ui:title"] = "BitForge-Layout"
+L["ui:filter"] = "Suche"
+L["ui:notReady"] = "Dein Layout wird noch gelesen -- versuche es gleich erneut"
+L["ui:markAttachedEui"] = "[verankert]"
+L["ui:markAttachedBitForge"] = "[angeheftet]"
+L["ui:markHidden"] = "[verborgen]"
+L["ui:anchorGroup"] = "Ankerrahmen"
+L["ui:anchorNew"] = "+ Neuer Ankerrahmen"
+L["ui:target"] = "Verankern an"
+L["ui:targetScreen"] = "Bildschirm"
+L["ui:myPoint"] = "Meine Ecke"
+L["ui:theirPoint"] = "Fremde Ecke"
+L["ui:offsetX"] = "X-Versatz"
+L["ui:offsetY"] = "Y-Versatz"
+L["ui:width"] = "Breite"
+L["ui:height"] = "Höhe"
+L["ui:label"] = "Bezeichnung"
+L["ui:key"] = "Schlüssel"
+L["ui:channelScreen"] = "Am Bildschirm ausgerichtet"
+L["ui:channelEui"] = "EllesmereUI-Anker (side = %s)"
+L["ui:channelBitForge"] = "BitForge-Anker -- EllesmereUI kann dieses Paar nicht ausdrücken"
+L["ui:noResize"] = "Dieses Element kann nicht in der Größe verändert werden"
+L["ui:hiddenNote"] = "Registriert, aber sein Rahmen wird derzeit nicht angezeigt"
+L["ui:pendingNone"] = "Keine ungespeicherten Änderungen"
+L["ui:pending"] = "%d ungespeicherte Änderung(en)"
+L["ui:save"] = "Speichern & neu laden"
+L["ui:revert"] = "Verwerfen"
+L["ui:saveCombat"] = "Im Kampf kann nicht neu geladen werden"
+L["ui:invalid"] = "%d Problem(e) vor dem Speichern beheben"
+L["ui:anchorDelete"] = "Löschen"
+L["ui:anchorDeleteConfirm"] = "Ankerrahmen '%s' löschen? Ankerdefinitionen existieren nur hier und können NICHT wiederhergestellt werden."
+L["ui:anchorKeyEmpty"] = "Ein Ankerrahmen benötigt einen Schlüssel"
+L["ui:anchorKeyTaken"] = "Ein Ankerrahmen namens '%s' existiert bereits"
+
+L["apply:deferredCombat"] = "Im Kampf -- das Layout wird angewendet, sobald du ihn verlässt"
+L["apply:deferredDone"] = "Kampf beendet: %d angewendet, %d unverändert"

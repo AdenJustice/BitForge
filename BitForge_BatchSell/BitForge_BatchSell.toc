@@ -28,6 +28,13 @@ Locales\ruRU.lua
 Locales\zhCN.lua
 Locales\zhTW.lua
 ItemData.lua
-model.lua
-view.lua
+model\model.lua
+model\rules.lua
+view\view.lua
+view\ruleDescriptors.lua
+view\ruleControls.lua
+view\ruleWindow.lua
+view\merchantPanel.lua
+view\settingsPanel.lua
+view\itemTooltip.lua
 control.lua

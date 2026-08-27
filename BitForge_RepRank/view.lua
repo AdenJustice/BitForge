@@ -31,33 +31,17 @@ local UI = BitForge.UI
 ---@class BitForge.RepRank.View
 local view = ns.view
 
--- =========================================================
--- Shared
--- =========================================================
-
 --- The character half of a "Name-Realm" key, painted in that character's class
 --- colour.
 ---
---- Realms are identical across an account, so spelling one out says nothing the
---- player does not already know. The colour is what the name is actually read
---- for: every surface that prints one is asking the player to pick a character
---- to log in to, and the class is the fastest way to tell three alts at Exalted
---- apart.
+--- Display only, and published rather than kept local so there is exactly one
+--- of it: the key stays plain everywhere it is identity -- the record lookup,
+--- the pending list, the sort -- and a second spelling is how markup ends up
+--- inside a charKey, where it matches nothing.
 ---
---- Published rather than kept local because the controller's chat lines name the
---- same characters the window's Best column does. Two functions of one name
---- meaning two things -- one plain, one marked up -- is how markup ends up
---- inside a charKey being used as identity, where it matches nothing.
----
---- No colour is the ordinary answer rather than a fault, on two independent
---- paths: core learns a class only when that character logs in, so an alt last
---- played before the registry existed has none recorded, and the client declines
---- a colour for a class file it does not recognise. Both fall through to the
---- bare name, which is what every one of these surfaces printed before there was
---- a colour to ask for.
----
---- Display only. The key stays plain everywhere it is identity -- the record
---- lookup, the pending list, the sort.
+--- No colour is the ordinary answer rather than a fault: core learns a class
+--- only when that character logs in, and the client declines a colour for a
+--- class file it does not recognise.
 ---@param charKey string
 ---@return string
 function view.CharacterLabel(charKey)
@@ -68,10 +52,6 @@ function view.CharacterLabel(charKey)
 
     return color:WrapTextInColorCode(shortName)
 end
-
--- =========================================================
--- Toast
--- =========================================================
 
 ---@class BitForge.RepRank.View.Toast
 local toast = {}
@@ -154,10 +134,6 @@ end
 
 view.toast = toast
 
--- =========================================================
--- Window
--- =========================================================
-
 ---@class BitForge.RepRank.View.Window
 local window = {}
 
@@ -183,6 +159,10 @@ local COLUMN_LEADER = 90
 local COLUMN_BAR = 100
 local COLUMN_STANDING = 110
 local ROW_INSET_LEFT = 4
+-- One indent step. Depth 0 is a section heading, 1 an expansion heading beneath
+-- it, 2 a faction row -- so a row reads as belonging to the heading above it
+-- rather than sitting level with it.
+local INDENT_STEP = 12
 local ROW_INSET_RIGHT = 24
 
 -- How tall the bar is inside a 20px row. Eight is the shared widget's own
@@ -244,12 +224,21 @@ function window.Elements()
 
     local elements = {}
 
+    -- Two heading levels. The rows arrive already grouped -- model.BuildSections
+    -- sorts by the heading's pane position before anything else -- so a change
+    -- of group is a boundary rather than something to search for.
     local function appendSection(title, rows)
         if #rows == 0 then return end
 
-        elements[#elements + 1] = { isHeader = true, title = title }
+        elements[#elements + 1] = { isHeader = true, title = title, depth = 0 }
 
+        local currentGroup
         for _, row in ipairs(rows) do
+            local group = row.group or locale["section:ungrouped"]
+            if group ~= currentGroup then
+                currentGroup = group
+                elements[#elements + 1] = { isHeader = true, title = group, depth = 1 }
+            end
             elements[#elements + 1] = row
         end
     end
@@ -308,23 +297,15 @@ local BAR_KIND_COLORS = {
 
 --- The colour a row's bar is painted.
 ---
---- Answers the palette's plain grey rather than raising for a record with no
---- bar, a kind this build does not know, or a standing outside the eight the
---- client has colours for -- all three are shapes a stored record can arrive
---- in, and a bar is painted from the same pass as the list around it, so a
---- lookup that threw here would take the whole window down with it. Grey reads
---- as progress of a kind the window cannot name, which is what it is.
+--- Never raises. A record with no bar, a kind this build does not know, and a
+--- standing outside the eight the client has colours for all answer the
+--- palette's plain grey -- all three are shapes a stored record can arrive in,
+--- the bar is painted from the same pass as the list around it, and a lookup
+--- that threw here would take the whole window down with it.
 ---
---- The colour is returned rather than unpacked because the two sources disagree
---- about their shape -- FACTION_BAR_COLORS holds ColorMixins the client calls
---- GetRGB on, while a plain { r, g, b } is what its consumers read off it in
---- GameTooltip.lua -- and BarMixin:SetBarColor resolves either through the same
---- primitive every other skin call uses.
----
---- colorRGB rather than colorRGBA, which is the narrowest thing all three
---- sources are. The client's palette entries and the shared tokens both carry an
---- alpha; PARAGON_BAR_COLOR above is built without one, so promising callers a
---- number there would be promising them a nil.
+--- Returned rather than unpacked, and typed colorRGB rather than colorRGBA:
+--- FACTION_BAR_COLORS holds ColorMixins while PARAGON_BAR_COLOR is built without
+--- an alpha, and BarMixin:SetBarColor resolves either.
 ---@param record table|nil
 ---@return colorRGB
 function window.BarColor(record)
@@ -336,26 +317,13 @@ end
 
 --- The progress bar's tooltip body.
 ---
---- A bar with no numbers beside it is half an indicator: it says "some of the
---- way" and never how far. The row has no space for the figures, so they live
---- here.
----
 --- Three bars have no figures to offer and all three answer nothing, so the
---- hover shows no tooltip at all rather than one that says nothing new.
----
---- A capped bar's stored shape is one over one, so its figures would read
---- `1 / 1` -- true of the placeholder and of nothing the character earned.
---- Blizzard suppresses the progress text there too (ReputationFrame.lua:497),
---- and the standing it finished at is already printed in the Standing column six
---- pixels to the right, so repeating it here would cost a hover and tell the
---- player nothing.
----
---- A bar whose range the client could not measure carries no maximum, because
---- there was none to measure; inventing one would put a figure in front of the
---- player that no faction in the game matches.
----
---- And a record written before bars existed has no bar at all, which an alt
---- keeps until it is next played. That row still draws its bar, empty.
+--- hover shows no tooltip at all rather than one that says nothing new. A capped
+--- bar's stored shape is one over one, so its figures would read `1 / 1` -- true
+--- of the placeholder and of nothing the character earned, which is why Blizzard
+--- suppresses the progress text there too (ReputationFrame.lua:497). An
+--- unmeasurable range and a record written before bars existed carry no maximum
+--- at all.
 ---@param row table
 ---@return string[]
 function window.BarTooltipLines(row)
@@ -432,9 +400,6 @@ local function initRow(row, element)
         row.standing:SetWidth(COLUMN_STANDING)
         row.standing:SetJustifyH("RIGHT")
 
-        -- Lower-case like every other region parked on a pooled row, and for
-        -- the same reason: the frame comes from a template that owns the
-        -- PascalCase keys, and a clash with one of those would be silent.
         row.bar = UI.CreateBar(row)
         PixelUtil.SetSize(row.bar, COLUMN_BAR, BAR_HEIGHT)
         PixelUtil.SetPoint(row.bar, "RIGHT", row.standing, "LEFT", -GAP, 0)
@@ -468,8 +433,6 @@ local function initRow(row, element)
         PixelUtil.SetPoint(row.paragon, "RIGHT", row, "RIGHT", -ROW_INSET_LEFT, 0)
         row.paragon:SetAtlas(PARAGON_ATLAS)
 
-        -- A bare Frame takes no mouse input, so without this the marker's
-        -- tooltip would never fire.
         row.paragonHit = CreateFrame("Frame", nil, row)
         row.paragonHit:SetAllPoints(row.paragon)
         row.paragonHit:EnableMouse(true)
@@ -481,6 +444,11 @@ local function initRow(row, element)
     -- from it, and a pooled row is refilled constantly -- one stale half of a
     -- pair of stashed fields would be a tooltip describing the wrong faction.
     row.element = element
+
+    -- Re-anchored per element rather than once at creation: rows are pooled, so
+    -- the one reused for a faction may last have drawn a heading.
+    PixelUtil.SetPoint(row.faction, "LEFT", row, "LEFT",
+        ROW_INSET_LEFT + (element.isHeader and (element.depth or 0) or 2) * INDENT_STEP, 0)
 
     if element.isHeader then
         row.faction:SetText(element.title)
@@ -600,10 +568,9 @@ local function build()
         model.SetWindowPos(selfX - centreX, selfY - centreY)
     end)
 
-    -- UI.CreateFrame draws a title bar but no close affordance, and this window
-    -- has no button that doubles as one. Without this the only way out is the
-    -- minimap entry, since the search box swallows the first ESC.
-    local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    -- Not redundant with ESC: the search box swallows the first press, and
+    -- without this the only other way out is the minimap entry.
+    local closeButton = UI.CreateCloseButton(frame)
     closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
     closeButton:SetScript("OnClick", function() frame:Hide() end)
     frame.closeButton = closeButton
@@ -663,6 +630,14 @@ end
 function window.Refresh()
     if not frame then return end
 
+    -- Re-asserted from the model rather than left to the click that changed it.
+    -- A CheckButton flips its checked flag in C, which does not route through
+    -- the Lua SetChecked that CheckButtonMixin hooks its repaint to, so a
+    -- clicked box keeps whatever state it was last painted with. This widget
+    -- carries no tick icon, so that paint is the only thing distinguishing on
+    -- from off.
+    frame.showUntouched:SetChecked(model.GetShowUntouched())
+
     frame.scrollBox:SetDataProvider(CreateDataProvider(window.Elements()))
 end
 
@@ -680,10 +655,6 @@ function window.Toggle()
 end
 
 view.window = window
-
--- =========================================================
--- Settings panel
--- =========================================================
 
 ---@class BitForge.RepRank.View.SettingsPanel
 local settingsPanel = {}

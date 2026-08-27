@@ -31,10 +31,6 @@ local control = ns.control
 ---@class BitForge.UPS.View
 local view = ns.view
 
--- ================================================================================
--- BankButton
--- ================================================================================
-
 ---@class BitForge.UPS.View.BankButton
 local bankButton = {}
 
@@ -54,14 +50,12 @@ local function build()
     button:SetScript("OnClick", onDepositClick)
 end
 
---- Restores the resting label and re-enables the button.
 function bankButton.SetIdle()
     if not button then return end
     button:SetText(locale["btn:deposit"])
     button:SetEnabled(model.IsEnabled())
 end
 
---- Shows progress and locks the button for the duration of a run.
 ---@param count number  moves completed so far
 function bankButton.SetWorking(count)
     if not button then return end
@@ -80,10 +74,6 @@ function bankButton.OnBankClosed()
 end
 
 view.bankButton = bankButton
-
--- ================================================================================
--- PreviewDialog
--- ================================================================================
 
 ---@class BitForge.UPS.View.PreviewDialog
 local previewDialog = {}
@@ -157,7 +147,6 @@ local function onConfirmClick()
 end
 
 local function onCancelClick()
-    -- Discards the plan without touching an item.
     dialog:Hide()
 end
 
@@ -267,10 +256,6 @@ end
 
 view.previewDialog = previewDialog
 
--- ================================================================================
--- TargetDialog
--- ================================================================================
-
 ---@class BitForge.UPS.View.TargetDialog
 local targetDialog = {}
 
@@ -359,10 +344,6 @@ function targetDialog.Show(itemID, itemName, onAccept)
 end
 
 view.targetDialog = targetDialog
-
--- ================================================================================
--- CurationWindow
--- ================================================================================
 
 ---@class BitForge.UPS.View.CurationWindow
 local curationWindow = {}
@@ -633,14 +614,13 @@ local function buildCurationWindow()
     _G[CURATION_GLOBAL_NAME] = frame
     tinsert(UISpecialFrames, CURATION_GLOBAL_NAME)
 
-    -- UI.CreateFrame draws a title bar but no close affordance, and this window
-    -- has no Cancel button to double as one. Without this the only way out is
-    -- ESC, which the search box swallows on its first press.
-    local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    -- Not redundant with ESC: the search box swallows the first press, and this
+    -- window has no Cancel button to double as a way out.
+    local closeButton = UI.CreateCloseButton(frame)
     closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
     closeButton:SetScript("OnClick", function() curationWindow.Hide() end)
+    frame.closeButton = closeButton
 
-    -- Filter row
     local search = UI.CreateEditBox(frame)
     search:SetSize(200, CURATION_CONTROL_HEIGHT)
     PixelUtil.SetPoint(search, "TOPLEFT", frame, "TOPLEFT",
@@ -688,7 +668,6 @@ local function buildCurationWindow()
     PixelUtil.SetPoint(classFilter, "LEFT", destinationFilter, "RIGHT", 6, 0)
     frame.classFilter = classFilter
 
-    -- Source and count line
     local sourceLabel = frame:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
     sourceLabel:SetPoint("TOPLEFT", search, "BOTTOMLEFT", 0, -6)
     sourceLabel:SetJustifyH("LEFT")
@@ -716,7 +695,6 @@ local function buildCurationWindow()
     frame.bannerFrame = bannerFrame
     frame.banner = banner
 
-    -- Row list
     local scrollBox = CreateFrame("Frame", nil, frame, "WowScrollBoxList")
     local scrollBar = CreateFrame("EventFrame", nil, frame, "MinimalScrollBar")
 
@@ -737,10 +715,6 @@ local function buildCurationWindow()
 end
 
 --- Rebuilds the class filter's options from what the account actually owns.
----
---- Derived from the owned table rather than from Enum.ItemClass: a filter
---- listing every class in the game when the account holds items in three is a
---- list of dead ends.
 local function refreshClassFilter()
     local classes = model.GetOwnedClasses(ownedCache)
     local dropdown = curationFrame.classFilter
@@ -813,8 +787,8 @@ end
 --- Separate from Refresh because a source read walks every container the
 --- adapter can see, and typing in the search box must not do that per keystroke.
 function curationWindow.Reload()
-    -- Shown, not merely built: a source read walks every container the adapter
-    -- can see, and the bank events below fire whether or not this window is up.
+    -- Shown, not merely built: the bank events below fire whether or not this
+    -- window is up.
     if not curationFrame or not curationFrame:IsShown() then return end
 
     ownedCache, activeSourceName = control.adapters.GetOwned()
@@ -849,10 +823,6 @@ function curationWindow.Toggle()
 end
 
 view.curationWindow = curationWindow
-
--- ================================================================================
--- SettingsPanel
--- ================================================================================
 
 ---@class BitForge.UPS.View.SettingsPanel
 local settingsPanel = {}

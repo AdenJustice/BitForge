@@ -302,6 +302,33 @@ local function rankOrder(a, b)
     return defaultOrder(a, b)
 end
 
+-- Ungrouped factions sort after every real heading. A faction reaches this only
+-- until the next full scan records its heading -- one login, for factions stored
+-- before grouping existed -- so it is a transient state rather than a category.
+local UNGROUPED_RANK = math.huge
+
+--- Wraps a row comparator so groups never interleave.
+---
+--- Which expansion a faction belongs to is structure; the sort mode orders rows
+--- inside a group rather than across them. Without this, sorting by rank would
+--- scatter one expansion's factions through every other expansion's heading.
+---
+--- Ordered by the heading's position in the reputation pane rather than by name
+--- or by expansion ID: the client already lists them in an order the player sees
+--- every time they open that pane, and it needs no expansion table to go stale.
+---@param order fun(a: table, b: table): boolean
+---@return fun(a: table, b: table): boolean
+local function byGroupThen(order)
+    return function(a, b)
+        local infoA = db.global.factions[a.factionID] or {}
+        local infoB = db.global.factions[b.factionID] or {}
+        local rankA = infoA.groupIndex or UNGROUPED_RANK
+        local rankB = infoB.groupIndex or UNGROUPED_RANK
+        if rankA ~= rankB then return rankA < rankB end
+        return order(a, b)
+    end
+end
+
 --- The window's two row lists, filtered and sorted.
 ---@param options { showUntouched: boolean, search: string|nil, sortByRank: boolean|nil }
 ---@return { warband: table[], characters: table[] }
@@ -331,6 +358,7 @@ function model.BuildSections(options)
                     leader    = nil,
                     record    = record,
                     pending   = model.PendingFor(factionID),
+                    group     = info.group,
                 }
                 warband[#warband + 1] = row
             else
@@ -342,22 +370,19 @@ function model.BuildSections(options)
                     leader    = leaderKey,
                     record    = leaderRecord,
                     pending   = model.PendingFor(factionID),
+                    group     = info.group,
                 }
                 characters[#characters + 1] = row
             end
         end
     end
 
-    local order = options.sortByRank and rankOrder or defaultOrder
+    local order = byGroupThen(options.sortByRank and rankOrder or defaultOrder)
     sort(warband, order)
     sort(characters, order)
 
     return { warband = warband, characters = characters }
 end
-
--- =========================================================
--- Settings accessors
--- =========================================================
 
 ---@return boolean
 function model.GetShowUntouched()

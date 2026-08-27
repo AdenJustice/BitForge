@@ -18,10 +18,6 @@ local EMPTY = {}
 ---@class BitForge.UPS.Control
 local control = ns.control
 
--- ================================================================================
--- Adapters
--- ================================================================================
-
 ---@class BitForge.UPS.Control.Adapters
 local adapters = {}
 
@@ -75,7 +71,6 @@ end
 -- source, which is defined below because it is the thing being fallen back to.
 local builtInAdapter
 
---- The source the curation window should read.
 ---@return UPS.Adapter
 function adapters.GetActive()
     return adapters.SelectActive(registry, builtInAdapter)
@@ -105,10 +100,6 @@ function adapters.GetOwned()
 
     return builtInAdapter.GetOwned(), builtInAdapter.name
 end
-
--- ================================================================================
--- Third-party sources
--- ================================================================================
 
 --- Adds one holding to an owned table.
 ---
@@ -233,7 +224,7 @@ local syndicatorAdapter = {
 ---
 --- The only source with an API built for third-party consumption
 --- (DataStore:RegisterMethod / RegisterModule), and the enumeration this window
---- needs is part of that registered surface after all: IterateContainerSlots,
+--- needs is part of that registered surface: IterateContainerSlots,
 --- IteratePlayerBankSlots and IterateWarbandBank each walk their slots and hand
 --- back an unpacked itemID and count, so none of DataStore's bit-packed slot
 --- encoding is touched here.
@@ -281,9 +272,6 @@ local dataStoreAdapter = {
             end
         end)
 
-        -- The warband bank belongs to no character, so it is attributed to the
-        -- one looking at the window. Leaving it out would make an item the user
-        -- has already deposited vanish from the list they curate against.
         if DataStore.IterateWarbandBank then
             local charKey = BitForge:GetCurrentCharacter()
             DataStore:IterateWarbandBank(function(itemID, _, itemCount)
@@ -442,10 +430,6 @@ local bagBrotherAdapter = {
     end,
 }
 
--- ================================================================================
--- Built-in source
--- ================================================================================
-
 ---@type UPS.Adapter
 builtInAdapter = {
     name = "builtin",
@@ -474,8 +458,6 @@ builtInAdapter = {
                 owned[entry.itemID] = holders
             end
 
-            -- Summed rather than assigned: the same item sits in several stacks
-            -- across bags and bank tabs, and the row reports a total.
             holders[charKey] = (holders[charKey] or 0) + entry.count
         end
 

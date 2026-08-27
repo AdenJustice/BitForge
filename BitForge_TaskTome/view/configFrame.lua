@@ -44,20 +44,17 @@ do
     frame:SetScript("OnDragStop", OnDragStop)
     frame:Hide()
 
-    -- Close button
-    local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    local closeBtn = UI.CreateCloseButton(frame)
     closeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
     local function OnCloseClick() configFrame.Hide() end
     closeBtn:SetScript("OnClick", OnCloseClick)
+    frame.closeButton = closeBtn
 
-    -- Divider line between panels
     local divider = frame:CreateTexture(nil, "ARTWORK")
     PixelUtil.SetWidth(divider, 1, 1)
     divider:SetColorTexture(0.3, 0.3, 0.3, 1)
     divider:SetPoint("TOPLEFT", frame, "TOPLEFT", 244, -40)
     divider:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 244, 8)
-
-    -- Left Panel: Task Tree
 
     local leftPanel = CreateFrame("Frame", nil, frame)
     leftPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", 8, -40)
@@ -71,7 +68,6 @@ do
     scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 1, 0)
     scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 1, 0)
 
-    -- "Add Root Task" button below the scroll
     local addRootBtn = UI.CreateButton(nil, leftPanel, nil, locale["btn:addRootTask"])
     addRootBtn:SetPoint("BOTTOMLEFT", leftPanel, "BOTTOMLEFT", 0, -44)
     addRootBtn:SetWidth(LEFT_WIDTH)
@@ -88,8 +84,6 @@ do
     end
     addRootBtn:SetScript("OnClick", OnAddRootTask)
 
-    -- Row Rendering
-
     local ROW_HEIGHT = 22
     local selectedId = nil
 
@@ -104,7 +98,6 @@ do
 
     treeView:SetElementFactory(function(factory, node)
         factory("BitForge_TaskTomeRowTemplate", function(rowFrame, elementData)
-            -- One-time frame setup
             if not rowFrame._initialized then
                 rowFrame._initialized = true
                 rowFrame:SetHighlightTexture("Interface\\QuestFrame\\UI-QuestLogTitleHighlight", "ADD")
@@ -122,7 +115,6 @@ do
                 rowFrame.selTex = sel
             end
 
-            -- Data bind
             local data = elementData:GetData()
             local task = data.task
             rowFrame.taskId = task.id
@@ -132,8 +124,6 @@ do
     end)
 
     ScrollUtil.InitScrollBoxListWithScrollBar(scrollBox, scrollBar, treeView)
-
-    -- Provider
 
     local function InsertChildrenIntoNode(parentNode, parentId)
         for _, task in ipairs(model.GetChildren(parentId)) do
@@ -161,8 +151,6 @@ do
         syncNode(provider:GetRootNode(), nil)
     end
 
-    -- Drag-and-Drop Behavior
-
     -- Uses Blizzard's tree drag behavior: handles edge-scroll, Above/Below/Inside detection,
     -- and drop visuals via the built-in ScrollBoxDragLineTemplate / ScrollBoxDragBoxTemplate.
     local dragBehavior = ScrollUtil.InitDefaultTreeDragBehavior(scrollBox)
@@ -186,8 +174,6 @@ do
         end)
         configFrame.PopulateForm(id)
     end
-
-    -- configFrame.PopulateForm defined below in Form Binding section
 
     -- Assigned in the Right Panel section below, once the character selector it
     -- resets exists. Forward-declared because Show is defined above that section
@@ -221,8 +207,6 @@ do
             configFrame.Show()
         end
     end
-
-    -- Right Panel: Detail Editor
 
     local rightPanel = CreateFrame("Frame", nil, frame)
     rightPanel:SetPoint("TOPLEFT", frame, "TOPLEFT", 252, -40)
@@ -258,8 +242,8 @@ do
         end
     end)
 
-    -- Spec §8: the selector defaults to the current character. Without a reset,
-    -- picking an alt once leaves the form editing that alt for the rest of the
+    -- The selector defaults to the current character. Without a reset, picking
+    -- an alt once leaves the form editing that alt for the rest of the
     -- session -- including the next time the frame is opened, where the label
     -- would be the only clue and nothing would have led the player to look.
     function ResetCharSelector()
@@ -267,7 +251,6 @@ do
         charDropdown.Label:SetText(BitForge:GetCurrentCharacter())
     end
 
-    -- Name
     local nameLabel = rightPanel:CreateFontString(nil, "OVERLAY", "BitForgeFontSmall")
     nameLabel:SetPoint("TOPLEFT", charDropdown, "BOTTOMLEFT", 0, -8)
     nameLabel:SetText(locale["settings:taskName"])
@@ -276,7 +259,6 @@ do
     nameEdit:SetPoint("TOPLEFT", nameLabel, "BOTTOMLEFT", 0, -2)
     nameEdit:SetWidth(330)
 
-    -- Reset dropdown
     local RESET_VALUES = { enum.RESET_NONE, enum.RESET_DAILY, enum.RESET_WEEKLY }
     local RESET_LABELS = { locale["menu:resetNone"], locale["menu:resetDaily"], locale["menu:resetWeekly"] }
     local resetValue = RESET_VALUES[1]
@@ -301,11 +283,9 @@ do
         end
     end)
 
-    -- Warband checkbox
     local warbandCheck = UI.CreateCheckButton(nil, rightPanel, locale["settings:warbandAssigned"], true)
     warbandCheck:SetPoint("TOPLEFT", resetDropdown, "BOTTOMLEFT", 0, -8)
 
-    -- Completion scope dropdown
     local SCOPE_VALUES = { enum.SCOPE_CHAR, enum.SCOPE_WARBAND }
     local SCOPE_LABELS = { locale["menu:scopeChar"], locale["menu:scopeWarband"] }
     local scopeValue = SCOPE_VALUES[1]
@@ -330,7 +310,6 @@ do
         end
     end)
 
-    -- Opt state dropdown
     local OPT_VALUES = { enum.OPT_FOLLOW, enum.OPT_IN, enum.OPT_OUT }
     local OPT_LABELS = { locale["menu:optFollow"], locale["menu:optIn"], locale["menu:optOut"] }
     local optValue = OPT_VALUES[1]
@@ -355,7 +334,6 @@ do
         end
     end)
 
-    -- Save button
     local saveBtn = UI.CreateButton(nil, rightPanel, nil, locale["btn:save"])
     saveBtn:SetPoint("BOTTOMLEFT", rightPanel, "BOTTOMLEFT", 4, 4)
     local function OnSaveClick()
@@ -376,7 +354,6 @@ do
     end
     saveBtn:SetScript("OnClick", OnSaveClick)
 
-    -- Add Child button
     local addChildBtn = UI.CreateButton(nil, rightPanel, nil, locale["btn:addChildTask"])
     addChildBtn:SetPoint("LEFT", saveBtn, "RIGHT", 6, 0)
     local function OnAddChildTask()
@@ -393,7 +370,6 @@ do
     end
     addChildBtn:SetScript("OnClick", OnAddChildTask)
 
-    -- Delete button (danger styling)
     local deleteBtn = UI.CreateButton(nil, rightPanel, nil, locale["btn:deleteTask"])
     deleteBtn:SetPoint("BOTTOMRIGHT", rightPanel, "BOTTOMRIGHT", -4, 4)
     local redBg = { r = 0.60, g = 0.10, b = 0.10, a = 1.00 }
@@ -442,8 +418,6 @@ do
     end
     deleteBtn:SetScript("OnClick", OnDeleteClick)
 
-    -- Form Binding
-
     local function SetFormEnabled(enabled)
         nameEdit:SetEnabled(enabled)
         resetDropdown:SetEnabled(enabled)
@@ -482,7 +456,6 @@ do
 
         nameEdit:SetText(task.name)
 
-        -- Reset
         resetValue = task.reset
         for i, resetVal in ipairs(RESET_VALUES) do
             if resetVal == resetValue then
@@ -492,7 +465,6 @@ do
 
         warbandCheck:SetChecked(task.warbandAssigned)
 
-        -- Scope
         scopeValue = task.completionScope
         for i, scopeVal in ipairs(SCOPE_VALUES) do
             if scopeVal == scopeValue then
@@ -522,7 +494,6 @@ do
         SetFormEnabled(true)
     end
 
-    -- Called once at file load time to set initial state
     SetFormEnabled(false)
 
     view.configFrame = configFrame

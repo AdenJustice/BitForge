@@ -24,10 +24,6 @@ local BankFrame = BankFrame
 local C_Bank = C_Bank
 local C_Container = C_Container
 
--- ================================================================================
--- Inventory
--- ================================================================================
-
 ---@class BitForge.UPS.Control.Inventory
 local inventory = {}
 
@@ -170,10 +166,6 @@ local GetProfessionInfo = GetProfessionInfo
 local C_TradeSkillUI = C_TradeSkillUI
 local time = time
 
--- ================================================================================
--- Recipes
--- ================================================================================
-
 ---@class BitForge.UPS.Control.Recipes
 local recipes = {}
 
@@ -300,18 +292,12 @@ function recipes.PromptForScans()
     if model.HasAnyRecipeScan(charKey) then return end
 
     for _, entry in ipairs(recipes.ReadProfessions()) do
-        -- Once per profession per session. Repeating it every login would be
-        -- nagging about something the player may have decided not to do.
         if not prompted[entry.skillLineID] then
             prompted[entry.skillLineID] = true
             BitForge:Print(format(locale["msg:openProfession"], entry.name))
         end
     end
 end
-
--- ================================================================================
--- Deposit
--- ================================================================================
 
 ---@class BitForge.UPS.Control.Deposit
 local deposit = {}
@@ -365,7 +351,6 @@ function deposit.DidMoveComplete(beforeCount, afterCount)
     return afterCount < beforeCount
 end
 
---- True while a plan is executing.
 function deposit.IsRunning()
     return running
 end
@@ -449,11 +434,11 @@ executeNext = function()
     local info = C_Container.GetContainerItemInfo(descriptor.srcBag, descriptor.srcSlot)
     -- The slot emptied or changed hands between planning and now, or the item's
     -- destination changed while the preview sat open -- the curation window is a
-    -- live writer from Phase 3 on. Re-resolving here makes "only what the user
-    -- asked for moves" a rule enforced at the point of action, not a property
-    -- that happens to hold because nothing writes overrides in this phase.
-    -- ResolveMove is asked the same question the planner asked it, which is
-    -- what descriptor.fromWarband is carried for.
+    -- live writer. Re-resolving here makes "only what the user asked for moves"
+    -- a rule enforced at the point of action, not a property that happens to
+    -- hold because nothing writes overrides. ResolveMove is asked the same
+    -- question the planner asked it, which is what descriptor.fromWarband is
+    -- carried for.
     -- None of these are failures; skip the descriptor and carry on.
     if not info or info.itemID ~= descriptor.itemID
         or model.ResolveMove(info.itemID, descriptor.fromWarband) ~= descriptor.destination then
@@ -584,10 +569,6 @@ control.inventory = inventory
 control.recipes = recipes
 control.deposit = deposit
 
--- ================================================================================
--- Events
--- ================================================================================
-
 local function onBankOpened()
     view.bankButton.OnBankOpened()
 
@@ -609,9 +590,6 @@ local function onBankClosed()
     view.bankButton.OnBankClosed()
     view.previewDialog.Hide()
 
-    -- The built-in source's container list is gated on the bank being open
-    -- (inventory.GetCurationContainers), so an open curation window is showing a
-    -- different account the moment the bank frame appears or disappears.
     view.curationWindow.Reload()
 end
 

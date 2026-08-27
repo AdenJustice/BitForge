@@ -1,0 +1,98 @@
+if GetLocale() ~= "ruRU" then return end
+---@class BitForge.EUI
+local ns = select(2, ...)
+local L = ns.locale
+
+-- Subcommand keywords (ui, apply, capture, list, reset, rl) are deliberately
+-- NOT translated. The player types them.
+
+L["cmd:help"] = "Команды: ui, apply, capture, list, reset, rl"
+L["cmd:helpUi"] = "ui -- открыть редактор расположения"
+L["cmd:helpApply"] = "apply -- применить сохранённое расположение к EllesmereUI"
+L["cmd:helpCapture"] = "capture -- сохранить текущую геометрию EllesmereUI"
+L["cmd:helpList"] = "list [-u] [текст] -- список позиционируемых элементов"
+L["cmd:helpListUnmanaged"] = "  -u -- только элементы, которыми сохранённое расположение не управляет"
+L["cmd:helpReset"] = "reset [anchors] -- удалить сохранённое расположение"
+L["cmd:deprecated"] = "/bfeui устарела -- используйте /bitforge eui"
+
+L["error:noEllesmere"] = "EllesmereUI не загружен"
+L["error:noRegistry"] = "Список элементов EllesmereUI недоступен"
+
+L["apply:applied"] = "Применено: %d, без изменений: %d"
+L["apply:anchorOwned"] = "Элементов, положение которых задаёт якорь: %d (координаты игнорируются)"
+L["apply:unknownKeys"] = "Неизвестных ключей (%d): %s"
+L["apply:unknownHint"] = "Используйте 'list', чтобы увидеть зарегистрированные ключи"
+L["apply:failedKeys"] = "Не удалось (%d): %s"
+L["apply:badAnchors"] = "Не применено якорей (%d):"
+L["apply:badAnchorLine"] = "  %s -> %s (%s)"
+L["apply:badAnchorHint"] = "Цель якоря — это ключ элемента. Для размещения относительно экрана используйте point/relPoint"
+L["apply:resolved"] = "Якорей вычислено силами BitForge: %d (EllesmereUI не может их выразить)"
+
+L["reason:unknown"] = "такой цели нет"
+L["reason:self"] = "привязан к самому себе"
+L["reason:cycle"] = "циклическая ссылка"
+L["reason:halfpair"] = "нужны и point, и relPoint"
+L["reason:badpoint"] = "не является названием точки привязки"
+L["reason:notarget"] = "к этому элементу нельзя привязываться"
+L["reason:noanchor"] = "этот элемент нельзя привязать"
+L["reason:norect"] = "у цели ещё нет положения на экране"
+L["reason:notextended"] = "нет point и relPoint для вычисления"
+
+L["list:none"] = "Подходящих элементов нет"
+L["list:count"] = "Показано: %d, без управления: %d/%d"
+L["list:unmanaged"] = "[без управления]"
+L["list:anchored"] = "[якорь -> %s %s]"
+L["list:noPosition"] = "нет положения"
+L["list:readFailed"] = "%s (не удалось прочитать)"
+
+L["capture:result"] = "Сохранено элементов: %d"
+L["capture:seeded"] = "Первый запуск: ваше текущее расположение сохранено (элементов: %d). Ничего не перемещено."
+
+L["unlock:attachedWarning"] = "Прикреплённых элементов: %d. Перетаскивание здесь открепит их."
+L["unlock:noLongerAttached"] = "Больше не прикреплено: %s"
+
+L["reset:confirm"] = "Это удалит сохранённое расположение. Введите 'reset confirm', чтобы продолжить."
+L["reset:done"] = "Сохранённое расположение удалено. Оно будет создано заново из EllesmereUI при следующем входе."
+L["reset:anchorsConfirm"] = "Это также удалит ваши определения якорей, которые ВОССТАНОВИТЬ НЕВОЗМОЖНО. Введите 'reset anchors confirm', чтобы продолжить."
+L["reset:anchorsDone"] = "Сохранённое расположение и определения якорей удалены."
+
+L["anchor:badTable"] = "якорь '%s' не является таблицей"
+L["anchor:badSize"] = "якорю '%s' нужны положительные w и h; без них у него нет краёв"
+L["anchor:collides"] = "якорь '%s' конфликтует с существующим элементом EllesmereUI (%s); переименуйте его"
+
+L["ui:title"] = "Расположение BitForge"
+L["ui:filter"] = "Поиск"
+L["ui:notReady"] = "Расположение ещё читается -- повторите через мгновение"
+L["ui:markAttachedEui"] = "[привязан]"
+L["ui:markAttachedBitForge"] = "[прикреплён]"
+L["ui:markHidden"] = "[скрыт]"
+L["ui:anchorGroup"] = "Рамки-якоря"
+L["ui:anchorNew"] = "+ Новая рамка-якорь"
+L["ui:target"] = "Привязать к"
+L["ui:targetScreen"] = "Экран"
+L["ui:myPoint"] = "Мой угол"
+L["ui:theirPoint"] = "Угол цели"
+L["ui:offsetX"] = "Смещение по X"
+L["ui:offsetY"] = "Смещение по Y"
+L["ui:width"] = "Ширина"
+L["ui:height"] = "Высота"
+L["ui:label"] = "Название"
+L["ui:key"] = "Ключ"
+L["ui:channelScreen"] = "Размещено относительно экрана"
+L["ui:channelEui"] = "Якорь EllesmereUI (side = %s)"
+L["ui:channelBitForge"] = "Якорь BitForge -- EllesmereUI не может выразить эту пару"
+L["ui:noResize"] = "Размер этого элемента изменить нельзя"
+L["ui:hiddenNote"] = "Зарегистрирован, но его рамка сейчас не показана"
+L["ui:pendingNone"] = "Несохранённых изменений нет"
+L["ui:pending"] = "Несохранённых изменений: %d"
+L["ui:save"] = "Сохранить и перезагрузить"
+L["ui:revert"] = "Откатить"
+L["ui:saveCombat"] = "В бою перезагрузка невозможна"
+L["ui:invalid"] = "Перед сохранением нужно исправить: %d"
+L["ui:anchorDelete"] = "Удалить"
+L["ui:anchorDeleteConfirm"] = "Удалить рамку-якорь '%s'? Определения якорей существуют только здесь и ВОССТАНОВИТЬ ИХ НЕВОЗМОЖНО."
+L["ui:anchorKeyEmpty"] = "Рамке-якорю нужен ключ"
+L["ui:anchorKeyTaken"] = "Рамка-якорь с именем '%s' уже существует"
+
+L["apply:deferredCombat"] = "Вы в бою -- расположение будет применено, когда вы выйдете из боя"
+L["apply:deferredDone"] = "Бой окончен: применено %d, без изменений %d"

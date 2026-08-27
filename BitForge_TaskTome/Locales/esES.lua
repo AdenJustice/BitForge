@@ -3,10 +3,8 @@ if GetLocale() ~= "esES" then return end
 local ns = select(2, ...)
 local L = ns.locale
 
--- Widget
 L["status:widgetTitle"] = "Tomo de tareas"
 
--- Config Frame
 L["settings:configTitle"] = "Tomo de tareas — Configuración"
 L["btn:addRootTask"] = "Añadir tarea raíz"
 L["btn:addChildTask"] = "Añadir tarea secundaria"
@@ -18,7 +16,6 @@ L["settings:warbandAssigned"] = "Asignada a todos los personajes"
 L["settings:completionScope"] = "Ámbito de finalización"
 L["settings:optState"] = "Mi asignación"
 
--- Dropdowns
 L["menu:resetNone"] = "Ninguno"
 L["menu:resetDaily"] = "Diario"
 L["menu:resetWeekly"] = "Semanal"
@@ -28,19 +25,16 @@ L["menu:optFollow"] = "Seguir valor predeterminado"
 L["menu:optIn"] = "Mostrar siempre"
 L["menu:optOut"] = "Ocultar siempre"
 
--- Messages / Dialogs
 L["msg:deleteConfirm"] = "¿Eliminar '%s' y todas sus %d tareas secundarias?"
 L["msg:deleteSingle"] = "¿Eliminar '%s'?"
 L["btn:confirmDelete"] = "Eliminar"
 L["btn:cancel"] = "Cancelar"
 L["msg:nameRequired"] = "El nombre de la tarea no puede estar vacío."
 
--- Settings panel
 L["settings:taskTomePanel"] = "Tomo de tareas"
 L["settings:config"] = "Configuración"
 L["settings:openConfig"] = "Abrir"
 
--- Widget modes
 L["group:accountWide"] = "De toda la cuenta"
 L["tooltip:scopeMe"] = "Mostrando este personaje. Haz clic para mostrar todos los personajes."
 L["tooltip:scopeAll"] = "Mostrando todos los personajes. Haz clic para mostrar solo este personaje."
@@ -50,6 +44,5 @@ L["tooltip:openConfig"] = "Abre la ventana de configuración del Tomo de tareas.
 L["tooltip:widgetLocked"] = "La ventana está bloqueada. Haz clic para desbloquearla y poder moverla y redimensionarla."
 L["tooltip:widgetUnlocked"] = "La ventana está desbloqueada. Haz clic para bloquear su posición y tamaño."
 
--- Config
 L["settings:editingFor"] = "Editando para"
 L["settings:optStateFor"] = "Asignación de %s"

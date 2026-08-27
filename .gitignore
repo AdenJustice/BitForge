@@ -6,3 +6,7 @@ __pycache__/
 *.pyc
 .wow-api-audit/report.md
 .wow-api-audit/findings.json
+
+# EllesmereUI is all-rights-reserved. The clone Scripts/track_eui.sh keeps here
+# is for reading only -- none of its code may ever be committed.
+reference/

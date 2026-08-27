@@ -11,13 +11,10 @@ local CreateColor = CreateColorFromHexString
 BitForge.UI = {}
 local UI = BitForge.UI
 
--- =========================================================
--- Shared colour palette (Flat Design tokens)
--- =========================================================
-
 ---@class BitForge.UI.Colors
 ---@field point colorRGBA
 ---@field hover colorRGBA
+---@field danger colorRGBA
 ---@field bg colorRGBA
 ---@field bgDisabled colorRGBA
 ---@field surface colorRGBA
@@ -30,6 +27,12 @@ local UI = BitForge.UI
 UI.Colors = {
     point = CreateColor("FF45B7D1"),
     hover = CreateColor("FF4B5267"),
+    -- The one warm token. A close affordance and a message saying a save is
+    -- refused both have to read as "not the rest of this window", and every
+    -- other entry here is a surface, an edge or a shade of text. The value is
+    -- the red BitForge_EUI had already picked for its own refusal message,
+    -- promoted rather than invented, so the suite carries a single red.
+    danger = CreateColor("FFFF4D4D"),
     bg = CreateColor("FF121212"),
     bgDisabled = CreateColor("7F121212"),
     surface = CreateColor("FF1E1E1F"),
@@ -41,13 +44,8 @@ UI.Colors = {
     edgeHover = CreateColor("FF2A2A2B"),
 }
 
--- =========================================================
--- BitForge.UI — Flat Design widget library
--- =========================================================
-
 local MEDIA = "Interface/AddOns/BitForge/Media"
 
---- Returns the full path to a media asset embedded in the BitForge addon.
 ---@param filename string  Relative name without extension, e.g. "checked"
 ---@return string
 function UI.GetMedia(filename)
@@ -75,10 +73,6 @@ function UI.CreateSeparatorTexture(parent)
 
     return line
 end
-
--- =========================================================
--- Shared skin helpers
--- =========================================================
 
 UI.Skin = UI.Skin or {}
 local skin = UI.Skin
@@ -337,10 +331,6 @@ function skin.StyleScrollBar(scrollBar, options)
     return thumbTexture
 end
 
--- =========================================================
--- Host UI skin bridge
--- =========================================================
---
 -- A host UI -- EllesmereUI today -- can paint this suite's windows in the
 -- user's own theme. It publishes EllesmereUI.RegisterSkin(name, applyFn) and
 -- calls applyFn once at PLAYER_LOGIN with a facade of skinning primitives
@@ -398,9 +388,7 @@ if EllesmereUI and EllesmereUI.RegisterSkin then
     end)
 end
 
--- =========================================================
--- Font objects
--- =========================================================
+UI.Mixins = {}
 
 ---@class BitForgeFontDef
 ---@field file   string|nil   Font file path (defaults to STANDARD_TEXT_FONT)
@@ -426,7 +414,6 @@ end
 ---@field NormalOutlineShadow Font
 ---@field LargeOutlineShadow  Font
 ---@field HugeOutlineShadow   Font
-UI.Mixins = {}
 UI.Fonts = {}
 
 local FONT_SIZES = { Small = 10, Normal = 12, Large = 14, Huge = 20 }

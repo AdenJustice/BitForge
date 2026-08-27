@@ -1,0 +1,98 @@
+if GetLocale() ~= "koKR" then return end
+---@class BitForge.EUI
+local ns = select(2, ...)
+local L = ns.locale
+
+-- Subcommand keywords (ui, apply, capture, list, reset, rl) are deliberately
+-- NOT translated. The player types them.
+
+L["cmd:help"] = "명령어: ui, apply, capture, list, reset, rl"
+L["cmd:helpUi"] = "ui -- 배치 편집창을 엽니다"
+L["cmd:helpApply"] = "apply -- 저장된 배치를 EllesmereUI 에 적용합니다"
+L["cmd:helpCapture"] = "capture -- EllesmereUI 의 현재 배치를 저장합니다"
+L["cmd:helpList"] = "list [-u] [문자열] -- 배치 가능한 요소를 나열합니다"
+L["cmd:helpListUnmanaged"] = "  -u -- 저장된 배치에 없는 요소만"
+L["cmd:helpReset"] = "reset [anchors] -- 저장된 배치를 지웁니다"
+L["cmd:deprecated"] = "/bfeui 는 더 이상 사용되지 않습니다 -- /bitforge eui 를 사용하세요"
+
+L["error:noEllesmere"] = "EllesmereUI 가 로드되지 않았습니다"
+L["error:noRegistry"] = "EllesmereUI 의 요소 목록을 찾을 수 없습니다"
+
+L["apply:applied"] = "적용 %d개, 변경 없음 %d개"
+L["apply:anchorOwned"] = "앵커가 위치를 결정하는 요소 %d개 (좌표는 무시됨)"
+L["apply:unknownKeys"] = "알 수 없는 키 %d개: %s"
+L["apply:unknownHint"] = "등록된 키는 list 로 확인하세요"
+L["apply:failedKeys"] = "실패 %d개: %s"
+L["apply:badAnchors"] = "적용하지 않은 앵커 %d개:"
+L["apply:badAnchorLine"] = "  %s -> %s (%s)"
+L["apply:badAnchorHint"] = "앵커 대상은 요소 키입니다. 화면 기준 배치는 point/relPoint 를 쓰세요"
+L["apply:resolved"] = "BitForge 가 직접 계산한 앵커 %d개 (EllesmereUI 로는 표현할 수 없음)"
+
+L["reason:unknown"] = "대상 없음"
+L["reason:self"] = "자기 참조"
+L["reason:cycle"] = "순환 참조"
+L["reason:halfpair"] = "point 와 relPoint 가 모두 필요합니다"
+L["reason:badpoint"] = "앵커 지점 이름이 아닙니다"
+L["reason:notarget"] = "해당 요소에는 앵커를 걸 수 없습니다"
+L["reason:noanchor"] = "이 요소는 앵커를 걸 수 없습니다"
+L["reason:norect"] = "대상의 화면 위치가 아직 정해지지 않았습니다"
+L["reason:notextended"] = "계산할 point 와 relPoint 가 없습니다"
+
+L["list:none"] = "일치하는 요소가 없습니다"
+L["list:count"] = "%d개 표시, 미관리 %d/%d"
+L["list:unmanaged"] = "[미관리]"
+L["list:anchored"] = "[앵커 -> %s %s]"
+L["list:noPosition"] = "위치 없음"
+L["list:readFailed"] = "%s (읽기 실패)"
+
+L["capture:result"] = "요소 %d개를 저장했습니다"
+L["capture:seeded"] = "첫 실행: 현재 배치를 저장했습니다 (요소 %d개). 아무것도 옮기지 않았습니다."
+
+L["unlock:attachedWarning"] = "요소 %d개가 연결되어 있습니다. 여기서 끌면 연결이 해제됩니다."
+L["unlock:noLongerAttached"] = "연결이 해제된 요소: %s"
+
+L["reset:confirm"] = "저장된 배치를 지웁니다. 계속하려면 'reset confirm' 을 입력하세요."
+L["reset:done"] = "저장된 배치를 지웠습니다. 다음 로그인 때 EllesmereUI 에서 다시 만듭니다."
+L["reset:anchorsConfirm"] = "앵커 정의도 함께 삭제되며 복구할 수 없습니다. 계속하려면 'reset anchors confirm' 을 입력하세요."
+L["reset:anchorsDone"] = "저장된 배치와 앵커 정의를 지웠습니다."
+
+L["anchor:badTable"] = "앵커 '%s' 가 테이블이 아닙니다"
+L["anchor:badSize"] = "앵커 '%s' 에는 양수 w, h 가 필요합니다. 없으면 모서리를 계산할 수 없습니다"
+L["anchor:collides"] = "앵커 '%s' 가 기존 EllesmereUI 요소(%s)와 충돌합니다. 이름을 바꾸세요"
+
+L["ui:title"] = "BitForge 배치"
+L["ui:filter"] = "검색"
+L["ui:notReady"] = "배치를 읽는 중입니다 -- 잠시 후 다시 시도하세요"
+L["ui:markAttachedEui"] = "[앵커]"
+L["ui:markAttachedBitForge"] = "[연결]"
+L["ui:markHidden"] = "[숨김]"
+L["ui:anchorGroup"] = "앵커 프레임"
+L["ui:anchorNew"] = "+ 새 앵커 프레임"
+L["ui:target"] = "기준 대상"
+L["ui:targetScreen"] = "화면"
+L["ui:myPoint"] = "내 기준점"
+L["ui:theirPoint"] = "상대 기준점"
+L["ui:offsetX"] = "X 간격"
+L["ui:offsetY"] = "Y 간격"
+L["ui:width"] = "너비"
+L["ui:height"] = "높이"
+L["ui:label"] = "이름"
+L["ui:key"] = "키"
+L["ui:channelScreen"] = "화면을 기준으로 배치됩니다"
+L["ui:channelEui"] = "EllesmereUI 앵커 (side = %s)"
+L["ui:channelBitForge"] = "BitForge 앵커 -- EllesmereUI 로는 표현할 수 없습니다"
+L["ui:noResize"] = "이 요소는 크기를 바꿀 수 없습니다"
+L["ui:hiddenNote"] = "등록되어 있지만 현재 화면에 표시되지 않습니다"
+L["ui:pendingNone"] = "저장하지 않은 변경 없음"
+L["ui:pending"] = "저장하지 않은 변경 %d개"
+L["ui:save"] = "저장 후 다시 불러오기"
+L["ui:revert"] = "되돌리기"
+L["ui:saveCombat"] = "전투 중에는 다시 불러올 수 없습니다"
+L["ui:invalid"] = "저장하기 전에 고쳐야 할 문제 %d개"
+L["ui:anchorDelete"] = "삭제"
+L["ui:anchorDeleteConfirm"] = "앵커 프레임 '%s' 을(를) 삭제할까요? 앵커 정의는 이곳에만 있으며 복구할 수 없습니다."
+L["ui:anchorKeyEmpty"] = "앵커 프레임에는 키가 필요합니다"
+L["ui:anchorKeyTaken"] = "'%s' 이름의 앵커 프레임이 이미 있습니다"
+
+L["apply:deferredCombat"] = "전투 중입니다 -- 전투가 끝나면 배치를 적용합니다"
+L["apply:deferredDone"] = "전투 종료: 적용 %d개, 변경 없음 %d개"

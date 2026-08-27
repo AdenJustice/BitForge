@@ -15,7 +15,7 @@ A modular World of Warcraft addon suite for WoW 12.0+ (Midnight). Each module is
 | WoW version     | 12+ (Midnight)                                        |
 | Retail only     | Yes                                                      |
 | Saved variables | `BitForgeDB` (core only — no per-module saved variables) |
-| Optional        | [EllesmereUI](https://github.com/EllesmereGaming/EllesmereUI) — BitForge windows adopt its theme when it is installed |
+| Optional        | [EllesmereUI](https://github.com/EllesmereGaming/EllesmereUI) — BitForge windows adopt its theme when it is installed, and the EUI module requires it |
 
 ---
 
@@ -25,7 +25,11 @@ A modular World of Warcraft addon suite for WoW 12.0+ (Midnight). Each module is
 
 Shared infrastructure: event bus, account/character database, settings panel integration, minimap button, and the BitForge UI widget library.
 
-It also ships a catalogue of which professions use an item as a crafting reagent, which other modules build on. The catalogue covers every profession, including ones none of your characters have, but it is not exhaustive: some reagents — the optional ones especially, and the higher quality tiers — are missing until you actually open a profession window. Opening each of your professions once fills in the rest for that profession for good. Anything still missing counts as unknown rather than unwanted, so nothing is ever acted on because of a gap.
+It also owns the two windows a player meets that belong to no one module. The first is the report window: when BatchSell or Openables judges an item and you disagree, the item's own menu opens a window holding everything it was judged by, already selected, with the address to paste it into and a plain statement of what the report discloses. The second appears once after an update, listing what changed since the version you last played; `/bitforge core whatsnew` opens it again.
+
+The suite's two slash commands live here: `/bitforge <module>` opens or acts on a module, and `/bfdump <module>` produces the diagnostic dump you would paste into a bug report. Not every module answers both, and some answer neither — `/bitforge` on its own lists what you have installed and which of the two each one takes, core included. A module name shortens to any unambiguous prefix, so `/bfdump b` and `/bfdump batchsell` are the same command.
+
+It also ships a catalogue of which professions use an item as a crafting reagent, which other modules build on. It is read from the game client's own recipe lists, so it carries every reagent a recipe consumes — optional reagents and the higher quality tiers of a reagent included, both of which the old catalogue missed — for all ten professions that have recipes, whether or not any of your characters have them. Herbalism, Skinning, Fishing and Archaeology have no entries at all, because nothing is crafted from them; Mining does, since smelting and prospecting are recipes of its own. It does not update itself and asks nothing of you: recipes added by a later patch are missing until the addon ships a rebuilt catalogue. Anything missing counts as unknown rather than unwanted, so nothing is ever acted on because of a gap.
 
 ### BitForge AutoBalance
 
@@ -33,16 +37,40 @@ Automatically deposits and withdraws gold between your bags and the Warband Bank
 
 ### BitForge BatchSell
 
-Automates selling items at vendors. Nothing is sold unless a rule selects it. Gear is put to three questions in order — is it good for you, is it good for an alt, is it worth disenchanting — and only a piece that fails all three is sold. The first compares it against what you have equipped in that slot: a single margin, a flat number of item levels, is what one quality tier is worth, so a lower quality piece has to make the difference up in item level and a higher quality one earns a discount rather than a free pass, with an option to weigh quality twice as heavily; crafting materials and consumables each get their own keep-or-sell mode based on expansion age; reagents your professions actually use are kept regardless; bind type and disenchantability are respected throughout, and disenchantability corrects itself: each time you raise Disenchant, BatchSell reads the game's own verdict on what is in your bags and remembers it, so its built-in list of exceptions stops being the last word. Per-item overrides via right-click blacklist / whitelist, both readable and editable from the merchant window. Drag an item in from your bags to sell it on that visit only. Item tooltips say what will happen and why, and a sell manifest shows a live total before confirming.
+Automates selling items at vendors. Nothing is sold unless a rule selects it. Every kind of item has its own rule — consumables, gems, trade goods, recipes, pets and mounts, housing decor — and a kind with no rule is never examined at all, so anything BatchSell does not understand stays in your bags. Gear is the longest of them: is it a kind your class uses, does it beat what you are wearing, could an alt still use it, is it worth disenchanting, and only a piece that answers no to all of them is sold. The comparison uses a single margin, a flat number of item levels, as what one quality tier is worth, so a lower quality piece has to make the difference up in item level and a higher quality one earns a discount rather than a free pass, with an option to weigh quality twice as heavily, and a piece from a finished expansion sets its bar on item level alone so it cannot outrank a plainly better upgrade. Reagents your professions actually use are kept whatever kind of item they are, and a bound one is weighed against the professions of the character holding it rather than the whole warband's, since nobody else can ever have it; nothing above epic quality is ever sold; and no rule ever sells on a fact the game had not finished answering — an item whose details have not loaded is kept. Bind type and disenchantability are respected throughout: gear you have never worn is spared by default so a copy can still reach an alt or the auction house — this expansion's Bind on Equip and Bind on Account pieces alike, each widenable to every expansion or turned off on its own. Disenchantability corrects itself: each time you raise Disenchant, BatchSell reads the game's own verdict on what is in your bags and remembers it, so its built-in list of exceptions stops being the last word. Settings are shared across your warband. Per-item overrides from the item's own menu, set for this character or for the whole warband and showing which is already set for each; both lists are readable and editable from the merchant window, and the same menu reports an item whose verdict you disagree with. Drag an item in from your bags to sell it on that visit only. Item tooltips say what will happen and why, and a sell manifest shows a live total before confirming. Every rule can be read in plain language, and set, in one window opened from the vendor or from the settings panel — each control saying what it does when you point at it, greying out while the setting above it is off, and updating the sell list the moment you change it. Nothing about a rule lives anywhere else.
+
+### BitForge EUI
+
+Numeric control over EllesmereUI's frame positions. EllesmereUI moves a frame by
+dragging it; this types the numbers in — a position, a size, and an attachment to
+another frame, all in one window with the whole layout listed beside it.
+Installing it changes nothing: it records where your frames already are and moves
+none of them until you edit something.
+
+It also offers attachments EllesmereUI cannot express. EllesmereUI attaches a
+frame to one side of another, centred on that side; here any corner or edge can
+be pinned to any other, and the pairings EllesmereUI has no way to store are
+resolved by the module itself. Anything EllesmereUI *can* express is handed back
+to it, so its own dragging, cascading and locking keep working on those.
+
+**EllesmereUI is required for this module, not optional.** It is a hard
+dependency: with EllesmereUI missing or disabled, WoW disables this module
+outright and shows it greyed out in the addon list. No other BitForge module is
+affected.
 
 ### BitForge Openables
 
 A single button showing the next openable or usable item in your bags, in that order of
-urgency: recipes, profession knowledge and other learnables first, then tokens, then caches
-and lockboxes, then quest items, and last of all anything that is merely usable. Left-click
-uses the item, right-click skips it for the session, Ctrl+right-click blacklists it
-permanently. Rogues and Mechagnomes get lockbox picking; other characters only see a
-lockbox once it is already open. Bindable through the standard Key Bindings panel.
+urgency: recipes, profession knowledge, housing decor and other learnables first, then
+tokens, then caches and lockboxes, then quest items, and last of all anything that is
+merely usable. An item that starts a quest is marked with a bold gold exclamation
+mark in the button's top-left corner. Left-click uses the item and moves to the next one
+whether or not the use succeeded — a failed use no longer leaves you stuck on the same
+item, and nothing is dropped from the queue, so it comes back round. Right-click skips it
+for the session, Ctrl+right-click blacklists it permanently, and Shift+Alt+right-click
+reports it if you think BitForge has judged it wrongly. Rogues and Mechagnomes get lockbox picking; other characters
+only see a lockbox once it is already open. Bindable through the standard Key Bindings
+panel.
 
 Derived from [New Openables](https://www.curseforge.com/wow/addons/new-openables) by
 PeknaMrcha, continued by srhinos and cont1nuity. MIT licensed.
@@ -51,7 +79,8 @@ PeknaMrcha, continued by srhinos and cont1nuity. MIT licensed.
 
 Records every character's reputations as you play them, and shows which character is
 furthest along with each faction — so the alt closest to that Exalted-only recipe is one
-window away instead of one login each. Opened from the BitForge minimap button.
+window away instead of one login each. Factions are grouped by expansion, under the same
+headings the game's own reputation pane uses. Opened from the BitForge minimap button.
 
 Each faction carries a progress bar for how far that character is through their current
 step — a standing, a friendship rank, a renown level, or a paragon bracket — coloured by
@@ -112,6 +141,7 @@ Interface/AddOns/
   BitForge/
   BitForge_AutoBalance/     ← optional
   BitForge_BatchSell/       ← optional
+  BitForge_EUI/             ← optional, requires EllesmereUI
   BitForge_Openables/       ← optional
   BitForge_RepRank/         ← optional
   BitForge_TaskTome/        ← optional

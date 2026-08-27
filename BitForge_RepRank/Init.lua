@@ -1,10 +1,6 @@
 ---@class BitForge.RepRank
 local ns = select(2, ...)
 
--- =========================================================
--- Enums / Constants
--- =========================================================
-
 ---@class BitForge.RepRank.Enum
 local enum = {
     -- Bumped whenever the stored shape changes incompatibly.
@@ -30,16 +26,8 @@ local enum = {
 }
 ns.enum = enum
 
--- =========================================================
--- Locale
--- =========================================================
-
 ---@class BitForge.RepRank.Locale
 ns.locale = {}
-
--- =========================================================
--- Namespace
--- =========================================================
 
 ---@class BitForge.RepRank.Model
 ns.model = {}

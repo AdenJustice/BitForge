@@ -3,10 +3,8 @@ local ns = select(2, ...)
 ---@class BitForge.TaskTome.Locale
 local L = ns.locale
 
--- Widget
 L["status:widgetTitle"] = "Task Tome"
 
--- Config Frame
 L["settings:configTitle"] = "Task Tome — Configuration"
 L["btn:addRootTask"] = "Add Root Task"
 L["btn:addChildTask"] = "Add Child Task"
@@ -18,7 +16,6 @@ L["settings:warbandAssigned"] = "Assigned to all characters"
 L["settings:completionScope"] = "Completion Scope"
 L["settings:optState"] = "My assignment"
 
--- Dropdowns
 L["menu:resetNone"] = "None"
 L["menu:resetDaily"] = "Daily"
 L["menu:resetWeekly"] = "Weekly"
@@ -28,19 +25,16 @@ L["menu:optFollow"] = "Follow Default"
 L["menu:optIn"] = "Always Show"
 L["menu:optOut"] = "Always Hide"
 
--- Messages / Dialogs
 L["msg:deleteConfirm"] = "Delete '%s' and all %d child task(s)?"
 L["msg:deleteSingle"] = "Delete '%s'?"
 L["btn:confirmDelete"] = "Delete"
 L["btn:cancel"] = "Cancel"
 L["msg:nameRequired"] = "Task name cannot be empty."
 
--- Settings panel
 L["settings:taskTomePanel"] = "Task Tome"
 L["settings:config"] = "Configuration"
 L["settings:openConfig"] = "Open"
 
--- Widget modes
 L["group:accountWide"] = "Account-wide"
 L["tooltip:scopeMe"] = "Showing this character. Click to show all characters."
 L["tooltip:scopeAll"] = "Showing all characters. Click to show only this character."
@@ -50,6 +44,5 @@ L["tooltip:openConfig"] = "Open the Task Tome configuration window."
 L["tooltip:widgetLocked"] = "The window is locked. Click to unlock it for moving and resizing."
 L["tooltip:widgetUnlocked"] = "The window is unlocked. Click to lock its position and size."
 
--- Config
 L["settings:editingFor"] = "Editing for"
 L["settings:optStateFor"] = "%s's assignment"

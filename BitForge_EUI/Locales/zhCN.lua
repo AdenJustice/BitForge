@@ -1,0 +1,98 @@
+if GetLocale() ~= "zhCN" then return end
+---@class BitForge.EUI
+local ns = select(2, ...)
+local L = ns.locale
+
+-- Subcommand keywords (ui, apply, capture, list, reset, rl) are deliberately
+-- NOT translated. The player types them.
+
+L["cmd:help"] = "命令：ui、apply、capture、list、reset、rl"
+L["cmd:helpUi"] = "ui — 打开布局编辑器"
+L["cmd:helpApply"] = "apply — 将已保存的布局应用到 EllesmereUI"
+L["cmd:helpCapture"] = "capture — 保存 EllesmereUI 当前的几何数据"
+L["cmd:helpList"] = "list [-u] [文本] — 列出可定位的元素"
+L["cmd:helpListUnmanaged"] = "  -u — 仅列出已保存布局未管理的元素"
+L["cmd:helpReset"] = "reset [anchors] — 丢弃已保存的布局"
+L["cmd:deprecated"] = "/bfeui 已废弃 -- 请改用 /bitforge eui"
+
+L["error:noEllesmere"] = "EllesmereUI 未加载"
+L["error:noRegistry"] = "无法获取 EllesmereUI 的元素列表"
+
+L["apply:applied"] = "已应用 %d 个，未变化 %d 个"
+L["apply:anchorOwned"] = "%d 个元素由锚点决定位置（坐标已忽略）"
+L["apply:unknownKeys"] = "%d 个未知键名：%s"
+L["apply:unknownHint"] = "使用 'list' 查看已注册的键名"
+L["apply:failedKeys"] = "%d 个失败：%s"
+L["apply:badAnchors"] = "%d 个锚点未应用："
+L["apply:badAnchorLine"] = "  %s -> %s (%s)"
+L["apply:badAnchorHint"] = "锚点目标是元素键名。若要相对屏幕定位，请使用 point/relPoint"
+L["apply:resolved"] = "%d 个锚点由 BitForge 直接计算（EllesmereUI 无法表达）"
+
+L["reason:unknown"] = "目标不存在"
+L["reason:self"] = "锚定到自身"
+L["reason:cycle"] = "循环引用"
+L["reason:halfpair"] = "需要同时提供 point 和 relPoint"
+L["reason:badpoint"] = "不是锚点名称"
+L["reason:notarget"] = "不能锚定到该元素"
+L["reason:noanchor"] = "该元素无法被锚定"
+L["reason:norect"] = "目标在屏幕上尚无位置"
+L["reason:notextended"] = "没有可解析的 point 和 relPoint"
+
+L["list:none"] = "没有匹配的元素"
+L["list:count"] = "显示 %d 个，未管理 %d/%d"
+L["list:unmanaged"] = "[未管理]"
+L["list:anchored"] = "[锚点 -> %s %s]"
+L["list:noPosition"] = "无位置"
+L["list:readFailed"] = "%s（读取失败）"
+
+L["capture:result"] = "已保存 %d 个元素"
+L["capture:seeded"] = "首次运行：已保存你当前的布局（%d 个元素）。没有移动任何东西。"
+
+L["unlock:attachedWarning"] = "%d 个元素处于附着状态。在此拖动会解除附着。"
+L["unlock:noLongerAttached"] = "已解除附着：%s"
+
+L["reset:confirm"] = "此操作将丢弃已保存的布局。输入 'reset confirm' 继续。"
+L["reset:done"] = "已丢弃保存的布局。下次登录时将从 EllesmereUI 重新建立。"
+L["reset:anchorsConfirm"] = "此操作还会删除你的锚点定义，且无法恢复。输入 'reset anchors confirm' 继续。"
+L["reset:anchorsDone"] = "已丢弃保存的布局与锚点定义。"
+
+L["anchor:badTable"] = "锚点 '%s' 不是一个表"
+L["anchor:badSize"] = "锚点 '%s' 需要正的 w 和 h；没有它们就没有边缘"
+L["anchor:collides"] = "锚点 '%s' 与已有的 EllesmereUI 元素（%s）冲突；请改名"
+
+L["ui:title"] = "BitForge 布局"
+L["ui:filter"] = "搜索"
+L["ui:notReady"] = "仍在读取你的布局 — 请稍后再试"
+L["ui:markAttachedEui"] = "[锚定]"
+L["ui:markAttachedBitForge"] = "[附着]"
+L["ui:markHidden"] = "[隐藏]"
+L["ui:anchorGroup"] = "锚点框体"
+L["ui:anchorNew"] = "+ 新建锚点框体"
+L["ui:target"] = "锚定到"
+L["ui:targetScreen"] = "屏幕"
+L["ui:myPoint"] = "我的角"
+L["ui:theirPoint"] = "对方的角"
+L["ui:offsetX"] = "X 偏移"
+L["ui:offsetY"] = "Y 偏移"
+L["ui:width"] = "宽度"
+L["ui:height"] = "高度"
+L["ui:label"] = "名称"
+L["ui:key"] = "键名"
+L["ui:channelScreen"] = "相对屏幕定位"
+L["ui:channelEui"] = "EllesmereUI 锚点（side = %s）"
+L["ui:channelBitForge"] = "BitForge 锚点 — EllesmereUI 无法表达这一组合"
+L["ui:noResize"] = "该元素无法调整大小"
+L["ui:hiddenNote"] = "已注册，但其框体当前未显示"
+L["ui:pendingNone"] = "没有未保存的更改"
+L["ui:pending"] = "%d 项未保存的更改"
+L["ui:save"] = "保存并重载"
+L["ui:revert"] = "还原"
+L["ui:saveCombat"] = "战斗中无法重载"
+L["ui:invalid"] = "保存前需要修复 %d 个问题"
+L["ui:anchorDelete"] = "删除"
+L["ui:anchorDeleteConfirm"] = "删除锚点框体 '%s'？锚点定义仅存在于此，且无法恢复。"
+L["ui:anchorKeyEmpty"] = "锚点框体需要一个键名"
+L["ui:anchorKeyTaken"] = "已存在名为 '%s' 的锚点框体"
+
+L["apply:deferredCombat"] = "战斗中 — 离开战斗后将应用布局"
+L["apply:deferredDone"] = "战斗结束：已应用 %d 个，未变化 %d 个"

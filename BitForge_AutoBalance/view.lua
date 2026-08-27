@@ -13,7 +13,7 @@ local GetMoneyString = GetMoneyString
 ---@class BitForge.AutoBalance.View
 local view = ns.view
 local model = ns.model
-local L = ns.locale
+local locale = ns.locale
 
 local balanceSetting, ratioSetting
 
@@ -32,13 +32,14 @@ local function BalanceOptions()
 end
 
 local function FormatRatio(value)
-    if value == 0 then return L["settings:always"] end
+    if value == 0 then return locale["settings:always"] end
     return format("%d%%", floor(value * 100 + 0.5))
 end
 
 local function CollectorOptions()
     local container = Settings.CreateControlTextContainer()
-    container:Add("", L["settings:none"])
+    -- "" is the no-collector sentinel: the stored default and balancer.Run agree.
+    container:Add("", locale["settings:none"])
     for _, name in ipairs(BitForge:GetKnownCharacters()) do
         container:Add(name, name)
     end
@@ -46,7 +47,7 @@ local function CollectorOptions()
 end
 
 function view.Init()
-    local cat = BitForge.Settings.NewSubcategory(ADDON_NAME, L["panel:autoBalance"], L)
+    local cat = BitForge.Settings.NewSubcategory(ADDON_NAME, locale["panel:autoBalance"], locale)
 
     cat:AddCheckbox("useCharSettings", model.GetUseCharSettings, OnUseCharChanged)
     balanceSetting = cat:AddDropdown("desiredBalance", model.GetDesiredBalance, model.SetDesiredBalance, BalanceOptions)

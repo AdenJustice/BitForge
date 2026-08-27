@@ -1,5 +1,12 @@
 package-as: BitForge
 
+# BitForge_Dev is a development-only tool that never reaches a release. It is
+# absent from move-folders below AND listed under ignore, and only the second of
+# those actually excludes it: move-folders relocates a folder out of the package
+# root, so an unlisted one stays inside BitForge/ rather than being dropped.
+# Neither is the real guarantee -- Scripts/public_tree.sh keeps it off main, and
+# the packager only ever runs against the public repo -- but a second line of
+# defence should be one that works. Do not "fix" either omission.
 move-folders:
   BitForge/BitForge: BitForge
   BitForge/BitForge_AutoBalance: BitForge_AutoBalance
@@ -8,10 +15,12 @@ move-folders:
   BitForge/BitForge_UPS: BitForge_UPS
   BitForge/BitForge_Openables: BitForge_Openables
   BitForge/BitForge_RepRank: BitForge_RepRank
+  BitForge/BitForge_EUI: BitForge_EUI
 
 enable-nolib-creation: no
 
 ignore:
+  - BitForge_Dev
   - .claude
   - .github
   - .wow-api-audit
@@ -19,5 +28,6 @@ ignore:
   - Scripts
   - tests
   - .gitignore
-  - .luarc.json
+  - .wowluarc.json
+  - "*/.wowluarc.json"
   - CLAUDE.md

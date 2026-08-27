@@ -24,6 +24,7 @@
 
 Init.lua
 ReagentData.lua
+ReleaseNotes.lua
 Locales\enUS.lua
 Locales\koKR.lua
 Locales\deDE.lua
@@ -39,14 +40,17 @@ APIs/Settings.lua
 APIs/UI/Core.lua
 APIs/UI/Templates/Frame.lua
 APIs/UI/Templates/Buttons.lua
+APIs/UI/Templates/CloseButton.lua
 APIs/UI/Templates/EditBox.lua
 APIs/UI/Templates/Dropdown.lua
 APIs/UI/Templates/Bar.lua
 APIs/UI/Templates/Slider.lua
 APIs/UI/Templates/Tab.lua
+APIs/UI/Templates/TextWindow.lua
 APIs/Utils.lua
 
 events.lua
 model.lua
 view.lua
-control.lua
+control\commands.lua
+control\control.lua

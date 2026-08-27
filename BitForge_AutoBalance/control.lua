@@ -10,7 +10,7 @@ local GetMoneyString = GetMoneyString
 
 local enum = ns.enum
 local model = ns.model
-local E = BitForge.Events
+local events = BitForge.Events
 
 ---@class BitForge.AutoBalance.Control
 local control = ns.control
@@ -27,9 +27,7 @@ local ACCOUNT_BANK = Enum.BankType.Account
 
 local playerName
 
--- ================================================================================
 -- Transfer
--- ================================================================================
 --
 -- The only code in the module that touches C_Bank. It never prints: the message
 -- waits for PLAYER_MONEY to confirm the server actually moved the money, so a
@@ -110,10 +108,6 @@ end
 
 control.transfer = transfer
 
--- ================================================================================
--- Balancer
--- ================================================================================
-
 local balancer = {}
 
 local function canTransferMoney()
@@ -154,9 +148,7 @@ end
 
 control.balancer = balancer
 
--- ================================================================================
 -- Readiness
--- ================================================================================
 --
 -- Bank money is not necessarily readable the instant the banker frame shows.
 -- Rather than guessing a settle delay, poll until the bank reports it can move
@@ -196,10 +188,6 @@ local function pollReady(chainGeneration)
         pollReady(chainGeneration)
     end)
 end
-
--- ================================================================================
--- Events
--- ================================================================================
 
 -- BankFrame registers three interaction types against the same frame
 -- (Blizzard_UIPanels_Game/Mainline/BankFrame.lua:101-111). Which one the server
@@ -246,7 +234,7 @@ local function onPlayerReady()
     }, startModule)
 end
 
-ns:Subscribe(E.PLAYER_INTERACTION_MANAGER_FRAME_SHOW, onInteractionShow)
-ns:Subscribe(E.PLAYER_INTERACTION_MANAGER_FRAME_HIDE, onInteractionHide)
-ns:Subscribe(E.PLAYER_MONEY, onPlayerMoney)
-ns:Subscribe(E.PLAYER_READY, onPlayerReady)
+ns:Subscribe(events.PLAYER_INTERACTION_MANAGER_FRAME_SHOW, onInteractionShow)
+ns:Subscribe(events.PLAYER_INTERACTION_MANAGER_FRAME_HIDE, onInteractionHide)
+ns:Subscribe(events.PLAYER_MONEY, onPlayerMoney)
+ns:Subscribe(events.PLAYER_READY, onPlayerReady)

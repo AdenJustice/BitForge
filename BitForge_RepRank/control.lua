@@ -25,10 +25,8 @@ local view = ns.view
 ---@class BitForge.RepRank.Control
 local control = ns.control
 
-local E = BitForge.Events
+local events = BitForge.Events
 
---- The owner every subscription is registered under. Core requires one, and
---- routing them all through ns keeps the module's unsubscribes symmetrical.
 function ns:Subscribe(event, handler)
     BitForge.Subscribe(event, handler, self)
 end
@@ -36,10 +34,6 @@ end
 function ns:Unsubscribe(event)
     BitForge.Unsubscribe(event, self)
 end
-
--- =========================================================
--- Scanner
--- =========================================================
 
 ---@class BitForge.RepRank.Control.Scanner
 local scanner = {}
@@ -59,11 +53,10 @@ local started = false
 
 --- Announces paragon chests that appeared since the stored reading.
 ---
---- A local rather than a member of scanner: both scan paths call it, and nothing
---- outside this file should be able to. The `started` check is redundant with
---- the collection gate and kept anyway -- an empty list is the only thing this
---- should ever be handed before startup finishes, and it costs one comparison
---- to make that true rather than merely expected.
+--- The `started` check is redundant with the collection gate and kept anyway --
+--- an empty list is the only thing this should ever be handed before startup
+--- finishes, and it costs one comparison to make that true rather than merely
+--- expected.
 ---@param transitions { charKey: string, factionID: number, name: string }[]
 local function announceTransitions(transitions)
     if not started or #transitions == 0 then return end
@@ -151,19 +144,10 @@ end
 --- character is, and which of the four kinds of step that is.
 ---
 --- Precedence and arithmetic copy Blizzard's watched-faction HUD bar,
---- ReputationStatusBarMixin:Update, rather than the reputation panel's. The
+--- ReputationStatusBarMixin:Update, rather than the reputation panel's: the
 --- panel resolves friendship ahead of major faction and leaves paragon out of
 --- the bar entirely, so a character maxed on a major faction would sit at a
 --- permanently full renown bar there while still banking paragon every week.
---- Paragon progress is one of the keys this module ranks characters by, so the
---- order that shows it is the one that matches what the window is for.
----
---- Nothing here asks the client a question recordFor has already asked. All four
---- of those answers arrive as arguments, because a full scan runs this against
---- every visible faction on the account inside one frame -- on a mature account
---- that is several hundred rows, and a second answer to a settled question buys
---- nothing at all. Only HasMaximumRenown is read here, because only the bar
---- wants it.
 ---@param factionData      table
 ---@param isMajor          boolean
 ---@param majorData        table|nil  GetMajorFactionData's answer, when isMajor
@@ -260,8 +244,10 @@ end
 --- them. This runs against every visible faction on the account in a single
 --- frame on the full scan, so the duplicates are not free.
 ---@param factionData table
+---@param group        string|nil  Reputation pane heading this faction sits under
+---@param groupIndex   number|nil  That heading's position in the pane
 ---@return table record
-local function recordFor(factionData)
+local function recordFor(factionData, group, groupIndex)
     local factionID = factionData.factionID
     local isMajor = C_Reputation.IsMajorFaction(factionID)
     local renownLevel, majorData
@@ -287,6 +273,14 @@ local function recordFor(factionData)
         isMajor       = isMajor,
         expansionID   = majorData and majorData.expansionID,
         uiPriority    = majorData and majorData.uiPriority,
+        -- The reputation pane's own top-level headings are expansion names, and
+        -- they are the only expansion grouping the client offers: FactionData
+        -- carries no expansion field, and expansionID exists on MajorFactionData
+        -- alone. Nil from scanner.Refresh, which reads by ID and never walks a
+        -- header -- MergeFaction merges field-wise, so the full scan's answer
+        -- stands rather than being wiped by the next refresh.
+        group         = group,
+        groupIndex    = groupIndex,
     })
 
     return {
@@ -370,11 +364,22 @@ function scanner.Full()
     local charKey = BitForge:GetCurrentCharacter()
     local records, transitions = {}, {}
 
+    -- Tracked across the walk rather than looked up per faction: the pane is a
+    -- flat list in display order, so a faction belongs to the last top-level
+    -- heading above it. isChild separates a sub-heading from the expansion
+    -- heading that owns it, exactly as Blizzard's own ReputationFrame does.
+    local group, groupIndex, headerCount
+
     for index = 1, C_Reputation.GetNumFactions() do
         local factionData = C_Reputation.GetFactionDataByIndex(index)
 
+        if factionData and factionData.isHeader and not factionData.isChild then
+            headerCount = (headerCount or 0) + 1
+            group, groupIndex = factionData.name, headerCount
+        end
+
         if factionData and (not factionData.isHeader or factionData.isHeaderWithRep) then
-            local record = recordFor(factionData)
+            local record = recordFor(factionData, group, groupIndex)
 
             -- Checked before the write, because NewlyPending compares against
             -- what is still stored -- and gated on `started`, so a scan that
@@ -541,10 +546,6 @@ end
 
 control.scanner = scanner
 
--- =========================================================
--- Alerts
--- =========================================================
-
 ---@class BitForge.RepRank.Control.Alerts
 local alerts = {}
 
@@ -614,17 +615,13 @@ control.alerts = alerts
 
 --- Marks the database safe to touch.
 ---
---- Called at the top of control.Start, which core invokes only once the schema
---- upgrade has resolved. Public so a test can arm the scanner without standing
---- up the whole of startup.
+--- Public so a test can arm the scanner without standing up the whole of
+--- startup.
 function control.MarkReady()
     ready = true
 end
 
 --- Marks startup complete, arming the live transition announcements.
----
---- Called at the bottom of control.Start, for the reason spelled out there.
---- Public for the same reason MarkReady is.
 function control.MarkStarted()
     started = true
 end
@@ -634,8 +631,6 @@ end
 --- Order matters: the scan writes the store the summary reads, so announcing
 --- first would report the previous session's state.
 function control.Start()
-    -- First: everything below this line reads or writes the database, and core
-    -- has only just finished resolving it.
     control.MarkReady()
 
     view.toast.Register()
@@ -650,12 +645,10 @@ function control.Start()
     scanner.Request()
     alerts.AnnounceLogin()
 
-    -- Last: from here a scan announces what changed, rather than repeating the
-    -- summary that just ran.
     control.MarkStarted()
 end
 
-ns:Subscribe(E.PLAYER_READY, function()
+ns:Subscribe(events.PLAYER_READY, function()
     BitForge:UpgradeModuleDB(ADDON_NAME, {
         version = enum.SCHEMA_VERSION,
         steps   = {
@@ -667,10 +660,10 @@ ns:Subscribe(E.PLAYER_READY, function()
     }, control.Start)
 end)
 
-ns:Subscribe(E.UPDATE_FACTION, function()
+ns:Subscribe(events.UPDATE_FACTION, function()
     scanner.ScheduleRefresh()
 end)
 
-ns:Subscribe(E.MAJOR_FACTION_RENOWN_LEVEL_CHANGED, function()
+ns:Subscribe(events.MAJOR_FACTION_RENOWN_LEVEL_CHANGED, function()
     scanner.ScheduleRefresh()
 end)

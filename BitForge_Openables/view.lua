@@ -18,6 +18,19 @@ local view = ns.view
 local BUTTON_NAME = ADDON_NAME .. "Button"
 local HIDER_NAME = ADDON_NAME .. "Hider"
 
+-- Not translated, and deliberately not a locale key: it is a symbol rather than
+-- a sentence, and every locale writes it the same way.
+local QUEST_MARK = "!"
+
+-- Sampled from the glyph in Interface/ContainerFrame/UI-Icon-QuestBang, whose
+-- body is a flat 255/209/0 -- the game's own gold, so the drawn mark matches the
+-- one the bags show without borrowing the texture that carries it.
+local QUEST_MARK_COLOR = CreateColor(1, 0.82, 0)
+
+-- A fraction of the button rather than a fixed height, so the mark holds its
+-- proportion across the 24-64 the size slider allows.
+local QUEST_MARK_RATIO = 0.5
+
 local pendingCandidate
 local pendingDirty = false
 local currentCandidate
@@ -49,10 +62,6 @@ local function applyAttributes(candidate)
         button:SetAttribute("item", "item:" .. candidate.itemID)
     end
 end
-
--- ================================================================================
--- Tooltip
--- ================================================================================
 
 -- Debug output is deliberately not routed through ns.locale: it appears only
 -- for a profile that has hand-set the module's debug flag, so translating it
@@ -104,16 +113,17 @@ local function addDebugLines(candidate)
         C_Item.GetItemInfoInstant(candidate.itemID)
 
     GameTooltip:AddLine(" ")
-    GameTooltip:AddLine(("[debug] item %d  bag %d slot %d"):format(
+    GameTooltip:AddLine(("[OP] item %d  bag %d slot %d"):format(
         candidate.itemID, candidate.bag, candidate.slot), DEBUG_COLOR:GetRGB())
-    GameTooltip:AddLine(("[debug] shown because: %s"):format(DebugBasis(candidate)),
+    GameTooltip:AddLine(("[OP] shown because: %s"):format(DebugBasis(candidate)),
         DEBUG_COLOR:GetRGB())
-    GameTooltip:AddLine(("[debug] class %s / %s (%s/%s)"):format(
+    GameTooltip:AddLine(("[OP] class %s / %s (%s/%s)"):format(
         tostring(itemType), tostring(itemSubType), tostring(classID), tostring(subClassID)),
         DEBUG_COLOR:GetRGB())
-    GameTooltip:AddLine(("[debug] priority %s (%d)  locked %s  cooldown %s"):format(
+    GameTooltip:AddLine(("[OP] priority %s (%d)  locked %s  cooldown %s  deferred %s"):format(
         PriorityName(candidate.priority), candidate.priority,
-        tostring(candidate.locked), tostring(candidate.onCooldown)), DEBUG_COLOR:GetRGB())
+        tostring(candidate.locked), tostring(candidate.onCooldown),
+        tostring(candidate.deferred)), DEBUG_COLOR:GetRGB())
 end
 
 -- What the open tooltip is describing. The post-call below fires for every item
@@ -147,6 +157,7 @@ local function OnItemTooltip(tooltip)
     tooltip:AddLine(locale["tooltip:use"])
     tooltip:AddLine(locale["tooltip:skip"])
     tooltip:AddLine(locale["tooltip:blacklist"])
+    tooltip:AddLine(locale["tooltip:report"])
     if not model.GetLocked() then
         tooltip:AddLine(locale["tooltip:drag"])
     end
@@ -167,10 +178,10 @@ end
 
 -- OnEnter fires only when the cursor crosses the button's edge, and every click
 -- swaps the candidate under a cursor that never moved: right-click skips or
--- blacklists, left-click consumes the item and the bag update rescans. Without
--- this the tooltip kept describing the previous item until the player moved the
--- mouse away and back. IsOwned keeps it to our own tooltip -- some other frame's
--- tooltip is not ours to rebuild or hide.
+-- blacklists, left-click uses the item and defers it. Without this the tooltip
+-- kept describing the previous item until the player moved the mouse away and
+-- back. IsOwned keeps it to our own tooltip -- some other frame's tooltip is
+-- not ours to rebuild or hide.
 local function refreshTooltip(candidate)
     if not GameTooltip:IsOwned(view.button) then return end
     if not candidate then
@@ -198,6 +209,10 @@ local function updateFace(candidate)
     else
         button.Count:Hide()
     end
+
+    -- Set on every candidate, not only the quest ones: the button is reused, so
+    -- a mark left up from the last item would follow the next one.
+    button.QuestBang:SetShown(candidate.startsQuest == true)
 
     view.RefreshCooldown()
     button:Show()
@@ -273,12 +288,20 @@ function view.ApplyClickRegistration()
 end
 
 function view.ApplySize()
+    if not view.button then return end
     -- Reachable from the settings slider while the Blizzard Settings UI is
     -- open in combat. Skipped here, then re-applied from onRegenEnabled once
     -- combat ends, so the change is never lost — see view.ApplyClickRegistration.
     if InCombatLockdown() then return end
     local size = model.GetButtonSize()
     view.button:SetSize(size, size)
+    -- The one region that does not follow the button on its own. Height and
+    -- weight ride on the same SetFont: WoW has no bold face, THICKOUTLINE is
+    -- reachable only as a SetFont flag, and re-setting both together is what
+    -- keeps the mark bold across a resize. GetFont answers the FontFamily
+    -- member already resolved for this client's alphabet, so the face survives.
+    local face = view.button.QuestBang:GetFont()
+    view.button.QuestBang:SetFont(face, math.floor(size * QUEST_MARK_RATIO), "THICKOUTLINE")
 end
 
 function view.ResetPosition()
@@ -335,13 +358,38 @@ function view.Init()
     button.HotKey = button:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmallGray")
     button.HotKey:SetPoint("TOPRIGHT", button, "TOPRIGHT", -2, -2)
 
+    -- Marks an item that offers a quest, on Blizzard's own rule of questID and
+    -- not isActive (ContainerFrame.lua), which is exactly what earns
+    -- PRIORITY.QUEST here.
+    --
+    -- Drawn rather than textured. UI-Icon-QuestBang is a framed tile, not a
+    -- glyph: a 64x64 rounded border with a transparent middle and the mark in
+    -- its upper left. Blizzard gets away with that over a bag slot, where the
+    -- border is the point, but over this button it reads as a frame with a
+    -- small mark in the corner, and cropping to the glyph leaves it stretched
+    -- to a square it was never drawn for. Text has neither problem; its height
+    -- and its weight are both re-driven from the button's size in
+    -- view.ApplySize.
+    --
+    -- Outlined, because it sits over an item icon that can be any colour.
+    -- Sublevel 2 mirrors the bag slot's own ordering, holding the mark above
+    -- Count and HotKey by declaration rather than by creation order.
+    button.QuestBang = button:CreateFontString(nil, "OVERLAY", "NumberFontNormalHuge")
+    button.QuestBang:SetDrawLayer("OVERLAY", 2)
+    -- Top left because Count and HotKey both sit on the right edge, so the
+    -- mark clears them at every size the slider allows.
+    button.QuestBang:SetPoint("TOPLEFT", button, "TOPLEFT", 2, -2)
+    button.QuestBang:SetText(QUEST_MARK)
+    button.QuestBang:SetTextColor(QUEST_MARK_COLOR:GetRGB())
+    button.QuestBang:Hide()
+
     button.cooldown = CreateFrame("Cooldown", nil, button, "CooldownFrameTemplate")
     button.cooldown:SetAllPoints(button)
 
     button:SetFrameStrata("MEDIUM")
     button:RegisterForDrag("LeftButton")
     -- type2 stays nil so right-click performs no secure action and falls through
-    -- to PostClick, which Task 8 installs.
+    -- to the PostClick handler installed below.
     button:SetAttribute("type2", nil)
 
     button:SetScript("OnDragStart", function(self)
@@ -364,14 +412,39 @@ function view.Init()
     end)
 
     button:SetScript("PostClick", function(self, mouseButton)
-        if mouseButton ~= "RightButton" then return end
         if not currentCandidate then return end
 
-        if IsControlKeyDown() then
-            model.SetBlacklisted(currentCandidate.itemID, true)
-        else
-            model.Skip(currentCandidate.itemID)
+        -- Two modifiers, because plain right click is Skip and this sits on the
+        -- same button. Left click is unavailable at any modifier: type1 is a
+        -- macro or an item, so every left click uses the item.
+        if mouseButton == "RightButton" and IsShiftKeyDown() and IsAltKeyDown() then
+            BitForge:ShowReport(
+                control.ReportText(currentCandidate.bag, currentCandidate.slot,
+                    currentCandidate.itemID),
+                locale["report:blurb"])
+            return
         end
+
+        if mouseButton == "LeftButton" then
+            -- Recorded whether the use worked or not. The secure click's
+            -- outcome is invisible from here, and a failed use changes no bags
+            -- -- so nothing fires a rescan, and a rescan on its own would not
+            -- help either, model.Rank being deterministic over bags that have
+            -- not moved. The deferral is the state change that makes the next
+            -- click reach a different item, and it leaves this one in the queue.
+            model.Defer(currentCandidate.itemID)
+        elseif mouseButton == "RightButton" then
+            if IsControlKeyDown() then
+                model.SetBlacklisted(currentCandidate.itemID, true)
+            else
+                model.Skip(currentCandidate.itemID)
+            end
+        else
+            -- Only type1 is ever set, so no other button acted on the item and
+            -- nothing about the queue has changed.
+            return
+        end
+
         control.scanner.RequestScan()
     end)
 
@@ -408,10 +481,6 @@ function view.Init()
 
     view.settingsPanel.Init()
 end
-
--- ================================================================================
--- Settings panel
--- ================================================================================
 
 local settingsPanel = {}
 
@@ -451,16 +520,14 @@ function settingsPanel.Init()
     -- initializers only, and has no way to parent a raw frame into the list.
     -- A settings button opening a standalone window (ns.view.blacklistFrame) is
     -- this suite's established pattern instead — see BitForge_UPS's
-    -- assignmentFrame.
+    -- curationWindow.
     category:AddInitializer(CreateSettingsButtonInitializer(
         "", locale["settings:manageBlacklist"], view.blacklistFrame.Open, nil, false))
 end
 
 view.settingsPanel = settingsPanel
 
--- ================================================================================
 -- Blacklist frame
--- ================================================================================
 --
 -- A standalone window rather than an inline settings section (see the comment in
 -- settingsPanel.Init above for why). Owning the frame is also what makes Refresh
@@ -479,10 +546,14 @@ local BLACKLIST_ROW_HEIGHT = 24
 -- Item names arrive asynchronously. Rows render as an itemID placeholder until
 -- ITEM_DATA_LOAD_RESULT fills them in; a stale itemID stays a placeholder rather
 -- than erroring.
+--
+-- The load goes through the controller because a blacklisted item is often not
+-- in the bags at all, so nothing else registers it as pending and the result
+-- would be discarded before it could redraw this row.
 local function BlacklistRowLabel(itemID)
     local name = C_Item.GetItemNameByID(itemID)
     if name then return name end
-    C_Item.RequestLoadItemDataByID(itemID)
+    control.scanner.RequestItemData(itemID)
     return locale["blacklist:unknownItem"]:format(itemID)
 end
 
@@ -568,9 +639,10 @@ local function CreateMainFrame()
     BitForge.UI.Skin.ApplyColorTexture(shell.borderLeft, colors.edge)
     BitForge.UI.Skin.ApplyColorTexture(shell.borderRight, colors.edge)
 
-    local closeButton = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
+    local closeButton = BitForge.UI.CreateCloseButton(mainFrame)
     closeButton:SetPoint("TOPRIGHT", mainFrame, "TOPRIGHT", -2, -2)
     closeButton:SetScript("OnClick", function() mainFrame:Hide() end)
+    mainFrame.closeButton = closeButton
 
     local title = mainFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOP", mainFrame, "TOP", 0, -8)

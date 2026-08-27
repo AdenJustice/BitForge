@@ -1,9 +1,8 @@
+if GetLocale() ~= "deDE" then return end
 ---@class BitForge.Openables
 local ns = select(2, ...)
-if GetLocale() ~= "deDE" then return end
 local L = ns.locale
 
--- Settings panel
 L["panel:title"] = "Öffenbares"
 L["settings:enabled"] = "Öffenbares aktivieren"
 L["settings:enabledTooltip"] = "Zeigt eine Schaltfläche für den nächsten benutzbaren Gegenstand in deinen Taschen"
@@ -18,19 +17,19 @@ L["settings:showCooldownTooltip"] = "Zeigt die Abklingzeit auf der Schaltfläche
 L["settings:resetPosition"] = "Position zurücksetzen"
 L["settings:manageBlacklist"] = "Ausschlussliste verwalten"
 
--- Button tooltip
 L["tooltip:use"] = "Linksklick zum Öffnen oder Benutzen."
 L["tooltip:skip"] = "Rechtsklick, um für diese Sitzung zu überspringen."
 L["tooltip:blacklist"] = "Strg + Rechtsklick, um dauerhaft auszuschließen."
+L["tooltip:report"] = "Umschalt + Alt + Rechtsklick, um dieses Urteil zu melden."
 L["tooltip:drag"] = "Alt + Ziehen zum Verschieben."
 
--- Blacklist
+L["report:blurb"] = "Dieser Bericht enthält den Gegenstand, wie BitForge ihn eingestuft hat, den Text seines Tooltips und welche Berufe dieser Charakter kennt. Nichts hier nennt deinen Charakter, deinen Realm, deine Gilde oder deine Fraktion."
+
 L["blacklist:windowTitle"] = "Ausgeschlossene Gegenstände"
 L["blacklist:empty"] = "Es sind keine Gegenstände ausgeschlossen."
 L["blacklist:remove"] = "Entfernen"
 L["blacklist:clearAll"] = "Alle löschen"
 L["blacklist:unknownItem"] = "Gegenstand %d"
 
--- Key bindings
 L["binding:header"] = "BitForge Öffenbares"
 L["binding:use"] = "Öffenbaren Gegenstand benutzen"

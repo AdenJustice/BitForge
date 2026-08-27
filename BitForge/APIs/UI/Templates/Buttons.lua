@@ -5,10 +5,6 @@ local PixelUtil = PixelUtil
 local UI = BitForge.UI
 local colors = UI.Colors
 
--- =========================================================
--- Shared constants
--- =========================================================
-
 local BUTTON_H_PADDING = 48 -- 24 px each side
 local PP = UI.GetPixel()
 local BACKDROP_CONFIG = {
@@ -23,10 +19,6 @@ local BORDER_BACKDROP = {
     edgeSize = PP,
     insets = { left = PP, right = PP, top = PP, bottom = PP },
 }
-
--- =========================================================
--- Shared helpers
--- =========================================================
 
 --- Re-anchor icon and label after any resize.
 local function updateLayout(self, width, height)
@@ -56,10 +48,6 @@ local function updateLayout(self, width, height)
         self.Label:SetAllPoints()
     end
 end
-
--- =========================================================
--- ButtonMixin — MD contained button
--- =========================================================
 
 ---@class BitForge.ButtonMixin : Button, BackdropTemplate
 local ButtonMixin = {}
@@ -194,9 +182,6 @@ end
 
 UI.Mixins.Button = ButtonMixin
 
--- =========================================================
--- CheckButtonMixin — toggle button with border-colour feedback
--- =========================================================
 -- For checkbutton, `*Texture` is for tick image
 -- So, if you want to use custom images for `tick`, customize `*Texture`s
 -- 1) button with only (custom) tick image
@@ -252,7 +237,9 @@ do
     end
 
     local function OnEnter(self)
-        if not self:GetChecked() then UpdateState(self, "HOVER") end
+        -- IsEnabled first: a greyed button still takes OnEnter, so without this
+        -- pointing at one brightens its label to textHover.
+        if self:IsEnabled() and not self:GetChecked() then UpdateState(self, "HOVER") end
         if self.tooltipText then
             local r, g, b = colors.textHover:GetRGB()
             GameTooltip:SetOwner(self, self.tooltipAnchor or "ANCHOR_RIGHT")
@@ -262,7 +249,7 @@ do
     end
 
     local function OnLeave(self)
-        if not self:GetChecked() then UpdateState(self, "NORMAL") end
+        if self:IsEnabled() and not self:GetChecked() then UpdateState(self, "NORMAL") end
         if self.tooltipText then GameTooltip:Hide() end
     end
 
@@ -332,6 +319,13 @@ do
         self:HookScript("OnLeave", OnLeave)
         self:HookScript("OnSizeChanged", updateLayout)
         hooksecurefunc(self, "SetChecked", HookSetChecked)
+        -- The greyed state, which SetChecked cannot reach. Scripts rather than
+        -- a hook on SetEnabled, matching ButtonMixin above: the client fires
+        -- these whichever of SetEnabled, Enable and Disable was called, and a
+        -- caller that had to grey the Label itself would leave two writers on
+        -- one region -- one of them unaware of CHECKED.
+        self:HookScript("OnDisable", function(btn) UpdateState(btn, "DISABLED") end)
+        self:HookScript("OnEnable", HookSetChecked)
 
         HookSetChecked(self)
     end
@@ -376,10 +370,6 @@ do
 end
 
 UI.Mixins.CheckButton = CheckButtonMixin
-
--- =========================================================
--- Factories
--- =========================================================
 
 --- Create an MD contained button.
 ---@param name   string?

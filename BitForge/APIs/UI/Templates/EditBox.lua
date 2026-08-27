@@ -2,10 +2,6 @@ local UI = BitForge.UI
 ---@type BitForge.UI.Colors
 local colors = UI.Colors
 
--- =========================================================
--- Shared backdrop config
--- =========================================================
-
 local PP = UI.GetPixel()
 local BACKDROP_CONFIG = {
     bgFile = "Interface/Buttons/WHITE8X8",
@@ -35,10 +31,6 @@ end
 local function OnEnterPressed(self) self:ClearFocus() end
 local function OnEscapePressed(self) self:ClearFocus() end
 
--- =========================================================
--- EditBoxMixin — single-line input
--- =========================================================
-
 ---@class BitForge.EditBoxMixin : EditBox, BackdropTemplate
 local EditBoxMixin = {}
 
@@ -60,10 +52,6 @@ end
 function EditBoxMixin:OnTextChanged() end
 
 UI.Mixins.EditBox = EditBoxMixin
-
--- =========================================================
--- ScrollEditBoxMixin — multi-line scrollable input
--- =========================================================
 
 ---@class BitForge.ScrollEditBoxMixin : Frame, ScrollingEditBoxTemplate
 local ScrollEditBoxMixin = {}
@@ -96,10 +84,6 @@ function ScrollEditBoxMixin:OnMouseDown()
 end
 
 UI.Mixins.ScrollEditBox = ScrollEditBoxMixin
-
--- =========================================================
--- Factories
--- =========================================================
 
 ---@param parent any
 ---@return BitForge.EditBoxMixin

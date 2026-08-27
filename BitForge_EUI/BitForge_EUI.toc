@@ -1,0 +1,39 @@
+## Interface: 120100
+## Title: |cFFFFD700Bit|cFFB87333Forge|r – EUI
+## Notes: Precise, numeric control over EllesmereUI's frame positions
+## Notes-koKR: EllesmereUI 프레임 위치의 정밀한 수치 제어
+## Notes-deDE: Präzise, numerische Kontrolle über EllesmereUIs Rahmenpositionen
+## Notes-esES: Control numérico preciso de las posiciones de marco de EllesmereUI
+## Notes-esMX: Control numérico preciso de las posiciones de marco de EllesmereUI
+## Notes-frFR: Contrôle numérique précis des positions de cadre d'EllesmereUI
+## Notes-itIT: Controllo numerico preciso delle posizioni dei riquadri di EllesmereUI
+## Notes-ptBR: Controle numérico preciso das posições de quadro do EllesmereUI
+## Notes-ruRU: Точное числовое управление позициями рамок EllesmereUI
+## Notes-zhCN: 精确的数值控制 EllesmereUI 框体位置
+## Notes-zhTW: 精確的數值控制 EllesmereUI 框體位置
+## Author: AdenJustice
+## Version: @project-version@
+## Dependencies: BitForge, EllesmereUI
+
+Init.lua
+Locales\enUS.lua
+Locales\koKR.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+model.lua
+view\view.lua
+view\editor.lua
+view\list.lua
+view\detail.lua
+adapters.lua
+control\resolver.lua
+control\sync.lua
+control\editor.lua
+control\control.lua
