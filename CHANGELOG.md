@@ -1,5 +1,11 @@
 # Changelog
 
+## [v12.1.0.9] — 2026-08-30
+
+### Changed
+
+- **BitForge has a mark of its own.** The minimap button was wearing the game's engineering icon, and the addon list and the addon compartment entry showed nothing at all — the icon the addon claimed to carry had never been drawn. All three now show the suite's own.
+
 ## [v12.1.0.8] — 2026-08-27
 
 ### Changed

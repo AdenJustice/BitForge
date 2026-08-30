@@ -140,10 +140,7 @@ local PRESS_INSET = 0.05
 -- allows, since SetTexCoord is rejected once a texture carries a mask.
 local PRESS_SIZE = ICON_SIZE / (1 - 2 * PRESS_INSET)
 
--- Stands in for a suite icon of BitForge's own, which does not exist yet:
--- BitForge.toc's IconTexture already names a file that has never been added.
--- See section 6 of the design (#58).
-local PLACEHOLDER_ICON = "Interface\\Icons\\Trade_Engineering"
+local SUITE_ICON = "Interface\\AddOns\\BitForge\\Media\\icon"
 
 local button
 
@@ -188,7 +185,7 @@ function minimapButton.Create(onClick, onPositionChanged)
     local icon = button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(ICON_SIZE, ICON_SIZE)
     icon:SetPoint("CENTER")
-    icon:SetTexture(PLACEHOLDER_ICON)
+    icon:SetTexture(SUITE_ICON)
 
     -- Anchored to the button rather than applied with SetMask, so the circle
     -- stays put while the icon resizes underneath it. SetMask binds the mask to

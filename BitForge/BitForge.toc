@@ -14,7 +14,7 @@
 ## Author: AdenJustice
 ## Version: @project-version@
 ## SavedVariables: BitForgeDB
-## IconTexture: Interface/AddOns/BitForge/icon
+## IconTexture: Interface/AddOns/BitForge/Media/icon
 ## X-Curse-Project-ID: 1475089
 ## X-Wago-ID: bGoyJB60
 ## OptionalDeps: EllesmereUI

@@ -11,16 +11,16 @@
 -- gone, not missing: CHANGELOG.md still has them, this table never will.
 --
 -- `lead` IS OPTIONAL. It is a bullet's bold prefix, where the source bullet
--- had one; 3 of the 101 items below have none, so a consumer
+-- had one; 2 of the 98 items below have none, so a consumer
 -- must not assume every item carries one.
 --
 -- `sep` IS THE SEPARATOR THE CHANGELOG WROTE between a lead and the rest of
 -- the bullet -- an em dash or a colon, recorded rather than dropped. ABSENT
--- MEANS THE SOURCE WROTE NEITHER, not that one went missing: 97 of the
--- 98 leads below have no `sep`, and supplying one for those strands a
+-- MEANS THE SOURCE WROTE NEITHER, not that one went missing: 95 of the
+-- 96 leads below have no `sep`, and supplying one for those strands a
 -- predicate with nothing in front of it ("BatchSell -- now asks ...").
 --
--- 5 releases, 101 items, v12.1.0.8 down to v12.1.0.4.
+-- 5 releases, 98 items, v12.1.0.9 down to v12.1.0.5.
 
 ---@class BitForge.Core
 local ns = select(2, ...)
@@ -29,6 +29,18 @@ local ns = select(2, ...)
 local enum = ns.enum
 
 enum.RELEASE_NOTES = {
+    {
+        version = "v12.1.0.9",
+        date = "2026-08-30",
+        sections = {
+            {
+                heading = "Changed",
+                items = {
+                    { lead = "BitForge has a mark of its own.", text = "The minimap button was wearing the game's engineering icon, and the addon list and the addon compartment entry showed nothing at all — the icon the addon claimed to carry had never been drawn. All three now show the suite's own." },
+                },
+            },
+        },
+    },
     {
         version = "v12.1.0.8",
         date = "2026-08-27",
@@ -201,31 +213,6 @@ enum.RELEASE_NOTES = {
                     { lead = "BatchSell:", text = "the sell list is no longer empty when you reopen a vendor. Closing and immediately reopening showed nothing until you pressed Refresh, on every visit after the first had cleared your junk." },
                     { lead = "TaskTome:", text = "the tracker window can be moved. Unlocking it with the padlock did nothing at all — the window never took mouse input, so the drag it was listening for could never begin. Locking it still pins it in place." },
                     { lead = "TaskTome:", text = "the tracker window has a close button. Until now the only way to put it away was the minimap icon." },
-                },
-            },
-        },
-    },
-    {
-        version = "v12.1.0.4",
-        date = "2026-08-22",
-        sections = {
-            {
-                heading = "Added",
-                items = {
-                    { lead = "BatchSell", text = "now keeps crafting reagents that a profession on one of your characters actually uses, instead of judging them on expansion age alone. On by default — turn off \"Keep Reagents Your Professions Use\" for the old behaviour." },
-                    { lead = "UPS", text = "now deposits only the reagents your professions can craft with. Turn off \"Only deposit reagents you can use\" to send everything to the Warband Bank for the auction house, as before." },
-                },
-            },
-            {
-                heading = "Changed",
-                items = {
-                    { text = "Your characters' professions are remembered by BitForge itself now rather than by UPS, so BatchSell can use them too. Nothing to do — whatever UPS already recorded is carried over." },
-                },
-            },
-            {
-                heading = "Fixed",
-                items = {
-                    { lead = "BatchSell:", text = "the list of items that cannot be disenchanted was badly incomplete — about 2,000 entries where the real figure is over 15,000. Shirts, tabards, rings, trinkets, cloaks and every cosmetic item were missing entirely, so BatchSell treated them as disenchantable and offered them for sale on that basis. All of them are now recognised." },
                 },
             },
         },
