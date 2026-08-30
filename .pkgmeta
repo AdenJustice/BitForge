@@ -73,3 +73,27 @@ ignore:
   - .wowluarc.json
   - "*/.wowluarc.json"
   - CLAUDE.md
+
+  # An external is a checkout of the library's whole repository, so it arrives
+  # with everything that repository keeps beside the library. LibDeflate's is an
+  # ldoc build -- seven .html files and a stylesheet under docs/ -- and
+  # CurseForge refuses an archive carrying web content.
+  #
+  # It refuses it *after* the upload returns, out of band, saying only "General
+  # error processing file", so the packager reports Success! and the release
+  # workflow stays green: v12.1.0.8 and v12.1.0.9 both reached GitHub and
+  # neither reached CurseForge. tests/python/test_pkgmeta_externals.py is what
+  # catches this now, because nothing in the pipeline itself does.
+  #
+  # WeakAuras2 externals the same GitHub URL and strips docs, examples and *.md
+  # the same way. LibDeflate's own .pkgmeta already drops tests/ and tools/, but
+  # not docs/, which is generated output it commits.
+  - BitForge/Libs/LibDeflate/docs
+  - BitForge/Libs/LibDeflate/examples
+  - BitForge/Libs/LibDeflate/tests
+  - BitForge/Libs/LibDeflate/*.md
+  - BitForge/Libs/LibDeflate/*.rockspec
+  - BitForge/Libs/LibStub/docs
+  - BitForge/Libs/LibStub/examples
+  - BitForge/Libs/LibStub/tests
+  - BitForge/Libs/LibStub/*.md

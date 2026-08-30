@@ -47,6 +47,27 @@ jobs:
           path: .release/*.zip
           retention-days: 7
 
+      # CurseForge refuses an archive carrying web content, and it decides that
+      # after the upload returns -- the packager prints "Success!" either way, so
+      # nothing above can see it. That is how v12.1.0.8 and v12.1.0.9 reached
+      # GitHub and Wago while CurseForge dropped both without a red build.
+      #
+      # This runs last, once the zip is on the release where it can be read. It
+      # cannot un-send what the packager already uploaded; what it buys is
+      # finding out now rather than whenever somebody opens the project page.
+      # .pkgmeta's ignore list is what actually keeps these files out of the
+      # package -- this only reports that it stopped working.
+      - name: Check the package for content CurseForge refuses
+        run: |
+          for zip in .release/*.zip; do
+            found=$(unzip -Z1 "$zip" | grep -iE '\.(html?|css|js)$' || true)
+            if [ -n "$found" ]; then
+              echo "::error::$zip carries web content CurseForge will reject:"
+              printf '%s\n' "$found" | sed 's/^/  /'
+              exit 1
+            fi
+          done
+
       - name: Delete old successful runs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

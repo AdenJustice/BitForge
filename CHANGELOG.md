@@ -1,5 +1,11 @@
 # Changelog
 
+## [v12.1.0.10] — 2026-08-30
+
+### Fixed
+
+- **The CurseForge download works again.** v12.1.0.8 and v12.1.0.9 were built and uploaded, and CurseForge refused both of them while processing the file — so the newest version there is still v12.1.0.7, and everything those two releases carried has been sitting somewhere CurseForge could not hand it to you. The package was shipping a documentation folder belonging to a bundled library, which CurseForge will not accept in an addon. The Wago and GitHub downloads were unaffected and have had both releases all along.
+
 ## [v12.1.0.9] — 2026-08-30
 
 ### Changed
