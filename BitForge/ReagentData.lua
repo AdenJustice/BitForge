@@ -12,11 +12,12 @@
 -- is the right answer rather than a gap: nothing is crafted from them, so
 -- nothing can be their reagent.
 --
--- ABSENCE MEANS "NOT KNOWN", NEVER "NOBODY WANTS THIS". These are one client at
--- one build. A recipe a later patch adds is missing until the captures are
--- retaken, and so is every reagent only that recipe consumes. A consumer
--- reading nil as a no would vendor exactly the reagents this exists to protect.
--- Fall through to your own rules instead.
+-- ABSENCE MEANS THE CAPTURE DID NOT SEE IT. These are one client at one build:
+-- a recipe a later patch adds is missing until the captures are retaken, and so
+-- is every reagent only that recipe consumes. What to do about that gap is the
+-- consumer's policy rather than this file's -- Dispatch's sell rules read the
+-- table as complete and sell on an absence (#330), so retaking the captures
+-- after a patch is what keeps that reading honest.
 --
 -- 2833 reagents across 10 professions, from 10308 recipes.
 
@@ -31,23 +32,23 @@ local enum = ns.enum
 -- newer client has recipes these captures never saw.
 enum.REAGENT_DATA_INTERFACE = 120100
 
--- Bit positions, matching Enum.Profession.
+-- One bit per profession: 1 << Enum.Profession.<name>.
 enum.REAGENT_PROFESSION_BIT = {
-    FirstAid         =      1, -- Enum.Profession.FirstAid
-    Blacksmithing    =      2, -- Enum.Profession.Blacksmithing
-    Leatherworking   =      4, -- Enum.Profession.Leatherworking
-    Alchemy          =      8, -- Enum.Profession.Alchemy
-    Herbalism        =     16, -- Enum.Profession.Herbalism
-    Cooking          =     32, -- Enum.Profession.Cooking
-    Mining           =     64, -- Enum.Profession.Mining
-    Tailoring        =    128, -- Enum.Profession.Tailoring
-    Engineering      =    256, -- Enum.Profession.Engineering
-    Enchanting       =    512, -- Enum.Profession.Enchanting
-    Fishing          =   1024, -- Enum.Profession.Fishing
-    Skinning         =   2048, -- Enum.Profession.Skinning
-    Jewelcrafting    =   4096, -- Enum.Profession.Jewelcrafting
-    Inscription      =   8192, -- Enum.Profession.Inscription
-    Archaeology      =  16384, -- Enum.Profession.Archaeology
+    FirstAid         =      1,
+    Blacksmithing    =      2,
+    Leatherworking   =      4,
+    Alchemy          =      8,
+    Herbalism        =     16,
+    Cooking          =     32,
+    Mining           =     64,
+    Tailoring        =    128,
+    Engineering      =    256,
+    Enchanting       =    512,
+    Fishing          =   1024,
+    Skinning         =   2048,
+    Jewelcrafting    =   4096,
+    Inscription      =   8192,
+    Archaeology      =  16384,
 }
 
 -- [itemID] = bitmask of the professions that use it as a reagent.

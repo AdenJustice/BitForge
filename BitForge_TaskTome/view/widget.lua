@@ -302,7 +302,7 @@ do
         if mouseButton ~= "LeftButton" or not elementData then return end
         -- GetSize, not HasChildren: TreeNodeMixin has no HasChildren, and
         -- Blizzard's own tree rows test the child count directly
-        -- (Blizzard_SharedXML/TreeListDataProvider.lua:44).
+        -- (Blizzard_SharedXML/TreeListDataProvider.lua).
         if elementData:GetSize() == 0 then return end
 
         -- No Refresh here. SetCollapsed invalidates the provider, which repaints

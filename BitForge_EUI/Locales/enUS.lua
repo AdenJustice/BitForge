@@ -1,8 +1,6 @@
 ---@class BitForge.EUI
 local ns = select(2, ...)
 
--- English is the base; a locale table overrides it key by key.
---
 -- Subcommand keywords (ui, apply, capture, list, reset, rl) are
 -- deliberately NOT translated. The player types them.
 

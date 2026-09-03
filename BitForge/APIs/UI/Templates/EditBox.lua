@@ -60,7 +60,6 @@ function ScrollEditBoxMixin:OnLoad()
     self:SetSize(200, 120)
 
     -- ScrollingEditBoxTemplate creates self.ScrollBox and self.ScrollBox.EditBox.
-    -- Apply the MD backdrop to the inner edit box.
     local editBox = self.ScrollBox.EditBox
     Mixin(editBox, BackdropTemplateMixin)
     BackdropTemplateMixin.OnBackdropLoaded(editBox)

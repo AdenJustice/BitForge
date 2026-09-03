@@ -76,17 +76,3 @@ function model.ClearResolved(key) db.global.resolved[key] = nil end
 function model.HasData()
     return next(db.global.anchors) ~= nil
 end
-
--- db.debug is the container core normalized, so the flag is .enabled inside it.
--- Never test the container itself for truth: any table is truthy.
-function model.IsDebug()
-    local diagnostics = db.debug
-    return (diagnostics and diagnostics.enabled) == true
-end
-
---- The dump table, or nil while diagnostics are off.
-function model.GetDebugDump()
-    local diagnostics = db.debug
-    if not (diagnostics and diagnostics.enabled) then return nil end
-    return diagnostics.dump
-end

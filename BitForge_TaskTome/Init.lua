@@ -3,11 +3,9 @@ local ns = select(2, ...)
 
 ---@class BitForge.TaskTome.Enum
 local enum = {
-    -- Opt State
     OPT_FOLLOW        = "follow",
     OPT_IN            = "optin",
     OPT_OUT           = "optout",
-    -- Reset Type
     RESET_NONE        = "none",
     RESET_DAILY       = "daily",
     RESET_WEEKLY      = "weekly",
@@ -36,11 +34,10 @@ ns.enum = enum
 ---@class BitForge.TaskTome.Locale
 ns.locale = {}
 
--- Namespace
---
 -- Declared here so later files populate these tables rather than replacing
--- them. view.lua captures ns.control at file-read time, so a replacement would
--- leave it holding a stale table once the TOC loads views before controls.
+-- them. view/widget.lua and view/configFrame.lua capture ns.control at
+-- file-read time and the .toc loads them before control.lua, so a replacement
+-- would leave them holding a stale table.
 
 ---@class BitForge.TaskTome.Model
 ns.model = {}

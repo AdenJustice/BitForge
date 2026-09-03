@@ -27,13 +27,10 @@ local ACCOUNT_BANK = Enum.BankType.Account
 
 local playerName
 
--- Transfer
---
--- The only code in the module that touches C_Bank. It never prints: the message
--- waits for PLAYER_MONEY to confirm the server actually moved the money, so a
--- rejected transfer stays silent instead of reporting a success that never
--- happened.
-
+-- The only code in the module that touches C_Bank. Nothing is printed at
+-- dispatch: the message waits for PLAYER_MONEY to confirm the server moved the
+-- money, so a rejected transfer stays silent rather than reporting a success
+-- that never happened.
 local transfer = {}
 
 local MESSAGE_KEY = {
@@ -148,12 +145,6 @@ end
 
 control.balancer = balancer
 
--- Readiness
---
--- Bank money is not necessarily readable the instant the banker frame shows.
--- Rather than guessing a settle delay, poll until the bank reports it can move
--- money, then give up after a bounded number of attempts.
-
 local armed = false
 local attempts = 0
 
@@ -190,7 +181,7 @@ local function pollReady(chainGeneration)
 end
 
 -- BankFrame registers three interaction types against the same frame
--- (Blizzard_UIPanels_Game/Mainline/BankFrame.lua:101-111). Which one the server
+-- (Blizzard_UIPanels_Game/Mainline/BankFrame.lua). Which one the server
 -- sends for a given banker is not knowable from client source, so wake on all
 -- three and let the capability check in balancer.Run decide whether the Warband
 -- Bank is actually usable.

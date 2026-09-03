@@ -25,9 +25,9 @@ A modular World of Warcraft addon suite for WoW 12.0+ (Midnight). Each module is
 
 Shared infrastructure: event bus, account/character database, settings panel integration, minimap button, and the BitForge UI widget library.
 
-It also owns the two windows a player meets that belong to no one module. The first is the report window: when BatchSell or Openables judges an item and you disagree, the item's own menu opens a window holding everything it was judged by, already selected, with the address to paste it into and a plain statement of what the report discloses. The second appears once after an update, listing what changed since the version you last played; `/bitforge core whatsnew` opens it again.
+It also owns the two windows a player meets that belong to no one module. The first is the report window: when Dispatch judges an item and you disagree, the item's own menu opens a window holding everything it was judged by, already selected, with the address to paste it into and a plain statement of what the report discloses. The second appears once after an update, listing what changed since the version you last played; `/bitforge core whatsnew` opens it again.
 
-The suite's two slash commands live here: `/bitforge <module>` opens or acts on a module, and `/bfdump <module>` opens a window holding the diagnostic record for that module, selected and ready to copy — nothing is written to your saved variables and no reload is involved, and each one says what it discloses before you send it. A record too long to be worth reading is compressed to a single line you paste exactly as it is. Not every module answers both, and some answer neither — `/bitforge` on its own lists what you have installed and which of the two each one takes, core included. A module name shortens to any unambiguous prefix, so `/bfdump b` and `/bfdump batchsell` are the same command.
+The suite's slash command lives here: `/bitforge <module>` opens or acts on a module. Not every module takes one — `/bitforge` on its own lists what you have installed and which of them answers, core included. A module name shortens to any unambiguous prefix, so `/bitforge a` and `/bitforge autobalance` are the same command. There is a second command, `/bfdump`, and a released build answers none of it: the diagnostic records it used to open are a developer's, and they are not shipped. Nothing you need in order to report something is one of them — that is the report window above, opened from the item's own menu and unchanged: nothing is written to your saved variables, no reload is involved, it says what it discloses before you send it, and a record too long to be worth reading is compressed to a single line you paste exactly as it is.
 
 It also ships a catalogue of which professions use an item as a crafting reagent, which other modules build on. It is read from the game client's own recipe lists, so it carries every reagent a recipe consumes — optional reagents and the higher quality tiers of a reagent included, both of which the old catalogue missed — for all ten professions that have recipes, whether or not any of your characters have them. Herbalism, Skinning, Fishing and Archaeology have no entries at all, because nothing is crafted from them; Mining does, since smelting and prospecting are recipes of its own. It does not update itself and asks nothing of you: recipes added by a later patch are missing until the addon ships a rebuilt catalogue. Anything missing counts as unknown rather than unwanted, so nothing is ever acted on because of a gap.
 
@@ -35,9 +35,44 @@ It also ships a catalogue of which professions use an item as a crafting reagent
 
 Automatically deposits and withdraws gold between your bags and the Warband Bank when you visit it, keeping each character at a configurable target balance. Supports a designated collector character that pulls all gold from the warband bank.
 
-### BitForge BatchSell
+### BitForge Dispatch
 
-Automates selling items at vendors. Nothing is sold unless a rule selects it. Every kind of item has its own rule — consumables, gems, trade goods, recipes, pets and mounts, toys, housing decor — and a kind with no rule is never examined at all, so anything BatchSell does not understand stays in your bags. Gear is the longest of them: is it a kind your class uses, does it beat what you are wearing, could an alt still use it, is it worth disenchanting, and only a piece that answers no to all of them is sold. The comparison runs on two dials — a flat item-level tolerance at your own quality, and what one quality tier is worth — so a lower quality piece has to make the difference up in item level and a higher quality one earns a discount worth that many levels rather than a free pass — or, at the quality margin's topmost setting, is kept outright whatever its item level while nothing of lower quality ever is — and a piece from a finished expansion is weighed by exactly the same two dials, with what you are told changing rather than what is decided — the tooltip says you outlived that bar rather than merely beat it. Reagents your professions actually use are kept whatever kind of item they are, and a bound one is weighed against the professions of the character holding it rather than the whole warband's, since nobody else can ever have it; nothing above epic quality is ever sold; and no rule ever sells on a fact the game had not finished answering — an item whose details have not loaded is kept. Bind type and disenchantability are respected throughout: gear you have never worn is spared by default so a copy can still reach an alt or the auction house — this expansion's Bind on Equip and Bind on Account pieces alike, each widenable to every expansion or turned off on its own. Disenchantability corrects itself: each time you raise Disenchant, BatchSell reads the game's own verdict on what is in your bags and remembers it, so its built-in list of exceptions stops being the last word. Settings are shared across your warband. Per-item overrides from the item's own menu, set for this character or for the whole warband and showing which is already set for each; both lists are readable and editable from the merchant window, and the same menu reports an item whose verdict you disagree with. Drag an item in from your bags to sell it on that visit only. Item tooltips say what will happen and why, and a sell manifest shows a live total before confirming. Every rule can be read in plain language, and set, in one window opened from the vendor or from the settings panel — each control saying what it does when you point at it, greying out whenever another setting has already decided the question, and updating the sell list the moment you change it. Nothing about a rule lives anywhere else.
+Merges Openables, BatchSell and UPS into a single module: a button for the next openable or usable item in your bags, selling at vendors by rule, and depositing to the Warband Bank — each on its own switch in the settings panel, sharing one saved profile in place of three.
+
+The three agree on every item rather than deciding separately, so nothing is ever both offered on the button and listed for sale. Opening wins, because it is the only one of the three that turns an item into other items; a per-item override of your own wins over all of them. If you disagree with the result, the report on the item's own menu carries how it was judged — Shift+Alt+right-click on the openables button, or Report This Verdict at a vendor.
+
+The button shows the next openable or usable item in your bags, in that order of
+urgency: recipes, profession knowledge, housing decor and other learnables first, then
+tokens, then caches and lockboxes, then quest items, and last of all anything that is
+merely usable. An item that starts a quest is marked with a bold gold exclamation
+mark in the button's top-left corner. Left-click uses the item and moves to the next one
+whether or not the use succeeded — a failed use no longer leaves you stuck on the same
+item, and nothing is dropped from the queue, so it comes back round. Right-click skips it
+for the session, Ctrl+right-click blacklists it permanently, and Shift+Alt+right-click
+reports it if you think BitForge has judged it wrongly. Rogues and Mechagnomes get lockbox picking; other characters
+only see a lockbox once it is already open. Bindable through the standard Key Bindings
+panel — if you had a key bound to the old Openables addon's button, bind it again here:
+WoW remembers a keybinding by the button's name, and this button's name is new.
+
+Derived from [New Openables](https://www.curseforge.com/wow/addons/new-openables) by
+PeknaMrcha, continued by srhinos and cont1nuity. MIT licensed.
+
+Selling at vendors is automatic once a rule selects an item. Every kind of item has its own rule — consumables, gems, trade goods, recipes, pets and mounts, toys, housing decor — and a kind with no rule is never examined at all, so anything Dispatch does not understand stays in your bags. Gear is the longest of them: is it a kind your class uses, does it beat what you are wearing, could an alt still use it, is it worth disenchanting, and only a piece that answers no to all of them is sold. The comparison runs on two dials — a flat item-level tolerance at your own quality, and what one quality tier is worth — so a lower quality piece has to make the difference up in item level and a higher quality one earns a discount worth that many levels rather than a free pass — or, at the quality margin's topmost setting, is kept outright whatever its item level while nothing of lower quality ever is — and a piece from a finished expansion is weighed by exactly the same two dials, with what you are told changing rather than what is decided — the tooltip says you outlived that bar rather than merely beat it. Reagents are kept by two questions rather than one, whatever kind of item they are: is the reagent's expansion ticked, and failing that, does a recipe you have flagged consume it — a recipe is flagged from its own right-click menu in the profession window, and its Basic ingredients are read from the game rather than listed by hand. A bound reagent is weighed against the professions of the character holding it rather than the whole warband's, since nobody else can ever have it; nothing above epic quality is ever sold; and no rule ever sells on a fact the game had not finished answering — an item whose details have not loaded is kept. Bind type and disenchantability are respected throughout: gear you have never worn is spared by default so a copy can still reach an alt or the auction house — Bind on Equip and Bind on Account pieces alike, each naming the expansions it covers or turned off entirely. Disenchantability corrects itself: each time you raise Disenchant, Dispatch reads the game's own verdict on what is in your bags and remembers it, so its built-in list of exceptions stops being the last word. Settings are shared across your warband. Per-item overrides from the item's own menu, set for this character or for the whole warband and showing which is already set for each; both lists are readable and editable from the merchant window, and the same menu reports an item whose verdict you disagree with. Drag an item in from your bags to sell it on that visit only. Item tooltips say what will happen and why, and a sell manifest shows a live total before confirming. Every rule can be read in plain language, and set, in one window opened from the vendor or from the settings panel — each control saying what it does when you point at it, greying out whenever another setting has already decided the question, and updating the sell list the moment you change it. Nothing about a rule lives anywhere else.
+
+Deposits your bags into the Warband Bank when you visit a bank — crafting reagents,
+recipes an alt still needs, and anything you have curated by hand. By default only
+reagents one of your professions can actually craft with are sent; turn that off to
+deposit everything, for the auction house. A confirmation window lists every move
+before anything is sent, and a curation window lets you set a destination per item,
+including keeping something in your own bank instead.
+
+Recipes are judged against what your alts already know. Seeing your other characters at all
+takes an inventory addon you have probably already got — **Baganator**, **Altoholic**,
+**Bagnon** or **BagSync**. What Dispatch actually reads is the data library behind each of
+those (Syndicator, DataStore, BagBrother, and BagSync itself), so anything else built on one
+of them works just as well. There is nothing extra to install and nothing to configure; the
+curation window names the source it used. Without any of them, Dispatch sees only the
+character you are playing.
 
 ### BitForge EUI
 
@@ -57,23 +92,6 @@ to it, so its own dragging, cascading and locking keep working on those.
 dependency: with EllesmereUI missing or disabled, WoW disables this module
 outright and shows it greyed out in the addon list. No other BitForge module is
 affected.
-
-### BitForge Openables
-
-A single button showing the next openable or usable item in your bags, in that order of
-urgency: recipes, profession knowledge, housing decor and other learnables first, then
-tokens, then caches and lockboxes, then quest items, and last of all anything that is
-merely usable. An item that starts a quest is marked with a bold gold exclamation
-mark in the button's top-left corner. Left-click uses the item and moves to the next one
-whether or not the use succeeded — a failed use no longer leaves you stuck on the same
-item, and nothing is dropped from the queue, so it comes back round. Right-click skips it
-for the session, Ctrl+right-click blacklists it permanently, and Shift+Alt+right-click
-reports it if you think BitForge has judged it wrongly. Rogues and Mechagnomes get lockbox picking; other characters
-only see a lockbox once it is already open. Bindable through the standard Key Bindings
-panel.
-
-Derived from [New Openables](https://www.curseforge.com/wow/addons/new-openables) by
-PeknaMrcha, continued by srhinos and cont1nuity. MIT licensed.
 
 ### BitForge RepRank
 
@@ -110,23 +128,6 @@ is corrected the next time any of your characters logs in. The config panel — 
 the gear on the widget, or from the Settings panel — supports drag-and-drop reordering, and
 can set another character's assignments without you logging in as them.
 
-### BitForge UPS _(Undermine Parcel Service)_
-
-Deposits your bags into the Warband Bank when you visit a bank — crafting reagents,
-recipes an alt still needs, and anything you have curated by hand. By default only
-reagents one of your professions can actually craft with are sent; turn that off to
-deposit everything, for the auction house. A confirmation window
-lists every move before anything is sent, and a curation window lets you set a
-destination per item, including keeping something in your own bank instead.
-
-Recipes are judged against what your alts already know. Seeing your other characters at all
-takes an inventory addon you have probably already got — **Baganator**, **Altoholic**,
-**Bagnon** or **BagSync**. What UPS actually reads is the data library behind each of those
-(Syndicator, DataStore, BagBrother, and BagSync itself), so anything else built on one of
-them works just as well. There is nothing extra to install and nothing to configure; the
-curation window names the source it used. Without any of them, UPS sees only the character
-you are playing.
-
 ---
 
 ## Installation
@@ -140,12 +141,10 @@ you are playing.
 Interface/AddOns/
   BitForge/
   BitForge_AutoBalance/     ← optional
-  BitForge_BatchSell/       ← optional
+  BitForge_Dispatch/        ← optional
   BitForge_EUI/             ← optional, requires EllesmereUI
-  BitForge_Openables/       ← optional
   BitForge_RepRank/         ← optional
   BitForge_TaskTome/        ← optional
-  BitForge_UPS/             ← optional
 ```
 
 ---

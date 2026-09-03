@@ -754,12 +754,8 @@ function editor.Validate()
         end
     end
 
-    -- The same check the login runs, over the layout as it will be.
-    --
-    -- Narrowed to keys the buffer touched, for the reason at the top of this
-    -- function: a pre-existing bad anchor is Apply's business, already reported
-    -- at login, and blocking every save until unrelated stored data is repaired
-    -- would make the editor useless.
+    -- The same check the login runs, over the layout as it will be, narrowed
+    -- to keys the buffer touched for the reason this function's doc gives.
     --
     -- WHAT IT COSTS: renaming an anchor orphans every layout entry that targets
     -- the old key, and those entries are not in the buffer -- so their targets

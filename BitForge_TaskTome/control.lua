@@ -21,13 +21,10 @@ function ns:Unsubscribe(event)
     BitForge.Unsubscribe(event, self)
 end
 
--- Resets
---
 -- The reset schedule is region-specific, so it comes from the client rather than
 -- from constants of our own. We still persist the expected reset time: asking
 -- only "how many seconds until the next reset" can never reveal that a reset
 -- already happened while the client was suspended.
-
 local resets = {}
 local resetTimer
 
@@ -74,14 +71,13 @@ end
 --- The client's last weekly reset boundary, or nil when it has not given a
 --- usable reading.
 ---
---- The same guard clientNextReset applies, and for the same reason: this is read
---- on every PLAYER_ENTERING_WORLD, which includes the loading screen before the
---- server has necessarily sent time data. The consequence of trusting a bad
---- reading is far worse here than on the daily path, because nothing downstream
---- can tell it apart from a genuine boundary crossing. A 0 differs from every
---- stored stamp, so IsWeeklyDue says "due" for every character and for the
---- warband at once, and the pass clears every weekly completion on the account;
---- the stamp then heals itself, leaving no trace but the missing ticks.
+--- The same guard clientNextReset applies, and for the same reason. The
+--- consequence of trusting a bad reading is far worse here than on the daily
+--- path, because nothing downstream can tell it apart from a genuine boundary
+--- crossing. A 0 differs from every stored stamp, so IsWeeklyDue says "due" for
+--- every character and for the warband at once, and the pass clears every weekly
+--- completion on the account; the stamp then heals itself, leaving no trace but
+--- the missing ticks.
 ---
 --- Returning nil rather than a fallback guess is the point. There is no
 --- arithmetic that can reconstruct this value, so the only safe answer to "no
@@ -214,7 +210,7 @@ function resets.Check()
     -- xpcall with CallErrorHandler rather than pcall and a re-raise: the handler runs
     -- before the stack unwinds, so the error reaches BugSack attributed to the line
     -- that actually failed. CallErrorHandler exists to do this -- it adjusts the
-    -- reported callstack height itself (Blizzard_SharedXMLBase/ErrorUtil.lua:1).
+    -- reported callstack height itself (Blizzard_SharedXMLBase/ErrorUtil.lua).
     -- pcall discards the stack before we could re-raise, so the report would blame
     -- this function instead of the one that threw.
     local changed = {}
@@ -246,10 +242,8 @@ function tasks.UpdateTask(id, fields)
     model.UpdateTask(id, fields)
 end
 
--- Deletes a task and all descendants, clearing every character's completion and
--- opt state for each -- not just the logged-in one's. Both tables are
--- account-wide now, so an alt's row is reachable from here and would otherwise
--- never be cleaned up by anything.
+-- Deletes a task and all its descendants. ClearAllRecordsFor clears every
+-- character's rows, not just the logged-in one's.
 function tasks.DeleteTask(id)
     local toDelete = { id }
     local descendants = model.GetDescendantIds(id)
@@ -308,7 +302,6 @@ function tasks.MoveTask(id, newParentId, newSortOrder)
     local task = model.GetTask(id)
     if not task then return end
 
-    -- Remove from old siblings: shift down all siblings with sortOrder > task.sortOrder
     local oldSiblings = model.GetChildren(task.parentId)
     for _, sibling in ipairs(oldSiblings) do
         if sibling.id ~= id and sibling.sortOrder > task.sortOrder then
@@ -318,7 +311,6 @@ function tasks.MoveTask(id, newParentId, newSortOrder)
 
     model.SetParent(id, newParentId)
 
-    -- Insert into new siblings: shift up all siblings with sortOrder >= newSortOrder
     local newSiblings = model.GetChildren(newParentId)
     for _, sibling in ipairs(newSiblings) do
         if sibling.id ~= id and sibling.sortOrder >= newSortOrder then
@@ -332,13 +324,10 @@ end
 control.resets = resets
 control.tasks = tasks
 
--- Events
---
 -- The timer is the primary mechanism, but a daily reset can be up to 24 hours
 -- out and whether C_Timer survives an OS suspend with its deadline intact is not
 -- determinable from the client source. These two events cover the moments a
 -- drifted timer would matter: coming back to the game.
-
 local wasAFK = false
 
 -- Fires on login, on reload, and on every zone transition.

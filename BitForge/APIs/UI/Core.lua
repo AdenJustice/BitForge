@@ -27,11 +27,10 @@ local UI = BitForge.UI
 UI.Colors = {
     point = CreateColor("FF45B7D1"),
     hover = CreateColor("FF4B5267"),
-    -- The one warm token. A close affordance and a message saying a save is
-    -- refused both have to read as "not the rest of this window", and every
-    -- other entry here is a surface, an edge or a shade of text. The value is
-    -- the red BitForge_EUI had already picked for its own refusal message,
-    -- promoted rather than invented, so the suite carries a single red.
+    -- The one warm token, and the suite's only red: a close affordance and a
+    -- refused save both have to read as "not the rest of this window", while
+    -- every other entry here is a surface, an edge or a shade of text. The
+    -- value is BitForge_EUI's own refusal red, promoted rather than invented.
     danger = CreateColor("FFFF4D4D"),
     bg = CreateColor("FF121212"),
     bgDisabled = CreateColor("7F121212"),
@@ -52,14 +51,14 @@ function UI.GetMedia(filename)
     return MEDIA .. "/" .. filename
 end
 
---- Returns the size of one physical pixel in UI units, using UIParent's effective scale.
---- Use this wherever a pixel-perfect 1px value is needed (edgeSize, SetHeight, etc.).
+--- The size of `px` physical pixels in UI units, at UIParent's effective scale.
+--- Use it wherever a pixel-perfect value is needed (edgeSize, SetHeight, etc.).
+---@param px number?  Defaults to 1.
 ---@return number
 function UI.GetPixel(px)
     return PixelUtil.GetNearestPixelSize(px or 1, UIParent:GetEffectiveScale(), 1)
 end
 
---- Returns the gradient texture
 function UI.CreateSeparatorTexture(parent)
     assert(parent and parent.IsObjectType and parent:IsObjectType("Frame"))
     local width = floor(parent:GetWidth() * .85)
@@ -192,6 +191,7 @@ function skin.StripFrameTextures(frameObject, options)
     end
 end
 
+---@param targetFrame Frame  Sized and levelled against; needs GetFrameLevel.
 function skin.CreateBackdropUnderlay(targetFrame, options)
     if not targetFrame then
         return nil
@@ -336,18 +336,18 @@ end
 -- calls applyFn once at PLAYER_LOGIN with a facade of skinning primitives
 -- (S.Shell, S.Button, S.Tab, ...). See its SKINNING_API.md.
 --
--- Core registers once for the whole suite and fans the facade out, so a module
--- never names the host addon and a second host can be added here alone. The
--- host loads first because the core .toc lists it under OptionalDeps; with the
--- host absent or its skinning disabled, nothing below ever fires and every
--- window keeps its own look.
+-- Core registers once for the whole suite, so a module never names the host
+-- addon and a second host can be added here alone. A file-scope check is enough
+-- because the core .toc lists the host under OptionalDeps; with the host absent
+-- or its skinning disabled, nothing below ever fires and every window keeps its
+-- own look.
 
 local externalSkinHandlers = {}
 local externalSkin
 
---- The host's skinning facade, or nil while no host has offered one. Useful for
---- a window built after the handover, which can skin itself inline rather than
---- waiting for a callback that has already been and gone.
+--- The host's skinning facade, or nil while no host has offered one. For a
+--- window built after the handover that would rather skin itself inline than
+--- through OnExternalSkin.
 ---@return table|nil
 function skin.GetExternalSkin()
     return externalSkin
@@ -355,10 +355,10 @@ end
 
 --- Run `handler` with the host's facade, now or whenever it arrives.
 ---
---- The two orderings both have to work and neither is the exceptional one: a
---- module whose window exists at login registers before the host answers, while
---- a lazily-built window registers long after. Late registrants are therefore
---- called immediately rather than queued for a dispatch that already happened.
+--- Both orderings are ordinary: a module whose window exists at login registers
+--- before the host answers, a lazily-built one long after. A late registrant is
+--- therefore called immediately rather than queued for a dispatch that already
+--- happened.
 ---
 --- Each handler is called at most once, so a host that drains its queue twice
 --- cannot make a view re-skin frames it has already skinned. Errors are caught:
@@ -377,9 +377,9 @@ if EllesmereUI and EllesmereUI.RegisterSkin then
     EllesmereUI.RegisterSkin("BitForge", function(facade)
         if externalSkin then return end
         externalSkin = facade
-        -- Drained rather than iterated in place: OnExternalSkin now dispatches
-        -- inline, so a handler that registers another during this loop would
-        -- otherwise be both appended to the list and called immediately.
+        -- Drained rather than iterated in place: OnExternalSkin dispatches
+        -- inline once externalSkin is set, so a handler registering another
+        -- during this loop would otherwise be both appended and called.
         local pending = externalSkinHandlers
         externalSkinHandlers = {}
         for index = 1, #pending do

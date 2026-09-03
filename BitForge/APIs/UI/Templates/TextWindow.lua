@@ -23,7 +23,6 @@ local BUTTON_WIDTH = 120
 ---@field Footnote  FontString?
 local TextWindowMixin = {}
 
---- Fills the scrolling box.
 ---@param text string
 function TextWindowMixin:SetText(text)
     self.Body:SetText(text or "")
@@ -53,10 +52,9 @@ function TextWindowMixin:SelectAll()
 end
 
 --- Shows the window. Focus-and-select on top of that is opt-in
---- (options.selectOnOpen): right for a report a player is about to copy out
---- of, wrong for a window that can open on its own at login and would
---- otherwise steal focus and swallow keybinds -- which is why the default
---- below, and the option's own default, is off.
+--- (options.selectOnOpen): right for a report a player is about to copy out of,
+--- wrong for a window that can open on its own at login and would otherwise
+--- steal focus and swallow keybinds.
 function TextWindowMixin:Open()
     self:Show()
     if self.selectOnOpen then

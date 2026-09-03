@@ -144,7 +144,7 @@ function resolver.Channel(key, entry)
     return nil
 end
 
---- Is this anchor definition usable? Returns ok, locale key, format arg.
+--- Is this anchor definition usable?
 ---
 --- Split from BuildAnchorFrames so the editor can show the same verdicts in
 --- its form, before committing: one set of rules, so an editor that accepted

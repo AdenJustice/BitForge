@@ -42,10 +42,9 @@
                 </Texture>
             </Layer>
             <Layer level="ARTWORK">
-                <!-- The same marker the reputation pane puts on a faction with
-                     a chest waiting, so the toast and the row read as one
-                     indicator rather than two. It sits in the card's icon well,
-                     where the criteria template puts the achievement shield. -->
+                <!-- The same marker the reputation pane puts on a faction
+                     with a chest waiting, so the toast and the row read as one
+                     indicator rather than two. -->
                 <Texture parentKey="Icon" atlas="ParagonReputation_Bag">
                     <Size x="40" y="40"/>
                     <Anchors>

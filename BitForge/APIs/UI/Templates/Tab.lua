@@ -103,7 +103,6 @@ do
         bg:SetAllPoints()
         self.Bg = bg
 
-        -- 1-px border strips
         local function makeBorder(layer)
             local tex = self:CreateTexture(nil, layer or "ARTWORK")
             tex:SetTexture("Interface/Buttons/WHITE8X8")
@@ -120,7 +119,6 @@ do
         PixelUtil.SetWidth(self.BorderLeft, 1, 1)
         PixelUtil.SetWidth(self.BorderRight, 1, 1)
 
-        -- 2-px active accent line
         local accent = self:CreateTexture(nil, "OVERLAY")
         accent:SetTexture("Interface/Buttons/WHITE8X8")
         PixelUtil.SetHeight(accent, 2, 1)
@@ -149,7 +147,8 @@ do
     end
 
     --- Inform the button which side of the content frame it sits on.
-    --- "bottom" → accent at bottom edge; "top" / "left" / "right" accordingly.
+    --- EDGE_CONFIG maps that to the accented and open edges -- a left or right
+    --- bar accents the top edge, not its own.
     ---@param pos "bottom"|"top"|"left"|"right"
     function TabButtonMixin:SetTabPosition(pos)
         self._position = pos or "bottom"
@@ -163,6 +162,13 @@ end
 UI.Mixins.TabButton = TabButtonMixin
 
 ---@class BitForge.TabBarMixin : Frame
+---@field _tabs { id: any, button: BitForge.TabButtonMixin }[]
+---@field _tabMap table<any, BitForge.TabButtonMixin>
+---@field _selected any
+---@field _onChange fun(id: any)|nil
+---@field _tabW number
+---@field _tabH number
+---@field _position "bottom"|"top"|"left"|"right"
 local TabBarMixin = {}
 
 function TabBarMixin:OnLoad()
@@ -220,7 +226,6 @@ function TabBarMixin:SetSelectedTab(id)
     for _, entry in ipairs(self._tabs) do
         local isSelected = (entry.id == id)
         entry.button:SetChecked(isSelected)
-        entry.button:_UpdateVisuals()
     end
     if self._onChange then
         self._onChange(id)

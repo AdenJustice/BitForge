@@ -60,3 +60,7 @@ model.lua
 view.lua
 control\commands.lua
 control\control.lua
+
+#@debug@
+debug\notices.lua
+#@end-debug@

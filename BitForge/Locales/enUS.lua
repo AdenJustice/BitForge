@@ -3,7 +3,6 @@ local ns = select(2, ...)
 ---@class BitForge.Core.Locale
 local L = ns.locale
 
--- Minimap button
 L["minimap:hintClick"] = "Left-click for options"
 L["minimap:hintDrag"] = "Drag to move"
 L["minimap:compartmentTooltip"] = "Open the BitForge menu"

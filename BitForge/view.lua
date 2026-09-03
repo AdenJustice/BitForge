@@ -298,12 +298,12 @@ end
 
 --- Shows a module's report, focused and selected, ready for the player's Ctrl+C.
 ---
---- Core owns the window because modules never call siblings. It owns nothing
---- else: the payload, the sentence about what that payload discloses, and the
---- title all arrive from the caller, because BatchSell sends an item link --
---- which states the character's level and specialization in its own fields --
---- and Openables sends no link at all, and because an item report and a
---- diagnostic dump are not describing the same thing.
+--- Core owns the window because modules never call siblings, and owns nothing
+--- else: the payload, the sentence about what it discloses and the title all
+--- arrive from the caller. What is disclosed varies -- Dispatch's sell verdict
+--- sends an item link, which states the character's level and specialization in
+--- its own fields, while its open-item report sends no link at all -- and an
+--- item report and a diagnostic dump are not describing the same thing.
 ---@param body  string  the report text
 ---@param blurb string  the calling module's own sentence about what it discloses
 ---@param title string?  defaults to locale["report:windowTitle"]; a diagnostic
@@ -342,19 +342,17 @@ function BitForge:ShowReport(body, blurb, title)
             },
         })
 
-        -- Applied once, right here at creation, and never again on a later
-        -- Open(): the window is created once and reused for the rest of the
-        -- session, so restoring on every open would undo a drag the player
-        -- made earlier in the same session while it stayed up. A falsy record
-        -- (never dragged) leaves the window on the CENTER anchor
-        -- CreateTextWindow already gave it.
+        -- Applied at creation and never again on a later Open(): the window is
+        -- reused for the rest of the session, so restoring on every open would
+        -- undo a drag made earlier while it stayed up. A falsy record (never
+        -- dragged) leaves it on the CENTER anchor CreateTextWindow gave it.
         --
         -- All four fields are checked, not just the record. Nothing this addon
         -- writes is ever partial -- UpdateDatabase stores the table in one shot
         -- and core's own db.global is not walked by PruneMatchingDefaults -- but
-        -- SetPoint raises on a nil anchor, and the saved variables are a file a
+        -- SetPoint raises on a nil anchor and the saved variables are a file a
         -- player can edit. A half-written record would break the window, and
-        -- with it every /bfdump, until they found and cleared the value by hand.
+        -- with it every /bfdump, until they cleared the value by hand.
         local storedPoint = model.ReadDatabase("reportWindowPoint")
         if storedPoint and storedPoint.point and storedPoint.relPoint
             and storedPoint.x and storedPoint.y then
@@ -363,15 +361,14 @@ function BitForge:ShowReport(body, blurb, title)
                 storedPoint.x, storedPoint.y)
         end
 
-        -- Hooked directly on the frame rather than a TextWindow onMoved
-        -- option: this is the one window issue #312 asked for -- What's New
-        -- is opened once after an update and read, not dragged around during
-        -- use -- so a reusable template option nothing else would ever supply
-        -- is speculative. HookScript chains after CreateTextWindow's own
-        -- OnDragStop, which already called StopMovingOrSizing, so the point
-        -- read here is the one the drag just settled on. Stored on drag stop
-        -- rather than on close, so a window dismissed with Escape still
-        -- remembers where it was.
+        -- Hooked on the frame rather than added as a TextWindow onMoved option:
+        -- this is the one window issue #312 asked for -- What's New is opened
+        -- once after an update and read, not dragged around during use -- so a
+        -- reusable option nothing else would supply is speculative. HookScript
+        -- chains after CreateTextWindow's own OnDragStop, which already called
+        -- StopMovingOrSizing, so the point read here is the one the drag settled
+        -- on. Stored on drag stop rather than on close, so a window dismissed
+        -- with Escape still remembers where it was.
         reportWindow:HookScript("OnDragStop", function(self)
             local point, _, relPoint, x, y = self:GetPoint()
             model.UpdateDatabase("reportWindowPoint",

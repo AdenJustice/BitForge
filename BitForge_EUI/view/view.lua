@@ -9,7 +9,7 @@ local ns = select(2, ...)
 -- of them changing repaints all three. Each pane registers its own repaint as
 -- it is created and never reaches into another's widgets.
 --
--- Ports the standalone addon's Core/UI/Window.lua:24-37.
+-- Ports the standalone addon's Core/UI/Window.lua.
 
 -- The sub-key files publish onto this table but must not widen it, so the
 -- fields they add are declared here, on the file that owns the key. That keeps

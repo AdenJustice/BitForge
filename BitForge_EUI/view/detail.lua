@@ -32,7 +32,7 @@ local TEXT_WIDTH = 170
 local DROPDOWN_WIDTH = 260
 local BUTTON_HEIGHT = 24
 
--- ~70 elements will not fit on screen (Blizzard_Menu/Menu.lua:227).
+-- ~70 elements will not fit on screen (Blizzard_Menu/Menu.lua).
 local MENU_SCROLL_HEIGHT = 480
 
 ---@class BitForge.EUI.View.Detail
@@ -47,7 +47,7 @@ local pane, currentKey, currentKind
 -- a width, a label, a delete held pending on some other row. The radio list
 -- only changes when the element changes or the buffer does; anything else gets
 -- SignalUpdate, which re-reads the selection from the descriptions already
--- built (DropdownButton.lua:279) without generating anything.
+-- built (DropdownButton.lua) without generating anything.
 --
 -- NOT the search box, which is the cheap thing to assume: view/list.lua's
 -- OnTextChanged calls list.Refresh() directly and never view.Repaint(), so a
@@ -108,7 +108,7 @@ local function numberBox(parent, labelText, read, write)
     end
 
     -- HookScript for these two: EditBoxMixin:OnLoad binds them first
-    -- (BitForge/APIs/UI/Templates/EditBox.lua:52-55) to clear focus and repaint
+    -- (BitForge/APIs/UI/Templates/EditBox.lua) to clear focus and repaint
     -- the border, and a hook runs after what is already there rather than
     -- replacing it.
     box:HookScript("OnEnterPressed", commit)
@@ -209,7 +209,7 @@ local function onDeleteClick()
     -- discarded layout is rebuilt from EllesmereUI on the next login, but an
     -- anchor definition exists ONLY in our SavedVariables and nothing in the
     -- game can re-derive it. StaticPopup_ShowGenericConfirmation(text, callback)
-    -- runs the callback on accept and nothing on cancel (StaticPopup.lua:217).
+    -- runs the callback on accept and nothing on cancel (StaticPopup.lua).
     StaticPopup_ShowGenericConfirmation(
         format(locale["ui:anchorDeleteConfirm"], key),
         function()

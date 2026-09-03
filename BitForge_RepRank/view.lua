@@ -148,7 +148,8 @@ local PADDING = 8
 local CONTROL_HEIGHT = 24
 local COLUMN_HEADER_HEIGHT = 20
 local GAP = 6
--- The strip kept clear down the right edge for the scroll bar, as UPS does.
+-- The strip kept clear down the right edge for the scroll bar, as Dispatch's
+-- curation window does.
 local SCROLLBAR_GUTTER = 20
 
 -- Fixed columns measured from the right edge inward, so the faction name takes
@@ -190,14 +191,15 @@ local PARAGON_ATLAS = "ParagonReputation_Bag"
 -- is a separate track that empties again every chest.
 local PARAGON_BAR_COLOR = CreateColor(0.64, 0.39, 0.90)
 
--- ReputationFrame.lua:520 -- `local friendshipColorIndex = 5; -- Always color
+-- ReputationFrame.lua -- `local friendshipColorIndex = 5; -- Always color
 -- friendships green`. A friendship has ranks but no reaction to index the
 -- palette with, so Blizzard hardcodes the first green entry and so does this.
 local FRIENDSHIP_COLOR_INDEX = 5
 
 -- The window, or nil before the first open. Everything it is built from hangs
--- off it rather than off a second set of file locals, following UPS's curation
--- window: one handle, and no way for the two to disagree about what exists.
+-- off it rather than off a second set of file locals, following Dispatch's
+-- curation window: one handle, and no way for the two to disagree about what
+-- exists.
 local frame
 
 --- The three column strings for a row.
@@ -278,7 +280,7 @@ end
 local BAR_KIND_COLORS = {
     [enum.BAR_KIND.STANDARD] = function(record)
         -- Hostile red through exalted green, exactly as the reputation panel
-        -- picks it (ReputationFrame.lua:501).
+        -- picks it (ReputationFrame.lua).
         return FACTION_BAR_COLORS[record.tier]
     end,
     [enum.BAR_KIND.FRIENDSHIP] = function()
@@ -321,7 +323,7 @@ end
 --- hover shows no tooltip at all rather than one that says nothing new. A capped
 --- bar's stored shape is one over one, so its figures would read `1 / 1` -- true
 --- of the placeholder and of nothing the character earned, which is why Blizzard
---- suppresses the progress text there too (ReputationFrame.lua:497). An
+--- suppresses the progress text there too (ReputationFrame.lua). An
 --- unmeasurable range and a record written before bars existed carry no maximum
 --- at all.
 ---@param row table
@@ -385,7 +387,8 @@ end
 ---
 --- The row's regions are created on first use and reused thereafter: the scroll
 --- box pools its frames, so a row arriving here has usually been filled before.
---- Mirrors BitForge_UPS's initCurationRow rather than inventing a second shape.
+--- Mirrors BitForge_Dispatch's curationWindow initCurationRow rather than
+--- inventing a second shape.
 ---@param row     table
 ---@param element table
 local function initRow(row, element)

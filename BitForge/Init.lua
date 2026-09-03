@@ -4,23 +4,23 @@ local ns = select(2, ...)
 ---@class BitForge.Core.Enum
 local enum = {
     DB_DEFAULTS = {
-        -- minimapPos is the button's angle on the minimap ring in degrees.
-        -- 45 is the angle the button sat at when its position was hardcoded
-        -- (at a hardcoded radius of 80), so an existing install keeps the same
-        -- angle. The radius is no longer hardcoded -- it now tracks the
-        -- minimap's real size -- so the button itself moves outward, from
-        -- inside the map onto the ring, even though the angle is unchanged.
+        -- minimapPos is the button's angle on the minimap ring in degrees. 45 is
+        -- where it sat while its position was hardcoded, so an existing install
+        -- keeps its angle -- but not its place: the radius now tracks the
+        -- minimap's real size rather than a hardcoded 80, so the button moves
+        -- outward, from inside the map onto the ring.
+        --
         -- professions is [charKey] = { Enum.Profession, ... }, rewritten at every
         -- login rather than merged: dropping a profession has to be able to
         -- remove it, or the account would go on believing someone can use a
         -- reagent nobody can.
         --
-        -- characterClasses is [charKey] = ClassFile ("MAGE"), a store that runs
-        -- parallel to knownCharacters rather than inside it. That list is an
-        -- array of plain strings walked with ipairs by every module that asks
-        -- who the account has, so giving it a second shape would break all of
-        -- them at once. Purely additive, so an existing profile is seeded with
-        -- an empty table and fills in one character at a time as each logs in.
+        -- characterClasses is [charKey] = ClassFile ("MAGE"), parallel to
+        -- knownCharacters rather than inside it: that list is an array of plain
+        -- strings walked with ipairs by every module that asks who the account
+        -- has, so a second shape would break all of them at once. Purely
+        -- additive, so an existing profile is seeded empty and fills in one
+        -- character at a time as each logs in.
         --
         -- lastSeenVersion is the running addon version the player last opened
         -- the What's New window at (or had it auto-opened for), compared by
@@ -29,15 +29,14 @@ local enum = {
         -- left absent so SeedDefaults always has something to write and an
         -- existing profile picks the key up on its next login.
         --
-        -- reportWindowPoint is the report window's last dragged position --
-        -- the report window only, per issue #312; What's New is read once
-        -- after an update and never worked in -- in the { point, relPoint, x,
-        -- y } shape BitForge_Openables already stores its button's position
-        -- in, because an anchor pair survives a resolution change where a raw
-        -- screen offset would not. Seeded false rather than left absent, so
-        -- SeedDefaults still has something to write for an existing profile.
-        -- false means "never dragged," exactly the state the window's own
-        -- CENTER anchor already describes, so ShowReport leaves it alone.
+        -- reportWindowPoint is the report window's last dragged position -- that
+        -- window alone, per issue #312 -- in the { point, relPoint, x, y } shape
+        -- BitForge_Dispatch already stores its button's position in, because an
+        -- anchor pair survives a resolution change where a raw screen offset
+        -- would not. Seeded false rather than left absent, so SeedDefaults still
+        -- has something to write for an existing profile; false means "never
+        -- dragged", exactly what the window's own CENTER anchor already
+        -- describes, so ShowReport leaves it alone.
         global = {
             knownCharacters   = {},
             characterClasses  = {},
@@ -108,7 +107,6 @@ BitForge.Events = {
     -- event, which is why key and value match: core derives the frame event to
     -- register from the value alone. Subscribers receive the raw WoW payload.
 
-    -- World and player state
     PLAYER_ENTERING_WORLD                 = "PLAYER_ENTERING_WORLD",
     PLAYER_FLAGS_CHANGED                  = "PLAYER_FLAGS_CHANGED",
     PLAYER_LEVEL_UP                       = "PLAYER_LEVEL_UP",
@@ -117,10 +115,23 @@ BitForge.Events = {
     PLAYER_INTERACTION_MANAGER_FRAME_SHOW = "PLAYER_INTERACTION_MANAGER_FRAME_SHOW",
     PLAYER_INTERACTION_MANAGER_FRAME_HIDE = "PLAYER_INTERACTION_MANAGER_FRAME_HIDE",
 
-    -- Inventory and items
+    -- Zone and sub-zone transitions. Three events for one concept, which is
+    -- what Blizzard's own ZoneText.lua registers: NEW_AREA covers the zone,
+    -- the other two cover sub-zone and indoor transitions -- so a player
+    -- walking into a building moves between maps without the zone changing.
+    ZONE_CHANGED           = "ZONE_CHANGED",
+    ZONE_CHANGED_INDOORS   = "ZONE_CHANGED_INDOORS",
+    ZONE_CHANGED_NEW_AREA  = "ZONE_CHANGED_NEW_AREA",
+
     BAG_UPDATE_DELAYED     = "BAG_UPDATE_DELAYED",
     ITEM_DATA_LOAD_RESULT  = "ITEM_DATA_LOAD_RESULT",
     EQUIPMENT_SETS_CHANGED = "EQUIPMENT_SETS_CHANGED",
+
+    -- One item equipped, unequipped, or swapped between two equipped slots.
+    -- Distinct from EQUIPMENT_SETS_CHANGED, which fires only for a saved
+    -- set: a ring moved from finger 1 to finger 2 touches neither a bag slot
+    -- nor a set, so this is the only signal for that swap.
+    PLAYER_EQUIPMENT_CHANGED = "PLAYER_EQUIPMENT_CHANGED",
 
     -- A bag slot locking or unlocking. Distinct from BAG_UPDATE_DELAYED: an
     -- interrupted cast unlocks its slot without changing what is in any bag,
@@ -135,11 +146,9 @@ BitForge.Events = {
     -- treats any firing as "re-read".
     TOOLTIP_DATA_UPDATE    = "TOOLTIP_DATA_UPDATE",
 
-    -- Bank
     BANKFRAME_OPENED = "BANKFRAME_OPENED",
     BANKFRAME_CLOSED = "BANKFRAME_CLOSED",
 
-    -- Merchant
     MERCHANT_SHOW   = "MERCHANT_SHOW",
     MERCHANT_CLOSED = "MERCHANT_CLOSED",
 
@@ -153,21 +162,20 @@ BitForge.Events = {
     -- spell goes up, so it never once woke the probe that watched for one.
     CURRENT_SPELL_CAST_CHANGED = "CURRENT_SPELL_CAST_CHANGED",
 
-    -- Professions
     SKILL_LINES_CHANGED     = "SKILL_LINES_CHANGED",
     TRADE_SKILL_LIST_UPDATE = "TRADE_SKILL_LIST_UPDATE",
     NEW_RECIPE_LEARNED      = "NEW_RECIPE_LEARNED",
 
-    -- Reputation
+    NEW_TOY_ADDED               = "NEW_TOY_ADDED",
+    TRANSMOG_COLLECTION_UPDATED = "TRANSMOG_COLLECTION_UPDATED",
+
     UPDATE_FACTION                     = "UPDATE_FACTION",
     MAJOR_FACTION_RENOWN_LEVEL_CHANGED = "MAJOR_FACTION_RENOWN_LEVEL_CHANGED",
 
-    -- Quests
     QUEST_ACCEPTED  = "QUEST_ACCEPTED",
     QUEST_TURNED_IN = "QUEST_TURNED_IN",
     QUEST_REMOVED   = "QUEST_REMOVED",
 
-    -- UI
     ACTIONBAR_UPDATE_COOLDOWN = "ACTIONBAR_UPDATE_COOLDOWN",
     CVAR_UPDATE               = "CVAR_UPDATE",
     UPDATE_BINDINGS           = "UPDATE_BINDINGS",

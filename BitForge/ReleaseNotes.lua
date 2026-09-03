@@ -11,16 +11,16 @@
 -- gone, not missing: CHANGELOG.md still has them, this table never will.
 --
 -- `lead` IS OPTIONAL. It is a bullet's bold prefix, where the source bullet
--- had one; 1 of the 78 items below have none, so a consumer
+-- had one; 1 of the 94 items below have none, so a consumer
 -- must not assume every item carries one.
 --
 -- `sep` IS THE SEPARATOR THE CHANGELOG WROTE between a lead and the rest of
 -- the bullet -- an em dash or a colon, recorded rather than dropped. ABSENT
--- MEANS THE SOURCE WROTE NEITHER, not that one went missing: 76 of the
--- 77 leads below have no `sep`, and supplying one for those strands a
+-- MEANS THE SOURCE WROTE NEITHER, not that one went missing: 92 of the
+-- 93 leads below have no `sep`, and supplying one for those strands a
 -- predicate with nothing in front of it ("BatchSell -- now asks ...").
 --
--- 5 releases, 78 items, v12.1.0.10 down to v12.1.0.6.
+-- 5 releases, 94 items, v12.1.0.11 down to v12.1.0.7.
 
 ---@class BitForge.Core
 local ns = select(2, ...)
@@ -29,6 +29,45 @@ local ns = select(2, ...)
 local enum = ns.enum
 
 enum.RELEASE_NOTES = {
+    {
+        version = "v12.1.0.11",
+        date = "2026-09-03",
+        sections = {
+            {
+                heading = "Added",
+                items = {
+                    { lead = "Flag a recipe, and Dispatch keeps what it is made of.", text = "Right-click a recipe in your profession window and there is a Flag entry on the menu: from then on, every reagent that recipe consumes is kept even when the reagent rule would otherwise let it go. It reads the recipe's own ingredient list from the game, so nothing has to be listed by hand and a flag keeps working when the recipe's requirements change. Basic ingredients only -- an optional or finishing reagent is not covered, because those are a choice you make at the crafting window rather than something the recipe needs." },
+                    { lead = "The expansion lists have a Vanilla row.", text = "Items the game files under the original game had no row to tick, so no expansion list could name them. They can be named now, everywhere an expansion list appears. One quirk worth knowing, and it is the game's rather than ours: a few items sold across late Vanilla and early Burning Crusade report the current expansion instead of either of them, so those follow the Current expansion row rather than Vanilla." },
+                    { lead = "The openables button offers you a cosmetic whose appearance you have not collected.", text = "These grant the appearance when you use them rather than when you vendor them, so one sitting unused in your bags is an appearance you do not have — and the button never showed them. It could not: an item says it adds an appearance on a line the game gives no type to, indistinguishable from any other sentence in a tooltip, and the two items that do have a type are ensembles and illusions. It now asks the collection directly instead, and a single uncollected appearance ranks with recipes and toys as something to learn. Once it is collected the item drops off the button again." },
+                },
+            },
+            {
+                heading = "Changed",
+                items = {
+                    { lead = "/bfdump is a developer's command now, and a released build answers none of it.", text = "/bfdump openables and /bfdump batchsell opened a machine-readable record of what BitForge had concluded about an item; Dispatch inherits neither of them, and /bfdump eui goes the same way. None of them is listed by /bitforge any more, and typing one is refused. If you ever pasted one of those records into an issue, that is a real loss and worth saying plainly rather than leaving you to find it. What is not lost is the record itself: Shift+Alt+right-click on the openables button, and Report This Verdict on an item at a vendor, open the same window they always did with the same report in it -- already selected, nothing written to your saved variables, no reload, and still saying what it discloses before you send it." },
+                    { lead = "Reagents are now kept by expansion first, and by the recipes you flagged second.", text = "The rule used to be one question -- does one of your professions craft with this -- and it kept the answer whatever expansion the reagent came from. It is two questions now: keep it if its expansion is ticked, otherwise keep it if a recipe you flagged wants it, otherwise sell it. The list starts on Current expansion, and your existing profile moves to that default rather than being migrated to something wider. So expect older reagents to be offered for sale even if you change nothing -- everything from a finished expansion that no flagged recipe consumes. If you were relying on the old behaviour, tick All expansions in the reagent rule, or flag the recipes you are actually saving them for." },
+                    { lead = "Every rule that names expansions now agrees about the original game.", text = "The two questions behind the expansion lists both treated an item from the original game as though the game had not answered, which meant a Vanilla piece slipped past the rules that were supposed to weigh it. This was not confined to reagents: it reaches the Bind on Equip and Bind on Account gear rescues and the keep-it-to-disenchant question too. Those rules now decide about a Vanilla item rather than stepping around it, so a Vanilla piece may be sold where it previously survived, and kept where you have ticked Vanilla." },
+                    { lead = "An item in your bags now gets one answer instead of three.", text = "The openables button, the vendor sweep and the Warband deposit each decided on their own, so the same item could sit on the button and in the sell list at once, and whichever you clicked first won. They agree now, and opening comes first -- it is the only one of the three that turns an item into other items, so a box you sold is gone while a box you opened is sorted out on the next pass. Four things follow: a cache or container is opened rather than sold; a recipe another of your characters still needs is kept; a recipe you have not learned but do not want stops being offered on the button and in the sell list at the same time; and with Only wanted reagents off, a reagent bound for the bank is no longer offered to the vendor as well. Grey items with a \"Use:\" line are the deliberate exception and still sell -- \"the game says this does something\" is not a reason to keep vendor trash." },
+                    { lead = "Your own decisions about an item are stored in one place instead of three.", text = "Hiding something from the openables button, putting it on a sell list, and choosing which bank it belongs in were three separate records, kept by what used to be three separate addons. They are one record now, and everything you had set is carried across the first time you log in — nothing is reset and there is nothing to re-enter. You should not be able to tell the difference from playing; that is the intent. One consequence worth knowing: once this version has upgraded your saved data, an older version of Dispatch can no longer read it, so this is not a change to roll back from by reinstalling an earlier build." },
+                    { lead = "Openables, Batch Sell and UPS are now one addon: Dispatch.", text = "Three folders become one, and the three features become three switches inside it — the openables button, selling at a vendor, and depositing to the Warband Bank — each turned on and off on its own in the settings panel. Everything you had configured in all three is carried over the first time you log in: rules, per-item lists, curation destinations, blacklists, the button's size and position. Nothing is reset and there is nothing to re-enter. One thing does not survive the move: the keybinding for the openables button. The button's name changed with the addon's, and the game stores keybindings by name, so yours is cleared — set it again in the standard Key Bindings panel. If you install by hand rather than through an addon manager, delete the three old folders: Dispatch refuses to start while any of them is still installed, and tells you which." },
+                    { lead = "Every selling rule that asked about an expansion now lets you name the expansions.", text = "The three-way \"this expansion / all of them / none\" on the gear rescues, and the \"keep this expansion's\" checkboxes on consumables, gems, reagents and enhancements, are one control now: a list you tick. Keep Dragonflight's flasks and nothing older, or spare Bind on Equip gear from the two expansions you are still levelling alts through. Each list opens with \"All expansions\" and \"Current expansion\", which follow the game as it moves, while a named expansion stays the one you picked. Two limits go with the old shape: consumables offered only the expansion immediately behind, and only while \"this expansion\" was ticked, and enhancements always kept the current expansion whether you wanted them or not. Your existing settings all carry across — nothing is reset." },
+                    { lead = "Selling trusts the crafting-reagent list instead of hedging against it.", text = "The list is captured from the game's own recipes, and anything missing from it used to count as \"unknown\" rather than as an answer — so an item it had never heard of was held back rather than judged, whatever you had set. That was meant to protect reagents, and mostly it protected junk: the list does know the real reagents, so those were already being handled correctly, while last expansion's food, gems and trade goods it had never seen sat in your bags forever with no setting that could shift them. Absence now means what it reads as — nothing crafts with this — and those items go through your rules like anything else. Expect more to be offered for sale, in the consumables, gems and trade goods rules especially. Your Never Sell list still overrules everything, and the reagent list is retaken from the client and reshipped after a game patch." },
+                    { lead = "Eight retired items no longer appear on the openables button.", text = "A Draenor cache, two Legion tomes and a set of War Within delve rewards are all grey, which is how the game marks this kind of item as finished with, and the button's curated list no longer overrides that — so the next one Blizzard retires drops off on its own rather than waiting for someone to notice." },
+                },
+            },
+            {
+                heading = "Fixed",
+                items = {
+                    { lead = "A greyed-out dropdown now looks greyed out.", text = "Every BitForge dropdown that switches itself off when another setting has already decided the question was painting only half of itself as disabled -- the arrow and the frame dimmed, the text stayed bright -- so a control that was doing nothing still read as live. It has been shipping that way in TaskTome and EUI as well as here, and all three are fixed together." },
+                    { lead = "The report windows now say exactly what they carry.", text = "The footnote under the openables report named the item, how BitForge classified it, its tooltip and this character's professions -- but not the bag and slot it was sitting in or whether it was locked, both of which the report also prints. The sell verdict's footnote was short of fields in the same way. So a report pasted into a public issue carried a little more than its own footnote promised. Both now list everything they disclose, and what you are told you are sending is what you send." },
+                    { lead = "The selling rules stop short of an item the game will not describe.", text = "An item's quality can be missing for a moment while the game is still answering, or withheld by the game outright — and only the first of those was being recognised. The selling rules and the disenchant probe now recognise both, and treat such an item as unanswered rather than weighing it against your settings on a quality nobody ever gave them." },
+                    { lead = "The openables button no longer acts on an item before the game has finished describing it.", text = "An item's tooltip and its item data load separately, and for a moment after a bag changes the tooltip can be empty. The button read that silence as an answer -- it took \"no line said this item cannot be used\" from a tooltip it had not been shown -- so in that moment it could offer an item the game itself refuses, and a toy or a recipe could be ranked below whatever else you were carrying instead of at the top. It now waits, and the item appears as soon as the tooltip arrives. If you are used to something showing up the instant it drops, it may now take a fraction of a second longer." },
+                    { lead = "Moving the openables button no longer skips the item on it.", text = "Alt and left-drag is how you reposition the button, and the same press was also counted as using the item -- so the item you were carefully not touching went to the back of the queue and the button moved on to the next one. It never actually opened anything: the game only performs a button's action on an unmodified click, so holding Alt meant nothing happened at all except the wrong bookkeeping. Holding Shift or Ctrl on a left click had the same effect and nobody had noticed. All three now leave the item where it is." },
+                    { lead = "The openables button no longer offers you socket gems.", text = "A gem's stats are built as an enchantment, and that is indistinguishable to an addon from an ordinary \"Use:\" effect — so every gem sitting in your bags took its turn on the button as though it were something to open. A gem goes into a socket rather than opening anything, and they are now left out." },
+                },
+            },
+        },
+    },
     {
         version = "v12.1.0.10",
         date = "2026-08-30",
@@ -165,24 +204,6 @@ enum.RELEASE_NOTES = {
                     { lead = "Openables", text = "holds back Focused Life Essence until you carry the five it needs to combine, and no longer offers Superior Loyal Spirit, which does nothing away from its Queen's Conservatory node." },
                     { lead = "RepRank:", text = "the Show factions with no progress toggle now shows its state after you click it. It changed the list correctly but kept the appearance it was built with, so it read as unchanged." },
                     { lead = "Openables:", text = "blacklisted items show their names again. A row in the blacklist window read Unknown item (194829) and stayed that way for the rest of the session — the window asked the game for the name, but nothing was listening for the answer when it came back. Rows only ever looked right for items still sitting in your bags, which is rarely what is on a blacklist." },
-                },
-            },
-        },
-    },
-    {
-        version = "v12.1.0.6",
-        date = "2026-08-23",
-        sections = {
-            {
-                heading = "Added",
-                items = {
-                    { lead = "RepRank:", text = "every faction now carries a progress bar showing how far the leading character is through their current step, so you can see who is close to the next rank rather than only which rank they have reached. The bar is coloured by what kind of progress it is — the game's own standing colours for ordinary reputations, green for friendships, the accent colour for renown, and purple for paragon — and hovering it gives you the exact figures. A faction in paragon shows its paragon progress rather than a permanently full bar. A faction with nothing left to earn shows a full bar and no figures, and one the game has not sent numbers for shows an empty bar rather than a made-up total. The window is wider to make room for the column." },
-                },
-            },
-            {
-                heading = "Changed",
-                items = {
-                    { lead = "RepRank:", text = "character names are shown in class colours — in the window's Best column, in the tooltip listing who has a paragon reward waiting, and in the paragon alerts printed to chat. A character is coloured from the next time you log in on it; until then it looks exactly as it does today." },
                 },
             },
         },

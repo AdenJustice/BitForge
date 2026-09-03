@@ -1,0 +1,3 @@
+<Bindings>
+  <Binding name="CLICK BitForge_DispatchButton:LeftButton" header="BITFORGE_DISPATCH"/>
+</Bindings>

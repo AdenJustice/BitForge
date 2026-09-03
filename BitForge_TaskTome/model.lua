@@ -183,12 +183,9 @@ function model.ClearCharCompleted(taskId)
     model.ClearCharCompletedFor(taskId, BitForge:GetCurrentCharacter())
 end
 
--- Opt State
---
 -- Keyed by character like completions, and for a stronger reason: the config
 -- frame writes another character's opt state directly, so this is the one
 -- cross-character write the UI performs.
-
 local function optStatesFor(charKey)
     local all = db.global.optStates
     local forChar = all[charKey]
@@ -235,13 +232,10 @@ function model.ClearAllRecordsFor(taskId)
     end
 end
 
--- Reset scheduling
---
 -- Each stamp set clears exactly the completions it owns. Scoping them this way
 -- is what prevents a second character, logging in with a stale stamp, from
 -- clearing a warband completion the first character legitimately re-earned
 -- after the boundary.
-
 function model.ClearCharCompletionsForReset(charKey, resetType)
     for _, task in pairs(db.global.tasks) do
         if task.reset == resetType and task.completionScope ~= enum.SCOPE_WARBAND then

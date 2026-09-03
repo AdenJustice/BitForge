@@ -79,7 +79,7 @@ function list.Refresh()
     if not scrollBox then return end
 
     -- RetainScrollPosition: a collapse or a marker change must not throw the
-    -- player back to the top (ScrollBox.lua:17).
+    -- player back to the top (ScrollBox.lua).
     scrollBox:SetDataProvider(buildProvider(), ScrollBoxConstants.RetainScrollPosition)
 end
 
@@ -99,8 +99,7 @@ local function onRowClick(self)
     end
 end
 
---- The marker suffix for one row. control/editor.lua chose the markers; this
---- only spells them.
+--- The marker suffix for one row.
 ---@param row table
 ---@return string
 local function markers(row)
@@ -174,7 +173,7 @@ function list.Create(parent)
     parent.searchBox = searchBox
 
     scrollBox = CreateFrame("Frame", nil, parent, "WowScrollBoxList")
-    -- MinimalScrollBar is an EventFrame, not a Frame (MinimalScrollBar.xml:15).
+    -- MinimalScrollBar is an EventFrame, not a Frame (MinimalScrollBar.xml).
     scrollBar = CreateFrame("EventFrame", nil, parent, "MinimalScrollBar")
 
     scrollBox:SetPoint("TOPLEFT", searchBox, "BOTTOMLEFT", 0, -GAP)
@@ -186,7 +185,7 @@ function list.Create(parent)
     local treeView = CreateScrollBoxListTreeListView(INDENT, PAD, PAD, PAD, PAD, SPACING)
     -- Mandatory for a bare frame type: with no template there is no
     -- C_XMLUtil.GetTemplateInfo to measure the row with, and Init raises
-    -- (ScrollBoxListView.lua:41-45).
+    -- (ScrollBoxListView.lua).
     treeView:SetElementExtent(ROW_HEIGHT)
     treeView:SetElementFactory(function(factory)
         factory("Button", initRow)

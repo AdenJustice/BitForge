@@ -164,13 +164,11 @@ function Handle:AddExpandableSection(name, expanded)
         end
     end
 
-    -- A section header must never be gated behind any section's predicate --
-    -- neither its own (that would make a collapsed section hide its own header,
-    -- taking everything under it with it) nor the previous section's (that
-    -- would tie one section's visibility to whether an unrelated, earlier one
-    -- happens to be expanded). So the header goes straight to the layout,
-    -- bypassing AddInitializer's predicate-attaching logic entirely, and only
-    -- afterwards does _currentSection update to gate whatever controls follow.
+    -- A section header must never be gated behind any section's predicate:
+    -- its own would let a collapsed section hide its own header and everything
+    -- under it, and the previous section's would tie it to whether an
+    -- unrelated, earlier section happens to be expanded. Hence the layout
+    -- directly rather than AddInitializer, and _currentSection only afterwards.
     if self._layout then
         self._layout:AddInitializer(initializer)
     end
@@ -186,7 +184,7 @@ end
 --
 -- For custom UI, either wrap it in an initializer and pass that to AddInitializer,
 -- or put the content in a standalone window opened from a settings button. See
--- BitForge_Openables (blacklist window) and BitForge_UPS (assignment frame).
+-- BitForge_Dispatch's blacklistFrame.lua and curationWindow.lua.
 
 function Handle:GetCategory()
     return self._cat

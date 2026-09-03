@@ -37,3 +37,7 @@ control\resolver.lua
 control\sync.lua
 control\editor.lua
 control\control.lua
+
+#@debug@
+debug\dumps.lua
+#@end-debug@

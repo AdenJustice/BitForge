@@ -196,7 +196,7 @@ end
 --- Runs inside adapters.RunApplying at the call site, like applyEntry.
 ---@param key string
 ---@param entry table
----@param state table  { bad, resolved }
+---@param state table  { bad, resolved, anchorsChanged }
 ---@return boolean changed
 local function resolvePendingEntry(key, entry, state)
     local resolvedPosition, reason = resolver.ResolveExtended(key, entry)
@@ -489,9 +489,6 @@ function sync.Apply()
         end
     end)
 
-    -- Without this, anchored frames sit at whatever coordinates they last
-    -- held until something else nudges them -- a visible jump later instead
-    -- of now.
     if state.anchorsChanged then
         adapters.ReapplyAnchors()
     end

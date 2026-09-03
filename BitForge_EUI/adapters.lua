@@ -245,7 +245,7 @@ end
 --- documented exception as IsAnchored and ReadAnchor. Returns false when
 --- EllesmereUI is not present -- there is no table to write into.
 ---@param key string
----@param def table  { target, side, offsetX, offsetY }
+---@param def table|nil  { target, side, offsetX, offsetY }, nil to remove
 ---@return boolean  true when a write happened
 function adapters.WriteAnchor(key, def)
     if not EllesmereUIDB then return false end

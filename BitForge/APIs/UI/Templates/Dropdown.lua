@@ -17,6 +17,32 @@ local BORDER_BACKDROP = {
     insets = { left = 1, right = 1, top = 1, bottom = 1 },
 }
 
+--- The closed box's three painted states, resolved in one place. The hover
+--- highlight and the greyed state both write the border, so a widget where each
+--- owned half of it would paint whichever fired last.
+---@param dropdown BitForge.DropdownMixin
+---@param state "NORMAL" | "HOVER" | "DISABLED"
+local function UpdateState(dropdown, state)
+    local disabled = state == "DISABLED"
+    local borderColor = colors.edge
+    if disabled then
+        borderColor = colors.bgDisabled
+    elseif state == "HOVER" then
+        borderColor = colors.point
+    end
+
+    dropdown:SetBackdropBorderColor(borderColor:GetRGBA())
+    dropdown.Label:SetTextColor((disabled and colors.textDisabled or colors.text):GetRGB())
+    -- The arrow wears no tint of its own at rest, so reviving restores the
+    -- texture's own white rather than painting the label's grey onto a glyph
+    -- that never carried it.
+    if disabled then
+        dropdown.Arrow:SetVertexColor(colors.textDisabled:GetRGB())
+    else
+        dropdown.Arrow:SetVertexColor(1, 1, 1, 1)
+    end
+end
+
 ---@class BitForge.DropdownMixin : Button, BackdropTemplate, DropdownButtonMixin
 local DropdownMixin = CreateFromMixins(DropdownButtonMixin)
 
@@ -32,21 +58,18 @@ function DropdownMixin:OnLoad()
     self:SetSize(160, DROPDOWN_HEIGHT)
     self:EnableMouseWheel(true) -- OnLoad_Intrinsic disables it; re-enable for rotation
 
-    -- Backdrop / border
-    local P = colors
+    -- Colours come later, from UpdateState, once the regions it paints exist.
     self:SetBackdrop(BORDER_BACKDROP)
-    self:SetBackdropBorderColor(P.edge.r, P.edge.g, P.edge.b, P.edge.a)
 
     local bg = self:CreateTexture(nil, "BACKGROUND")
     bg:SetTexture("Interface/Buttons/WHITE8X8")
     bg:SetAllPoints()
-    bg:SetVertexColor(P.bg.r, P.bg.g, P.bg.b, P.bg.a)
+    bg:SetVertexColor(colors.bg.r, colors.bg.g, colors.bg.b, colors.bg.a)
     self.Bg = bg
 
     local label = self:CreateFontString(nil, "OVERLAY", "BitForgeFontNormalOutline")
     label:SetJustifyH("LEFT")
     label:SetJustifyV("MIDDLE")
-    label:SetTextColor(P.text.r, P.text.g, P.text.b, P.text.a)
     label:SetPoint("LEFT", self, "LEFT", H_PADDING, 0)
     label:SetPoint("RIGHT", self, "RIGHT", -(ARROW_SIZE + H_PADDING + 6), 0)
     label:SetPoint("TOP", self, "TOP", 0, 0)
@@ -63,21 +86,31 @@ function DropdownMixin:OnLoad()
     self:HookScript("OnMouseDown", DropdownButtonMixin.OnMouseDown_Intrinsic)
     self:HookScript("OnMouseWheel", DropdownButtonMixin.OnMouseWheel_Intrinsic)
 
-    -- Hover border highlight
+    -- Hover border highlight. IsEnabled first: a greyed button still takes
+    -- OnEnter, the same trap CheckButtonMixin's own OnEnter documents in
+    -- Buttons.lua.
     self:HookScript("OnEnter", function(f)
-        local c = colors.point
-        f:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+        if f:IsEnabled() then UpdateState(f, "HOVER") end
     end)
     self:HookScript("OnLeave", function(f)
         if not f:IsMenuOpen() then
-            local c = colors.edge
-            f:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+            UpdateState(f, f:IsEnabled() and "NORMAL" or "DISABLED")
         end
     end)
+
+    -- The greyed state. SetEnabled(false) already stops the menu and the wheel
+    -- -- OpenMenu and OnMouseWheel_Intrinsic both return early on IsEnabled
+    -- (Blizzard_Menu/DropdownButton.lua) -- but says so nowhere on screen, so
+    -- without these the box keeps a live border and a live label: a control
+    -- that provably does nothing looking like one that does.
+    self:HookScript("OnDisable", function(f) UpdateState(f, "DISABLED") end)
+    self:HookScript("OnEnable", function(f) UpdateState(f, "NORMAL") end)
+
+    UpdateState(self, "NORMAL")
 end
 
---- Called by DropdownButtonMixin when the selection changes.
---- Displays a comma-separated list of selected option texts in the label.
+--- Called by DropdownButtonMixin when the selection changes; the label then
+--- shows the selected option texts joined with ", ".
 function DropdownMixin:UpdateToMenuSelections(menuDescription, selections)
     local text = self._placeholder or ""
     if selections and #selections > 0 then
@@ -98,15 +131,17 @@ end
 function DropdownMixin:OnMenuOpened(menu)
     DropdownButtonMixin.OnMenuOpened(self, menu)
     self.Arrow:SetTexture(UI.GetMedia("arrow_up"))
-    local c = colors.point
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    UpdateState(self, "HOVER")
 end
 
 function DropdownMixin:OnMenuClosed(menu)
     DropdownButtonMixin.OnMenuClosed(self, menu)
     self.Arrow:SetTexture(UI.GetMedia("arrow_down"))
-    local c = self:IsMouseOver() and colors.point or colors.edge
-    self:SetBackdropBorderColor(c.r, c.g, c.b, c.a)
+    if not self:IsEnabled() then
+        UpdateState(self, "DISABLED")
+    else
+        UpdateState(self, self:IsMouseOver() and "HOVER" or "NORMAL")
+    end
 end
 
 --- Placeholder text shown when nothing is selected.
@@ -121,8 +156,6 @@ end
 
 UI.Mixins.Dropdown = DropdownMixin
 
---- Create a styled dropdown widget.
----
 --- Example usage:
 ---   local dd = UI.CreateDropdown(parent, "Select an option")
 ---   dd:SetupMenu(function(dropdown, root)

@@ -8,6 +8,7 @@ local setmetatable = setmetatable
 local tostring = tostring
 local type = type
 local sub = string.sub
+local sort = table.sort
 local wipe = table.wipe
 
 ---@class BitForge.Core.Model
@@ -35,11 +36,7 @@ local PREFIX_LEN = #PREFIX
 --- rather than having each module hand over a second, hand-written short name
 --- is what keeps the two from ever drifting apart.
 ---
---- Core is the one name that is stated rather than derived. It answers /bfdump
---- beside the modules, so it needs a name in their namespace, and it has no
---- prefix to strip and no BitForgeDB.modules entry to agree with. The obvious
---- derivation -- its own addon name -- shares a first letter with a module and
---- would lengthen an abbreviation players already type.
+--- Core is the one name stated rather than derived -- see enum.CORE_KEY for why.
 ---
 --- Any other name without the prefix passes through unchanged: the public entry
 --- points are callable with an arbitrary string, and a caller that names a
@@ -57,9 +54,8 @@ local function ModuleKey(addonName)
     return addonName
 end
 
--- Published so the slash-command surface can name a module the same way its
--- saved data is keyed. A second copy of this strip would be the one place the
--- roster and the storage key could disagree.
+-- Published so the slash-command surface names a module exactly as its saved
+-- data is keyed, rather than carrying a second copy of the strip.
 model.ModuleKey = ModuleKey
 
 --- Where an addon's diagnostics dump is read back from in the saved variables.
@@ -102,7 +98,7 @@ end
 --- The shape a caller reads is `{ enabled = <boolean>, dump = <table> }`, but
 --- the value in the saved file is hand-written, so it arrives in whatever shape
 --- a developer typed. The documented one-liner is still a bare
---- `/run BitForgeDB.modules.UPS.debug = true`, and indexing that scalar for
+--- `/run BitForgeDB.modules.Dispatch.debug = true`, and indexing that scalar for
 --- .enabled would raise, so a truthy scalar is upgraded in place the first time
 --- it is read. A container typed without its dump table is completed the same
 --- way, so nothing downstream has to check whether dump exists.
@@ -177,15 +173,13 @@ local function Allocate(name, moduleDefaults, callback)
 
     -- db.debug is read through __index rather than copied in, so it answers
     -- whatever is in the saved file at the moment it is asked. That makes
-    -- `/run BitForgeDB.modules.UPS.debug = true` take effect on the next check
+    -- `/run BitForgeDB.modules.Dispatch.debug = true` take effect on the next check
     -- instead of the next login. It is deliberately not part of the module's
     -- defaults or its schema: nothing seeds it, nothing migrates it, and a
     -- module that has never been flagged reads nil.
     --
     -- What comes back is the container, not a boolean: a module asks it for
-    -- .enabled and parks diagnostics in .dump. Returning the container rather
-    -- than unwrapping it here is what lets a dump written by a module reach the
-    -- saved file, since it is the stored table itself.
+    -- .enabled and parks diagnostics in .dump.
     local proxies = setmetatable({ global = globalProxy, char = charProxy }, {
         __index = function(_, k)
             if k == "debug" then return DebugContainer(module) end
@@ -203,11 +197,9 @@ function model.InitializeDatabase()
     SeedDefaults(BitForgeDB.global, ns.enum.DB_DEFAULTS.global)
     db = BitForgeDB
 
-    -- The retired reagent scan's store. It held what the old shipped catalogue
-    -- lacked, keyed to the interface it was recorded against; the catalogue is
-    -- now generated from the client's own recipe lists and nothing reads this.
-    -- Unconditional so a profile that has not been opened in a year is still
-    -- cleared on its next login.
+    -- The retired reagent scan's store: nothing reads it now that the catalogue
+    -- is generated from the client's own recipe lists. Unconditional so a profile
+    -- that has not been opened in a year is still cleared on its next login.
     db.global.reagentScan = nil
 
     for _, req in ipairs(pendingAllocations) do
@@ -482,15 +474,16 @@ function model.SetModuleList(modules)
     moduleRegistry = modules
 end
 
---- Allocates a dedicated DB table for a module and delivers a live reference via callback.
---- If called before DB:Init(), the request is queued and processed once Init() completes.
+--- Allocates a dedicated DB table for a module and delivers a live reference via
+--- callback. Called before model.InitializeDatabase, the request is queued and
+--- delivered once that runs.
 --- db.global is account-wide; db.char is isolated to the current character;
 --- db.debug is the module's diagnostics container, `{ enabled, dump }` or nil,
 --- read live.
 ---
 --- Pass the addon's own name from `...` -- core derives the storage key and
 --- keeps the full name to look the module's .toc title up by.
----@param addonName string  The addon's name from `...`, e.g. "BitForge_UPS"
+---@param addonName string  The addon's name from `...`, e.g. "BitForge_Dispatch"
 ---@param defaults  { global: table|nil, char: table|nil }
 ---@param callback  fun(db: table)  db.global = account-wide, db.char = current character
 function BitForge:AllocateModuleDB(addonName, defaults, callback)
@@ -508,6 +501,117 @@ function BitForge:AllocateModuleDB(addonName, defaults, callback)
     end
 end
 
+--- The raw stored table of a module nothing registered this session.
+---
+--- Raw rather than proxied, and deliberately: a retired module registered no
+--- defaults, so there is nothing for a proxy to fall back to. That is also the
+--- trap this function hands its caller -- the logout prune deleted every key
+--- that matched the retired module's shipped default and nothing re-seeded
+--- them, so a missing key means "the player left it alone", never "the player
+--- turned it off". Whoever adopts the table has to supply those defaults.
+---
+--- Refuses a key a loaded module owns: that data is live, reachable through its
+--- own proxies, and not anyone else's to take.
+---
+--- A container holding neither global nor char is not data. Allocate reads that
+--- same shape as a fresh profile -- one carrying only a hand-set debug flag has
+--- never stored a setting -- and adoption has to agree with it, or a player who
+--- once switched diagnostics on would be told their settings were carried
+--- across when there were none.
+---@param key string  a storage key, e.g. "Openables" -- not an addon name
+---@return table|nil
+function BitForge:GetRetiredModuleDB(key)
+    if not db or model.GetModuleProxies(key) then return nil end
+    local stored = db.modules[key]
+    if not stored or (stored.global == nil and stored.char == nil) then return nil end
+    return stored
+end
+
+--- Deletes a retired module's stored table once its data has been adopted.
+---
+--- Nothing else ever will. CleanupDatabase only visits modules that registered
+--- defaults this session, which is exactly why a retired table survives long
+--- enough to be adopted -- and exactly why one left behind would sit in the
+--- saved variables forever.
+---@param key string
+function BitForge:DropRetiredModuleDB(key)
+    if not db or model.GetModuleProxies(key) then return end
+    db.modules[key] = nil
+end
+
+--- One character's slot in a LIVE module's own table, created and seeded from
+--- that module's own registered defaults if it does not already exist.
+---
+--- Takes the addon's own name, unlike GetRetiredModuleDB/DropRetiredModuleDB
+--- above: those take a bare storage key because no live module is left to hand
+--- core its own name, and here the caller is loaded like any other.
+---
+--- For adoption and migration only, where a module legitimately has to write
+--- a character other than the one currently logging in -- ordinary operation
+--- never needs this, because a module already holds a proxy bound to exactly
+--- the character it is allowed to touch. A module reaching for this from a
+--- normal code path is doing something wrong.
+---
+--- Seeding is not optional politeness: a slot created by raw assignment holds
+--- only whatever was assigned into it, and nothing re-seeds it until that
+--- character's own next login -- so any code reading it before then would see
+--- holes where a live module sees registered defaults. An existing slot is
+--- seeded too (SeedDefaults only fills what is missing), but never re-seeded
+--- OVER a value already stored there.
+---
+--- The character currently logging in reaches through this the exact table
+--- its own char proxy already writes through -- the same table, not a copy --
+--- so a write through either one is visible through the other immediately.
+---@param addonName string  the addon's own name from `...`
+---@param charKey string
+---@return table|nil  nil if the module has not allocated a database this session
+function BitForge:GetModuleCharSlot(addonName, charKey)
+    local name = ModuleKey(addonName)
+    if not db or not model.GetModuleProxies(name) then return nil end
+
+    local module = db.modules[name]
+    module.char[charKey] = module.char[charKey] or {}
+
+    local defaults = moduleDefaultsRegistry[name]
+    SeedDefaults(module.char[charKey], defaults and defaults.char)
+
+    return module.char[charKey]
+end
+
+--- Every charKey a LIVE module's own stored table already holds a slot for.
+---
+--- The enumeration half of GetModuleCharSlot above, and it exists for the same
+--- callers: a migration can reach any character's slot it can name, and has no
+--- way to name them. The char proxy exposes one key and offers no way to ask
+--- which others exist, so a step converting per-character data would otherwise
+--- convert the character logging in and silently leave every alt behind --
+--- and the version stamped afterwards is account-wide, so no later login ever
+--- comes back for them.
+---
+--- Deliberately not BitForge:GetKnownCharacters(). That registry is a
+--- different set, and in the direction that matters a superset: it names
+--- every character that has logged in with BitForge loaded, including ones
+--- that never touched this module. Feeding those keys to GetModuleCharSlot
+--- would create and seed a slot for every one of them -- per-character
+--- storage invented for characters that never stored any.
+---
+--- Creates nothing itself: only keys already stored come back. Sorted, so a
+--- migration visits them in the same order twice.
+---@param addonName string  the addon's own name from `...`
+---@return string[]  empty when the module has not allocated a database this session
+function BitForge:GetModuleCharKeys(addonName)
+    local name = ModuleKey(addonName)
+    if not db or not model.GetModuleProxies(name) then return {} end
+
+    local keys = {}
+    for charKey in pairs(db.modules[name].char) do
+        keys[#keys + 1] = charKey
+    end
+    sort(keys)
+
+    return keys
+end
+
 --- Clears a module's entire saved database -- the account-wide table and every
 --- character's slot -- and re-seeds its registered defaults.
 ---
@@ -518,7 +622,7 @@ end
 --- login, which is why this is the one thing the tests pin explicitly.
 ---
 --- Safe to call for a module that has never allocated.
----@param addonName string  the addon's name from `...`, e.g. "BitForge_UPS"
+---@param addonName string  the addon's name from `...`, e.g. "BitForge_Dispatch"
 function BitForge:ResetModuleDB(addonName)
     if not db then return end
     local name = ModuleKey(addonName)
@@ -618,6 +722,17 @@ StaticPopupDialogs["BITFORGE_SCHEMA_RESET"] = {
     end,
 }
 
+--- Whether any retired key a spec names still holds data to adopt.
+---@param keys string[]|nil
+---@return boolean
+local function HasRetiredData(keys)
+    if not keys then return false end
+    for _, key in ipairs(keys) do
+        if BitForge:GetRetiredModuleDB(key) then return true end
+    end
+    return false
+end
+
 --- Brings a module's saved database up to its current schema, then starts it.
 ---
 --- Migration-first: every version between what is stored and spec.version needs
@@ -642,8 +757,8 @@ StaticPopupDialogs["BITFORGE_SCHEMA_RESET"] = {
 --- cannot use "the new key is absent" as its signal, because that key was
 --- already filled in with its default before the step ever ran; it must test
 --- the OLD key's presence instead.
----@param addonName string  The addon's name from `...`, e.g. "BitForge_UPS"
----@param spec      { version: number, title: string|nil, hasData: (fun(): boolean)|nil, steps: table }
+---@param addonName string  The addon's name from `...`, e.g. "BitForge_Dispatch"
+---@param spec      { version: number, title: string|nil, adopts: string[]|nil, hasData: (fun(): boolean)|nil, steps: table }
 ---@param onReady   fun()|nil
 function BitForge:UpgradeModuleDB(addonName, spec, onReady)
     local name = ModuleKey(addonName)
@@ -665,7 +780,12 @@ function BitForge:UpgradeModuleDB(addonName, spec, onReady)
     -- A container created this session belongs to a profile that has never
     -- stored anything for this module, so there is nothing to convert and
     -- nothing to warn about.
-    if model.WasModuleCreatedFresh(name) then
+    --
+    -- Unless the spec declares that it inherits a retired module's data: a
+    -- module that merges others is new for EVERY player alive, so this
+    -- short-circuit would skip its adoption for all of them. Being new is
+    -- precisely the state those steps exist for.
+    if model.WasModuleCreatedFresh(name) and not HasRetiredData(spec.adopts) then
         model.SetModuleSchemaVersion(name, version)
         if onReady then onReady() end
         return
@@ -680,6 +800,7 @@ function BitForge:UpgradeModuleDB(addonName, spec, onReady)
     end
 
     if verdict == "gap" then
+        ---@cast detail number
         ReportSchemaFailure(name, detail, "no migration step is registered for it")
         return
     end
@@ -795,20 +916,21 @@ end
 -- want this item as a crafting reagent? -- so a consumer can decline to vendor
 -- something an alt needs.
 --
--- ABSENCE MEANS "NOT KNOWN", NEVER "NOBODY WANTS THIS". A consumer that reads
--- nil as a no would sell the very items this exists to protect, and would do it
--- silently. Fall through to your own rules instead.
+-- ABSENCE MEANS THE CAPTURE DID NOT SEE IT, which is not the same as nothing
+-- wanting the item, and nothing here can tell the two apart. What a consumer
+-- does with a nil is therefore its own policy: Dispatch's sell rules read the
+-- table as complete and sell on one (#330). model.IsReagentDataStale is what says
+-- whether that reading is still safe, and it is reported in debug only.
 
 local bor, lshift = bit.bor, bit.lshift
 
 --- Core's own diagnostics container, normalized, or nil while it has never been
 --- flagged.
 ---
---- Hand-written into the saved variables -- `/run BitForgeDB.debug = true` --
---- and read live, so it takes effect on the next check without a reload. It is
---- the same `{ enabled, dump }` shape a module gets, hanging off the database
---- root instead of a module entry, so core's own flag carries the same shape
---- and goes through the same normalize / wipe / prune path a module's does.
+--- Hand-written as `/run BitForgeDB.debug = true` and read live, so it takes
+--- effect on the next check without a reload. The same container a module gets,
+--- hanging off the database root instead of a module entry, so it goes through
+--- the same normalize / wipe / prune path a module's does.
 ---@return table|nil
 local function CoreDiagnostics()
     if not db then return nil end
@@ -859,17 +981,18 @@ end
 
 -- GetProfessions() only ever answers for the character who is logged in, so the
 -- account-wide picture has to be accumulated one login at a time. It lives in
--- core because two modules ask the same question of it -- BatchSell to decide
--- whether a reagent is worth keeping, UPS to decide whether it is worth
--- depositing -- and a second copy refreshed by a second code path would
--- eventually disagree with the first.
+-- core because two features ask the same question of it -- Dispatch's sell
+-- rules to decide whether a reagent is worth keeping, its bank feature to
+-- decide whether it is worth depositing -- and a second copy refreshed by a
+-- second code path would eventually disagree with the first.
 --
--- Stored per character rather than as a bare account mask, because UPS asks a
--- per-character question: whether one named alt has a profession AND has not
--- learned a given recipe. The mask is derived from it.
+-- Stored per character rather than as a bare account mask, because the bank
+-- feature asks a per-character question: whether one named alt has a
+-- profession AND has not learned a given recipe. The mask is derived from it.
 
 -- Rebuilt on demand and dropped whenever the registry changes, rather than
--- recomputed per item: BatchSell asks this once per bag slot at a merchant.
+-- recomputed per item: Dispatch's sell rules ask this once per bag slot at a
+-- merchant.
 local accountProfessionMask
 
 --- The professions recorded for a character, or nil if none ever were.

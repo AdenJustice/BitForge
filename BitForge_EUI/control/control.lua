@@ -3,7 +3,17 @@ local ADDON_NAME, ns = ...
 
 local events = BitForge.Events
 
+-- Declaring elementFacts below is what makes wowlua-ls check every other
+-- sub-key access in this file: an ---@class with no ---@field left every
+-- control.<subKey> access here uninferred but also unwarned, so adapters,
+-- resolver and sync need their own fields now too, not just the one this
+-- commit adds.
 ---@class BitForge.EUI.Control
+---@field adapters BitForge.EUI.Control.Adapters
+---@field resolver BitForge.EUI.Control.Resolver
+---@field sync BitForge.EUI.Control.Sync
+---@field editor BitForge.EUI.Control.Editor
+---@field elementFacts fun(key: string): table
 local control = ns.control
 
 ---@type BitForge.EUI.Model
@@ -34,8 +44,9 @@ end
 --- Subscribes to one of core's two command events. Separate from ns:Subscribe
 --- because core also has to be told which addon is answering: the bus knows
 --- only an owner table, and /bitforge's roster names modules.
-function ns:SubscribeCommand(event, handler)
-    BitForge.SubscribeCommand(ADDON_NAME, event, handler, self)
+---@param isDiagnostic boolean|nil  see BitForge.SubscribeCommand
+function ns:SubscribeCommand(event, handler, isDiagnostic)
+    BitForge.SubscribeCommand(ADDON_NAME, event, handler, self, isDiagnostic)
 end
 
 -- Set when an apply was refused for combat and is owed a retry.
@@ -107,11 +118,8 @@ local function loginPass()
     if ok then deferForCombat(result) end
 end
 
--- Ports the standalone addon's Core/Events.lua:82-93. Passed to
--- control.adapters.OnUnlockMode, which wraps it in its own xpcall --
--- EllesmereUI's own dispatcher already wraps every listener in pcall, which
--- unwinds the stack before anything here could report a raise, so the safety
--- net has to sit on our side of that call.
+-- Ports the standalone addon's Core/Events.lua. No xpcall here: this is passed
+-- to control.adapters.OnUnlockMode, which wraps the listener body in one.
 local function onUnlockMode(active, closeAction)
     if active then
         -- Opening: warn before the drag, since the drag is what destroys the
@@ -147,8 +155,8 @@ function control.OnPlayerReady()
     C_Timer.After(enum.SECOND_PASS, loginPass)
 end
 
--- Slash commands -- ported from the standalone addon's Core/Commands.lua.
--- Subcommand keywords stay ASCII and untranslated: the player types them.
+-- Slash commands. Subcommand keywords stay ASCII and untranslated: the player
+-- types them.
 
 local function isUnmanaged(key)
     return model.GetLayout()[key] == nil
@@ -180,6 +188,9 @@ local function elementFacts(key)
 
     return facts
 end
+
+-- Published so debug/dumps.lua can reach it without duplicating it.
+control.elementFacts = elementFacts
 
 --- One element as a line of `/bitforge eui list`. `element` is the registry
 --- itself, and `element.label` is read off it by name -- fact 9,
@@ -215,6 +226,7 @@ local function describeElement(key, element)
     return table.concat(parts, " ")
 end
 
+---@param rest string  the command's argument text, already lowercased
 local function doList(rest)
     local elements = control.adapters.Elements()
     if not elements then
@@ -382,89 +394,3 @@ SlashCmdList["BITFORGEEUI"] = function(input)
     BitForge:Print(locale["cmd:deprecated"])
     handleCommand(input)
 end
-
--- Diagnostics dump -- BitForge_BatchSell's /bfdump batchsell is the worked
--- example this follows. The record's own field names stay unlocalized, like
--- that one: a diagnostic dump is read by a developer pasting it back, not by
--- a player. Only the report window's footnote goes through ns.locale, since
--- that is what the player reads before deciding to paste it anywhere.
-
--- The scalar keys BuildElementDump's table literal writes. Fixed here rather
--- than read with pairs: a table literal's pairs() order is unspecified, and a
--- report has to render identically for every player who copies one out.
-local DUMP_FIELDS = { "label", "folder", "anchored", "anchor", "position", "size", "managed" }
-
---- One registered element's known geometry, flattened to strings so it is
---- pastable verbatim -- flattening is what makes a value that could be secret
---- in 12.0 safe to put in front of a player. `label` and `folder` are read by
---- name off the registry entry (fact 9, docs/eui-integration.md).
----@param key string
----@param element table  the raw EllesmereUI registry entry
----@return table
-local function BuildElementDump(key, element)
-    local facts = elementFacts(key)
-
-    return {
-        label    = tostring(element.label or key),
-        folder   = tostring(element.folder or "?"),
-        anchored = tostring(facts.anchored),
-        anchor   = facts.anchored
-            and format("target=%s side=%s", tostring(facts.anchorTarget), tostring(facts.anchorSide))
-            or "nil",
-        position = facts.point
-            and format("%s %s,%s", facts.point, tostring(facts.x), tostring(facts.y))
-            or "nil",
-        size     = format("%sx%s", tostring(facts.width), tostring(facts.height)),
-        managed  = tostring(facts.managed),
-    }
-end
-
---- One registered element's known geometry as text a player can select and
---- paste.
----@param key string
----@param element table
----@return string
-local function RenderElementDump(key, element)
-    local record = BuildElementDump(key, element)
-    local lines = {
-        "BitForge EUI -- element report",
-        BitForge:ReportHeader(ADDON_NAME),
-        "",
-        format("key = %s", key),
-    }
-
-    for _, field in ipairs(DUMP_FIELDS) do
-        lines[#lines + 1] = format("%s = %s", field, tostring(record[field]))
-    end
-
-    return table.concat(lines, "\n")
-end
-
---- Show one registered element's known geometry in the report window.
----
---- Nothing is stored: the record used to be parked in the module's debug
---- container for a later session to dig out of SavedVariables, which is why
---- it needed the debug flag to stop it accumulating unasked. Rendered and
---- shown, it records nothing, so it needs no flag and no /reload.
----@param key string|nil
-function control.DumpElement(key)
-    if not key then
-        BitForge:Print("EUI: /bfdump eui <key>")
-        return
-    end
-
-    local elements = control.adapters.Elements()
-    local element = elements and elements[key]
-    if not element then
-        BitForge:Print(("EUI: %s is not a registered element"):format(key))
-        return
-    end
-
-    BitForge:ShowReport(RenderElementDump(key, element), locale["report:blurb"],
-        BitForge:DiagnosticReportTitle())
-end
-
-ns:SubscribeCommand(events.MODULE_DUMP, function(addon, argument)
-    if addon ~= ADDON_NAME then return end
-    control.DumpElement(argument:match("%S+"))
-end)

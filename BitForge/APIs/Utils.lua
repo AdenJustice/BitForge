@@ -33,7 +33,6 @@ function BitForge:ReportHeader(addonName)
         GetLocale())
 end
 
--- Distribute children width as evenly as possible
 ---@param n number total length
 ---@param k number number of entity
 ---@param g number spacing
@@ -72,8 +71,7 @@ function BitForge:DistributeEvenly(n, k, g)
     return lengths
 end
 
--- Returns interpolated RGB between two color tables at position t (0→1).
--- Color tables are indexed as { r, g, b } (WoW color table convention).
+-- cA and cB are { r, g, b } arrays, not ColorMixins; t runs 0 to 1.
 function BitForge:LerpColor(cA, cB, t)
     return
         cA[1] + t * (cB[1] - cA[1]),
@@ -89,10 +87,9 @@ end
 --- C_ClassColor.GetClassColor MayReturnNothing for a class file the client does
 --- not recognise. A caller renders the character unadorned in either case.
 ---
---- The colour comes back bare rather than wrapped around a string, because the
---- callers want different things done with it -- TaskTome dims it for a
+--- The colour comes back bare rather than as markup: TaskTome dims it for a
 --- finished row before wrapping the character name, RepRank paints a bar and
---- wraps nothing. A helper that returned markup would serve only one of them.
+--- wraps nothing.
 ---@param charKey string  as returned by BitForge:GetCurrentCharacter()
 ---@return ColorMixin|nil
 function BitForge:GetCharacterClassColor(charKey)

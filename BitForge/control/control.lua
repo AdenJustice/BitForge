@@ -5,7 +5,11 @@ local view = ns.view
 local enum = ns.enum
 ---@type BitForge.Core.Locale
 local locale = ns.locale
+-- Nilable: a release build ships no debug/notices.lua at all, so a
+-- non-nilable field would tell the language server the nil check below is
+-- dead code.
 ---@class BitForge.Core.Control
+---@field debugNotices BitForge.Core.Control.DebugNotices|nil
 local control = ns.control
 local events = BitForge.Events
 
@@ -14,7 +18,6 @@ local C_TradeSkillUI = C_TradeSkillUI
 local EventRegistry = EventRegistry
 local ipairs = ipairs
 local select = select
-local format = string.format
 local sub = string.sub
 
 ---@class BitForge.Core.Control.MinimapButton
@@ -57,13 +60,12 @@ function BitForge.RegisterMinimapButton(entry)
 end
 
 -- The addon compartment calls these by name out of the TOC, so they have to be
--- globals rather than namespace members. Blizzard dispatches them as
--- _G[func](addonName, ...) after calling forceinsecure()
--- (Blizzard_Minimap/Mainline/AddonCompartment.lua:97-119).
+-- globals rather than namespace members. Blizzard's AddonCompartment.lua
+-- dispatches them as _G[func](addonName, ...) after calling forceinsecure().
 
 -- Only the enter and leave callbacks are handed the frame; the click callback
--- receives the mouse button's name instead (:99-103). Hovering necessarily
--- precedes clicking, so the anchor is captured here.
+-- receives the mouse button's name instead. Hovering necessarily precedes
+-- clicking, so the anchor is captured here.
 local compartmentAnchor
 
 function BitForge_OnAddonCompartmentEnter(_, anchor)
@@ -119,8 +121,8 @@ end
 -- goes on protecting reagents for a trade that was just abandoned.
 ns:Subscribe(events.SKILL_LINES_CHANGED, RecordProfessions)
 
--- The bus and the relay registry live in events.lua. Only the two events core
--- publishes itself are wired here; every other event in BitForge.Events is a
+-- The bus and the relay registry live in events.lua. Only core's two lifecycle
+-- events are published from here; every other entry in BitForge.Events is a
 -- relay that registers itself when a module first subscribes to it.
 
 EventRegistry:RegisterFrameEventAndCallback("PLAYER_LOGIN", function()
@@ -128,12 +130,8 @@ EventRegistry:RegisterFrameEventAndCallback("PLAYER_LOGIN", function()
     minimapButton.Init()
     RecordProfessions()
 
-    if model.IsReagentDataStale() and model.IsDebug() then
-        BitForge:Print(format(
-            "reagent catalogue was built for interface %d; this client is newer,"
-            .. " so recipes added since are missing from it",
-            enum.REAGENT_DATA_INTERFACE))
-    end
+    local debugNotices = control.debugNotices
+    if debugNotices then debugNotices.ReagentDataStale() end
 
     control.TriggerEvent(events.PLAYER_READY)
 end)
@@ -231,8 +229,8 @@ end
 
 -- OnCoreLoaded must run before TriggerEvent(CORE_LOADED) so that
 -- BitForge.settingsCategory is set before any module's CORE_LOADED handler
--- fires. TriggerEvent dispatches via pairs() which gives no ordering guarantee,
--- so we cannot rely on subscription order to ensure the core runs first.
+-- fires. Subscription order cannot carry that: TriggerEvent dispatches through
+-- pairs(), which guarantees no ordering.
 EventUtil.ContinueOnAddOnLoaded("BitForge", function()
     model.InitializeDatabase()
     OnCoreLoaded()

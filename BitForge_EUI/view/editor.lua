@@ -21,9 +21,8 @@ local tinsert = table.insert
 -- The editor's shell: the window, the footer, and nothing else. Ports the
 -- standalone addon's Core/UI/Window.lua.
 --
--- Everything in view/ is widgets. Every decision -- what a row is, what the
--- form shows, what refuses a save -- was made in control/editor.lua, where a
--- spec can reach it.
+-- Everything in view/ is widgets. Every decision the editor makes was made in
+-- control/editor.lua, where a spec can reach it.
 
 local WIDTH, HEIGHT = 720, 520
 
@@ -32,7 +31,7 @@ local FOOTER_HEIGHT = 28
 local BUTTON_HEIGHT = 24
 
 -- A global name, because UISpecialFrames is a list of NAMES -- Escape-to-close
--- has no other way to find the frame (UIParentPanelManager.lua:1040).
+-- has no other way to find the frame (UIParentPanelManager.lua).
 local FRAME_NAME = ADDON_NAME .. enum.EDITOR_FRAME_SUFFIX
 
 ---@class BitForge.EUI.View.Editor
@@ -169,7 +168,7 @@ local function build()
     closeButton:SetScript("OnClick", function() frame:Hide() end)
     frame.closeButton = closeButton
 
-    -- THE FOOTER. Built before the panes so they can anchor above it.
+    -- Built before the panes so they can anchor above it.
     local footer = CreateFrame("Frame", nil, frame)
     footer:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", PADDING, PADDING)
     footer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -PADDING, PADDING)

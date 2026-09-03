@@ -10,12 +10,10 @@ package-as: BitForge
 move-folders:
   BitForge/BitForge: BitForge
   BitForge/BitForge_AutoBalance: BitForge_AutoBalance
-  BitForge/BitForge_BatchSell: BitForge_BatchSell
   BitForge/BitForge_TaskTome: BitForge_TaskTome
-  BitForge/BitForge_UPS: BitForge_UPS
-  BitForge/BitForge_Openables: BitForge_Openables
   BitForge/BitForge_RepRank: BitForge_RepRank
   BitForge/BitForge_EUI: BitForge_EUI
+  BitForge/BitForge_Dispatch: BitForge_Dispatch
 
 # LibDeflate has no CurseForge/wowace SVN mirror -- WeakAuras2, which also
 # depends on it, externals the same GitHub URL. Pinned to the tag vendored
@@ -63,6 +61,13 @@ enable-nolib-creation: no
 
 ignore:
   - BitForge_Dev
+  # Each module's diagnostics. Both halves of the exclusion are needed and each
+  # fails silently alone -- tests/python/test_debug_directories.py holds them
+  # together. The .toc lines are wrapped in #@debug@ so the released .toc does
+  # not name a file this list has dropped.
+  - BitForge/debug
+  - BitForge_EUI/debug
+  - BitForge_Dispatch/debug
   - .claude
   - .github
   - .wow-api-audit

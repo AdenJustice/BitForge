@@ -12,10 +12,9 @@ local error = error
 local pairs = pairs
 local tostring = tostring
 
--- Modules never register frame events themselves. Every entry in
--- BitForge.Events is either published by core or relayed from the identically
--- named WoW frame event, and every one of them reaches a module through
--- BitForge.Subscribe.
+-- Every entry in BitForge.Events is either published by core or relayed from the
+-- identically named WoW frame event, and reaches a module through
+-- BitForge.Subscribe. Modules never register a frame event themselves.
 
 local bus = CreateFromMixins(CallbackRegistryMixin)
 bus:OnLoad()

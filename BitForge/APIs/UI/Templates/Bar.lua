@@ -49,12 +49,9 @@ function BarMixin:OnLoad()
     self:SetValue(0)
 end
 
---- Colour the filled portion.
----
---- Takes either a ColorMixin or loose r, g, b[, a] numbers, because the two
---- callers arrive with different things in hand: a palette token is already a
---- ColorMixin, while a class or faction colour is often unpacked before it gets
---- here. Both resolve through the same path every other skin primitive uses.
+--- Colour the filled portion, from a ColorMixin or loose r, g, b[, a] numbers:
+--- a palette token is already a ColorMixin, while a class or faction colour is
+--- often unpacked before it gets here.
 ---@param colorOrRed ColorMixin|number
 ---@param green? number
 ---@param blue? number
@@ -77,10 +74,10 @@ end
 --- A convenience over the native SetMinMaxValues/SetValue pair, which stay
 --- available for a caller that wants a floor other than zero.
 ---
---- A maxValue that is missing, zero or negative renders empty rather than
---- raising: "nothing known yet" and "no progress to show" are ordinary answers
---- from a data source, not faults, and a bar is drawn from the same paint pass
---- as everything else on its row. A value past maxValue is left to the widget,
+--- A missing, zero or negative maxValue renders empty rather than raising:
+--- "nothing known yet" and "no progress to show" are ordinary answers from a
+--- data source, not faults, and a bar is drawn from the same paint pass as
+--- everything else on its row. A value past maxValue is left to the widget,
 --- which clamps it to full.
 ---@param value number|nil
 ---@param maxValue number|nil
@@ -99,7 +96,6 @@ end
 
 UI.Mixins.Bar = BarMixin
 
---- Create a flat horizontal progress bar.
 ---@param parent any
 ---@return BitForge.BarMixin
 function UI.CreateBar(parent)

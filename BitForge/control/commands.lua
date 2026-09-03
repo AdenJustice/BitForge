@@ -39,14 +39,45 @@ local commands = {}
 --
 -- A command subscription lasts the session: there is no inverse, and nothing
 -- ever clears an entry. A module that dropped its handler with a bare
--- ns:Unsubscribe would keep its roster line and stay past the refusal, so its
--- command would broadcast to nobody -- the silence the refusal exists to
--- prevent. Adding the inverse is what to do if a module ever needs one; no
--- module unsubscribes today.
+-- ns:Unsubscribe would keep its roster line and pass the refusal, so its command
+-- would broadcast to nobody -- the silence the refusal exists to prevent. No
+-- module unsubscribes today; the first one that has to needs the inverse.
 local answering = {
     [events.MODULE_COMMAND] = {},
     [events.MODULE_DUMP]    = {},
 }
+
+-- Which of those subscriptions are diagnostics. A separate register rather
+-- than a value in `answering`, because `answering` is read as a set and a
+-- truthy-but-different value there would keep working while meaning something
+-- else.
+--
+-- BitForge_Dev named as a literal, and it is the only module name core spells
+-- out. The alternative -- letting each subscription name the addon that gates
+-- it -- is generality nothing has asked for: there is one development addon
+-- and the whole point is that it is the switch.
+local DIAGNOSTIC_ADDON = "BitForge_Dev"
+local diagnostic = {
+    [events.MODULE_COMMAND] = {},
+    [events.MODULE_DUMP]    = {},
+}
+
+--- Whether an addon answers this event right now.
+---
+--- Live rather than remembered, for the reason CommandTargets gives about its
+--- own IsAddOnLoaded call: a subscription is recorded while addons are still
+--- loading, and BitForge_Dev may not have been read yet when a module's debug
+--- file subscribes.
+---@param event string
+---@param addonName string
+---@return boolean
+local function Answers(event, addonName)
+    if not answering[event][addonName] then return false end
+    if diagnostic[event][addonName] then
+        return C_AddOns.IsAddOnLoaded(DIAGNOSTIC_ADDON)
+    end
+    return true
+end
 
 --- Subscribes an addon to a command event and lists it in /bitforge's roster.
 ---
@@ -57,13 +88,18 @@ local answering = {
 ---@param event string  BitForge.Events.MODULE_COMMAND or MODULE_DUMP
 ---@param callback fun(addonName: string, argument: string)
 ---@param owner table
-function BitForge.SubscribeCommand(addonName, event, callback, owner)
+---@param isDiagnostic boolean|nil  a developer's command rather than a player's:
+---   listed and answered only while BitForge_Dev is loaded. In a release build
+---   the file carrying it is not shipped at all, so this is what the developer's
+---   own checkout and a clone of the public repo turn on
+function BitForge.SubscribeCommand(addonName, event, callback, owner, isDiagnostic)
     local subscribers = answering[event]
     if not subscribers then
         error("BitForge.SubscribeCommand: " .. tostring(event) .. " is not a command event", 2)
     end
 
     subscribers[addonName] = true
+    if isDiagnostic then diagnostic[event][addonName] = true end
     BitForge.Subscribe(event, callback, owner)
 end
 
@@ -75,8 +111,9 @@ end
 --- out of that without a second code path.
 ---@param event string  BitForge.Events.MODULE_COMMAND or MODULE_DUMP
 ---@param callback fun(addonName: string, argument: string)
-function ns:SubscribeCommand(event, callback)
-    BitForge.SubscribeCommand(ADDON_NAME, event, callback, self)
+---@param isDiagnostic boolean|nil
+function ns:SubscribeCommand(event, callback, isDiagnostic)
+    BitForge.SubscribeCommand(ADDON_NAME, event, callback, self, isDiagnostic)
 end
 
 --- Everything a slash command can name, by full addon name.
@@ -152,10 +189,9 @@ end
 --- The roster, as the lines it prints: one module per line with the shortest
 --- abbreviation that reaches it and the commands it answers.
 ---
---- This is the whole reason /bitforge takes no subcommand. The complaint the
---- rewrite answers is that the old five commands were impossible to remember,
---- and a list that is computed from what is installed cannot go stale the way
---- a written-down one does.
+--- Computed from what is installed rather than written down, so it cannot go
+--- stale -- and it is why /bitforge takes no subcommand of its own: the roster
+--- is the thing a player has to remember instead of five commands.
 ---@return string[]
 function commands.Roster()
     local installed = CommandTargets()
@@ -163,8 +199,8 @@ function commands.Roster()
 
     for _, addonName in ipairs(installed) do
         local answers = {}
-        if answering[events.MODULE_COMMAND][addonName] then answers[#answers + 1] = "/bitforge" end
-        if answering[events.MODULE_DUMP][addonName] then answers[#answers + 1] = "/bfdump" end
+        if Answers(events.MODULE_COMMAND, addonName) then answers[#answers + 1] = "/bitforge" end
+        if Answers(events.MODULE_DUMP, addonName) then answers[#answers + 1] = "/bfdump" end
 
         local line = format("%s (%s)", model.ModuleKey(addonName), Abbreviation(addonName, installed))
         if #answers > 0 then
@@ -210,7 +246,7 @@ local function Dispatch(event, slash, input)
 
     -- Refused rather than fired. A broadcast nobody answers is silence, which
     -- reads exactly like a command that worked.
-    if not answering[event][addonName] then
+    if not Answers(event, addonName) then
         BitForge:Print(format(locale["cmd:noSuchCommand"], model.ModuleKey(addonName), slash))
         return
     end

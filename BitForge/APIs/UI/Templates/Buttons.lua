@@ -20,7 +20,6 @@ local BORDER_BACKDROP = {
     insets = { left = PP, right = PP, top = PP, bottom = PP },
 }
 
---- Re-anchor icon and label after any resize.
 local function updateLayout(self, width, height)
     local hasIcon = self.Icon ~= nil
     local hasLabel = self.Label ~= nil
@@ -50,6 +49,9 @@ local function updateLayout(self, width, height)
 end
 
 ---@class BitForge.ButtonMixin : Button, BackdropTemplate
+---@field Label FontString?  Present when created with text.
+---@field Icon  Texture?     Present when created with an icon.
+---@field Accent Texture?    Optional, supplied by the caller.
 local ButtonMixin = {}
 
 do
@@ -182,13 +184,14 @@ end
 
 UI.Mixins.Button = ButtonMixin
 
--- For checkbutton, `*Texture` is for tick image
--- So, if you want to use custom images for `tick`, customize `*Texture`s
--- 1) button with only (custom) tick image
--- 2) button with label but tick image (border shows checked status)
--- 3) button with label AND tick image
+-- On a CheckButton the *Texture set -- Normal, Checked, DisabledChecked,
+-- Highlight -- is the tick rather than the background, so custom tick art goes
+-- there. Without a tick the border alone carries the checked state.
 
 ---@class BitForge.CheckButtonMixin : CheckButton, BackdropTemplate
+---@field Label FontString?  Present when created with text.
+---@field Accent Texture?    Optional, supplied by the caller.
+---@field hasIcon boolean?
 local CheckButtonMixin = {}
 do
     ---@param state "NORMAL" | "HOVER" | "CHECKED" | "DISABLED"
@@ -371,7 +374,6 @@ end
 
 UI.Mixins.CheckButton = CheckButtonMixin
 
---- Create an MD contained button.
 ---@param name   string?
 ---@param parent any
 ---@param icon   string|number?  Texture path or FileDataID for the icon.
@@ -391,7 +393,6 @@ function UI.CreateButton(name, parent, icon, text)
     return btn
 end
 
---- Create an MD toggle (checkbox-style) button.
 ---@param name        string?
 ---@param parent      any
 ---@param text        string?

@@ -18,9 +18,10 @@ local BACKDROP_CONFIG = {
 local BACKDROP_ALPHA = 0.5
 
 ---@class BitForge.FrameMixin : BackdropTemplate
+---@field Title    FontString?  Present when created with a title bar.
+---@field TitleBar Texture?     Present when created with a title bar.
 local FrameMixin = {}
 
---- Initialises backdrop and optional title bar.
 ---@param hasTitle boolean?  When true, a 32-px primary-colour title bar is added.
 function FrameMixin:OnLoad(hasTitle)
     self:SetClampedToScreen(true)
@@ -48,7 +49,7 @@ function FrameMixin:OnLoad(hasTitle)
     end
 end
 
---- Set the title bar text.  Errors if the frame was created without a title bar.
+--- Errors if the frame was created without a title bar.
 ---@param text string
 function FrameMixin:SetTitle(text)
     if not self.Title then
@@ -59,15 +60,13 @@ end
 
 UI.Mixins.Frame = FrameMixin
 
---- Create an MD card-style frame.
 ---@param parent any
 ---@param title  string?  Optional title bar text.
----@param name   string?  Optional global frame name, for a window UISpecialFrames
----                        must find by name to close on Escape. Every caller before
----                        this one built an anonymous frame and reached for
----                        `_G[name] = frame` on its own -- correct for `_G`, but
----                        `GetName()` answered nil, because a frame's name is set at
----                        creation and nothing since offers a second chance.
+---@param name   string?  Optional global frame name, for a window
+---                        UISpecialFrames must find by name to close on Escape.
+---                        It has to be passed here: a frame's name is fixed at
+---                        creation, so a later `_G[name] = frame` is right for
+---                        `_G` and still leaves `GetName()` answering nil.
 ---@return BitForge.FrameMixin
 function UI.CreateFrame(parent, title, name)
     local isTitle = title and type(title) == "string" and trim(title) ~= ""
@@ -82,8 +81,8 @@ function UI.CreateFrame(parent, title, name)
     return frame
 end
 
---- Adds a faint 1px dark shadow just outside the frame for a floating appearance.
---- Sets frame.Shadow to the created shadow frame.
+--- A faint dark glow just outside the frame, for a floating appearance. Sets
+--- frame.Shadow rather than returning the frame it creates.
 ---@param frame any
 function UI.ApplyShadow(frame)
     local shadow = CreateFrame("Frame", nil, frame, "BackdropTemplate")
