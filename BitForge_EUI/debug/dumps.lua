@@ -11,7 +11,7 @@ local locale = ns.locale
 
 local format = string.format
 
--- Diagnostics dump -- BitForge_Dispatch's /bfdump dispatch sell is the worked
+-- Diagnostics dump -- BitForge_AzerothPrime's /bfdump azerothprime sell is the worked
 -- example this follows. The record's own field names stay unlocalized, like
 -- that one: a diagnostic dump is read by a developer pasting it back, not by
 -- a player. Only the report window's footnote goes through ns.locale, since

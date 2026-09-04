@@ -25,6 +25,7 @@ local min = math.min
 local atan2 = math.atan2 or math.atan
 
 local Settings = Settings
+local C_AddOns = C_AddOns
 local CreateFrame = CreateFrame
 local Minimap = Minimap
 local GameTooltip = GameTooltip
@@ -300,7 +301,7 @@ end
 ---
 --- Core owns the window because modules never call siblings, and owns nothing
 --- else: the payload, the sentence about what it discloses and the title all
---- arrive from the caller. What is disclosed varies -- Dispatch's sell verdict
+--- arrive from the caller. What is disclosed varies -- AzerothPrime's sell verdict
 --- sends an item link, which states the character's level and specialization in
 --- its own fields, while its open-item report sends no link at all -- and an
 --- item report and a diagnostic dump are not describing the same thing.
@@ -514,3 +515,118 @@ function releaseNotes.Show()
 end
 
 view.releaseNotes = releaseNotes
+
+---@class BitForge.Core.View.UpgradeNotice
+local upgradeNotice = {}
+
+-- The folders a BitForge download used to carry and no longer does. Each is its
+-- own CurseForge project now, and the client removes nothing when a project
+-- stops shipping a folder -- so an existing install goes on loading these from
+-- a copy nothing updates, which is the whole reason this notice exists.
+--
+-- BitForge_Dispatch is held apart from the four because it was renamed rather
+-- than merely split off: BitForge_AzerothPrime replaces it, adopts its saved
+-- profile, and switches it off on sight. A player meets that as an addon
+-- disabling itself, so the notice has to say why.
+local SPLIT_OFF = {
+    "BitForge_AutoBalance",
+    "BitForge_EUI",
+    "BitForge_RepRank",
+    "BitForge_TaskTome",
+}
+local RENAMED = ns.enum.RENAMED_MODULE
+
+local noticeWindow
+
+--- The project name a player types into an addon manager, from the folder name
+--- on disk. Derived rather than read from the .toc's Title, which carries the
+--- suite's colour escapes and a dash no search box wants.
+---@param folder string
+---@return string
+local function projectName(folder)
+    return (folder:gsub("_", " "))
+end
+
+--- The notice as one string: what changed, then the retired folders it changed
+--- things for.
+---
+--- Both lists can be empty -- ShowIfUnseen refuses to raise the window when
+--- both are -- so each block is conditional rather than always rendered with
+--- nothing under it.
+---@param separate string[]  project names, already display-formatted
+---@param renamed boolean    whether the renamed folder is still on disk
+---@return string
+local function renderNotice(separate, renamed)
+    local lines = { locale["upgrade:lead"] }
+    if #separate > 0 then
+        lines[#lines + 1] = ""
+        lines[#lines + 1] = locale["upgrade:separate"]
+        for _, name in ipairs(separate) do
+            lines[#lines + 1] = "- " .. UI.Colors.point:WrapTextInColorCode(name)
+        end
+    end
+    if renamed then
+        lines[#lines + 1] = ""
+        lines[#lines + 1] = locale["upgrade:renamed"]
+    end
+    return table.concat(lines, "\n")
+end
+
+--- Builds the window on first use and shows `body` in it.
+---@param body string
+local function openNoticeWindow(body)
+    if not noticeWindow then
+        noticeWindow = UI.CreateTextWindow({
+            title   = locale["upgrade:windowTitle"],
+            name    = "BitForgeUpgradeNoticeWindow",
+            buttons = {
+                {
+                    text = locale["upgrade:close"],
+                    onClick = function(self) self:Hide() end,
+                },
+            },
+        })
+        -- Same strata and the same reason as the release-notes window above:
+        -- BITFORGE_SCHEMA_RESET can be queued for this same login and its
+        -- acknowledge-only popup has to stay on top of this.
+        noticeWindow:SetFrameStrata(WINDOW_STRATA)
+    end
+
+    noticeWindow:SetText(body)
+    noticeWindow:Open()
+end
+
+--- Raises the one-time notice that the suite is six downloads now, and records
+--- that it has been raised.
+---
+--- Gated on a retired folder actually being on disk, so somebody installing
+--- BitForge for the first time is not told about a split they never lived
+--- through. The gate is one-sided and deliberately so: core cannot tell a stale
+--- folder from one installed this morning, so anyone installing core and a
+--- module together -- which is what a first install looks like -- sees it once,
+--- reading about a split they were never on the wrong side of. That is the cost
+--- taken knowingly: the reverse error, a notice missed by somebody who needs
+--- it, leaves five folders nothing updates and no way to find out.
+---
+--- Recorded on show rather than on close, the same way ShowIfNew records
+--- lastSeenVersion: somebody who logs out from the window has seen it.
+---@return boolean  true when the window was raised, so the caller can hold
+--- another window back for this login
+function upgradeNotice.ShowIfUnseen()
+    if model.ReadDatabase("upgradeNoticeSeen") then return false end
+
+    local separate = {}
+    for _, folder in ipairs(SPLIT_OFF) do
+        if C_AddOns.DoesAddOnExist(folder) then
+            separate[#separate + 1] = projectName(folder)
+        end
+    end
+    local renamed = C_AddOns.DoesAddOnExist(RENAMED)
+    if #separate == 0 and not renamed then return false end
+
+    openNoticeWindow(renderNotice(separate, renamed))
+    model.UpdateDatabase("upgradeNoticeSeen", true)
+    return true
+end
+
+view.upgradeNotice = upgradeNotice

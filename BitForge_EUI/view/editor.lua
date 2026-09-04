@@ -120,9 +120,9 @@ end
 --- that arrives after the host has already handed its facade over runs
 --- immediately, which is exactly this case.
 ---
---- Through core's bridge, never EllesmereUI.RegisterSkin -- that call belongs
---- to core, and reaching for it here would put the host addon's name outside
---- adapters.lua.
+--- Through control.adapters.OnSkin, never EllesmereUI.RegisterSkin directly --
+--- that call belongs to adapters.lua, and reaching for it here would put the
+--- host addon's name outside it.
 ---
 --- The shell and the footer are this file's own; the two panes paint what they
 --- built. Every widget of the window is covered, because one that is not reads
@@ -155,15 +155,7 @@ local function build()
     tinsert(UISpecialFrames, FRAME_NAME)
 
     -- Not redundant with ESC: the search box swallows the first press.
-    --
-    -- Blizzard's template on purpose, and the only site left on it.
-    -- applyExternalSkin hands this button to EllesmereUI's facade, which
-    -- restyles a UIPanelCloseButton by replacing its Normal, Pushed and
-    -- Highlight textures (fact 10, docs/eui-integration.md). The suite's own
-    -- widget draws its glyph as lines instead, so the host would paint its X
-    -- over ours rather than replace it. This window is EllesmereUI's guest and
-    -- keeps the host's look.
-    local closeButton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    local closeButton = UI.CreateCloseButton(frame)
     closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -4, -4)
     closeButton:SetScript("OnClick", function() frame:Hide() end)
     frame.closeButton = closeButton
@@ -196,7 +188,7 @@ local function build()
     view.detail.Create(frame)
 
     view.AddRefresher(refreshFooter)
-    UI.Skin.OnExternalSkin(applyExternalSkin)
+    control.adapters.OnSkin(applyExternalSkin)
 
     frame:Hide()
 end

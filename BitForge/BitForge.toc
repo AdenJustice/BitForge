@@ -16,7 +16,6 @@
 ## SavedVariables: BitForgeDB
 ## IconTexture: Interface/AddOns/BitForge/Media/icon
 ## X-Curse-Project-ID: 1475089
-## X-Wago-ID: bGoyJB60
 ## OptionalDeps: EllesmereUI
 ## AddonCompartmentFunc: BitForge_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: BitForge_OnAddonCompartmentEnter
@@ -25,9 +24,19 @@
 Init.lua
 # LibDeflate's header self-registers with LibStub when it finds one already
 # loaded, so LibStub has to load first -- this order is load-bearing, not
-# alphabetical.
+# alphabetical. The same reason now covers three libraries rather than two.
 Libs\LibStub\LibStub.lua
 Libs\LibDeflate\LibDeflate.lua
+Libs\LibBitForgeUI\LibBitForgeUI.lua
+Libs\LibBitForgeUI\Skin.lua
+Libs\LibBitForgeUI\Templates\Frame.lua
+Libs\LibBitForgeUI\Templates\Buttons.lua
+Libs\LibBitForgeUI\Templates\CloseButton.lua
+Libs\LibBitForgeUI\Templates\EditBox.lua
+Libs\LibBitForgeUI\Templates\Dropdown.lua
+Libs\LibBitForgeUI\Templates\Bar.lua
+Libs\LibBitForgeUI\Templates\Slider.lua
+Libs\LibBitForgeUI\Templates\TextWindow.lua
 ReagentData.lua
 ReleaseNotes.lua
 Locales\enUS.lua
@@ -43,16 +52,7 @@ Locales\zhCN.lua
 Locales\zhTW.lua
 APIs/Compress.lua
 APIs/Settings.lua
-APIs/UI/Core.lua
-APIs/UI/Templates/Frame.lua
-APIs/UI/Templates/Buttons.lua
-APIs/UI/Templates/CloseButton.lua
-APIs/UI/Templates/EditBox.lua
-APIs/UI/Templates/Dropdown.lua
-APIs/UI/Templates/Bar.lua
-APIs/UI/Templates/Slider.lua
-APIs/UI/Templates/Tab.lua
-APIs/UI/Templates/TextWindow.lua
+APIs/UILib.lua
 APIs/Utils.lua
 
 events.lua

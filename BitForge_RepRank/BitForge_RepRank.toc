@@ -13,6 +13,7 @@
 ## Notes-zhTW: 戰團聲望排行與巔峰獎勵提醒
 ## Author: AdenJustice
 ## Version: @project-version@
+## X-Curse-Project-ID: 1680972
 ## Dependencies: BitForge
 
 Init.lua

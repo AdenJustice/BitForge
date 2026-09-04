@@ -29,9 +29,26 @@ local enum = {
         -- left absent so SeedDefaults always has something to write and an
         -- existing profile picks the key up on its next login.
         --
+        -- upgradeNoticeSeen records that view.upgradeNotice has raised the
+        -- one-time notice about the suite becoming six separate downloads. A
+        -- boolean rather than a version: it marks one event in the suite's
+        -- history, not what the player last read, so nothing about it wants
+        -- comparing against RELEASE_NOTES. Seeded false for the same reason
+        -- lastSeenVersion is seeded empty.
+        --
+        -- versionSkewTold is what the player has already been told about a
+        -- module running at a version core was not released beside, as
+        -- [addonName] = { core = <core's version>, module = <the module's> }.
+        -- The pair rather than the module's version alone: core moving on
+        -- while a stale module stands still is a new fact, and one worth
+        -- saying again. Seeded empty for the same reason lastSeenVersion is
+        -- seeded blank, and it never grows past one entry per module the
+        -- player has ever had installed -- CleanupDatabase prunes db.modules,
+        -- not db.global, so an entry outlives the folder that earned it.
+        --
         -- reportWindowPoint is the report window's last dragged position -- that
         -- window alone, per issue #312 -- in the { point, relPoint, x, y } shape
-        -- BitForge_Dispatch already stores its button's position in, because an
+        -- BitForge_AzerothPrime already stores its button's position in, because an
         -- anchor pair survives a resolution change where a raw screen offset
         -- would not. Seeded false rather than left absent, so SeedDefaults still
         -- has something to write for an existing profile; false means "never
@@ -43,6 +60,8 @@ local enum = {
             minimapPos        = 45,
             professions       = {},
             lastSeenVersion   = "",
+            upgradeNoticeSeen = false,
+            versionSkewTold   = {},
             reportWindowPoint = false,
         },
         modules = {},
@@ -58,6 +77,13 @@ local enum = {
     -- own addon name shares a first letter with a module -- which would lengthen
     -- an abbreviation players already type.
     CORE_KEY = "Core",
+    -- The one module that was renamed rather than split off. Two things read
+    -- it and they have to agree: view.upgradeNotice tells a player holding
+    -- this folder to install BitForge_AzerothPrime, and model.VersionSkew
+    -- passes over it for that reason -- a line telling them to update
+    -- "BitForge Dispatch" names a CurseForge project that no longer exists,
+    -- and would contradict the window on the same screen.
+    RENAMED_MODULE = "BitForge_Dispatch",
     -- Where a player is told to paste a report. An enum constant rather than a
     -- locale key: a URL is the same in eleven languages, and
     -- Scripts/check_addon_conventions.py reports a non-English value

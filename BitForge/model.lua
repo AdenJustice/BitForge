@@ -98,7 +98,7 @@ end
 --- The shape a caller reads is `{ enabled = <boolean>, dump = <table> }`, but
 --- the value in the saved file is hand-written, so it arrives in whatever shape
 --- a developer typed. The documented one-liner is still a bare
---- `/run BitForgeDB.modules.Dispatch.debug = true`, and indexing that scalar for
+--- `/run BitForgeDB.modules.AzerothPrime.debug = true`, and indexing that scalar for
 --- .enabled would raise, so a truthy scalar is upgraded in place the first time
 --- it is read. A container typed without its dump table is completed the same
 --- way, so nothing downstream has to check whether dump exists.
@@ -173,7 +173,7 @@ local function Allocate(name, moduleDefaults, callback)
 
     -- db.debug is read through __index rather than copied in, so it answers
     -- whatever is in the saved file at the moment it is asked. That makes
-    -- `/run BitForgeDB.modules.Dispatch.debug = true` take effect on the next check
+    -- `/run BitForgeDB.modules.AzerothPrime.debug = true` take effect on the next check
     -- instead of the next login. It is deliberately not part of the module's
     -- defaults or its schema: nothing seeds it, nothing migrates it, and a
     -- module that has never been flagged reads nil.
@@ -224,16 +224,21 @@ end
 
 local VERSION_PATTERN = "^v%d+%.%d+%.%d+%.%d+$"
 
---- The running addon's version, or nil when the .toc's token was never
---- substituted.
+--- An addon's version, or nil when the .toc's token was never substituted.
+--- Core's own unless another addon is named.
 ---
 --- BitForge.toc carries `## Version: @project-version@`, which the CurseForge
 --- packager replaces from the tag. A development checkout has the literal, and
 --- a literal is not a version -- so it reads as nil here rather than being
 --- compared against release numbers it can never match.
+---
+--- Any installed addon can be asked, because GetAddOnMetadata reads the .toc
+--- and calls into nothing the addon itself supplies: a module packaged before
+--- core ever compared versions is readable, and so is one too broken to run.
+---@param addonName string|nil  the addon to read; core itself when absent
 ---@return string|nil
-function model.GetAddonVersion()
-    local version = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version")
+function model.GetAddonVersion(addonName)
+    local version = C_AddOns.GetAddOnMetadata(addonName or ADDON_NAME, "Version")
     if type(version) ~= "string" or not version:match(VERSION_PATTERN) then
         return nil
     end
@@ -474,6 +479,73 @@ function model.SetModuleList(modules)
     moduleRegistry = modules
 end
 
+--- Every loaded module carrying a version core was not released beside, minus
+--- the ones the player has already been told about at this exact pair of
+--- versions.
+---
+--- Plain equality, never an ordering. The six projects share one release
+--- stream and one tag, so anything released together carries the identical
+--- string and any difference at all means the two were not installed together.
+--- Nothing finer is available to ask -- a .toc's `## Dependencies:` is a bare
+--- name list and has never carried a version qualifier -- and nothing finer is
+--- meant: a difference here says the pair was never tested together, not that
+--- it is known to be broken.
+---
+--- A version that does not parse on either side is "cannot tell" rather than a
+--- mismatch, so a development checkout says nothing and records nothing, and
+--- the real answer is still spoken the first time a released build reads it.
+---
+--- Reports without recording. The caller records each pair after saying it,
+--- through model.RecordVersionSkewTold -- so a failure between the two costs a
+--- login rather than the message, and a diagnostic that wants to see the
+--- current answer can ask without consuming it.
+---@return { name: string, version: string, coreVersion: string }[]
+function model.VersionSkew()
+    local coreVersion = model.GetAddonVersion()
+    if not db or not coreVersion then return {} end
+
+    local told = db.global.versionSkewTold
+    local skewed = {}
+    for _, entry in ipairs(moduleRegistry) do
+        local name = entry.name
+        -- Asked of the client rather than read off the scan's `loaded` flag,
+        -- for the reason CommandTargets gives: that flag is taken while core's
+        -- own ADDON_LOADED is being handled, before any module addon has been
+        -- read, so it answers false for every one of them.
+        -- The renamed module is the one folder here a player must not be sent
+        -- to update: its CurseForge project is gone, and view.upgradeNotice is
+        -- already telling them to install BitForge_AzerothPrime instead. Both
+        -- fire on the same login for anyone who updated core and kept the old
+        -- folders, which is what every existing install looks like the first
+        -- time it takes the split.
+        if C_AddOns.IsAddOnLoaded(name) and name ~= ns.enum.RENAMED_MODULE then
+            local version = model.GetAddonVersion(name)
+            if version and version ~= coreVersion then
+                local last = told[name]
+                if not last or last.core ~= coreVersion or last.module ~= version then
+                    skewed[#skewed + 1] =
+                        { name = name, version = version, coreVersion = coreVersion }
+                end
+            end
+        end
+    end
+    return skewed
+end
+
+--- Records that a player has been told about one module's skew, so the same
+--- pair is not named again at the next login.
+---
+--- Separate from the query above and called after the line is said, the way
+--- view.releaseNotes.ShowIfNew writes lastSeenVersion after it opens the
+--- window rather than before.
+---@param name        string  the module's addon name
+---@param version     string  the version it is running
+---@param coreVersion string  the version core is running
+function model.RecordVersionSkewTold(name, version, coreVersion)
+    if not db then return end
+    db.global.versionSkewTold[name] = { core = coreVersion, module = version }
+end
+
 --- Allocates a dedicated DB table for a module and delivers a live reference via
 --- callback. Called before model.InitializeDatabase, the request is queued and
 --- delivered once that runs.
@@ -483,7 +555,7 @@ end
 ---
 --- Pass the addon's own name from `...` -- core derives the storage key and
 --- keeps the full name to look the module's .toc title up by.
----@param addonName string  The addon's name from `...`, e.g. "BitForge_Dispatch"
+---@param addonName string  The addon's name from `...`, e.g. "BitForge_AzerothPrime"
 ---@param defaults  { global: table|nil, char: table|nil }
 ---@param callback  fun(db: table)  db.global = account-wide, db.char = current character
 function BitForge:AllocateModuleDB(addonName, defaults, callback)
@@ -622,7 +694,7 @@ end
 --- login, which is why this is the one thing the tests pin explicitly.
 ---
 --- Safe to call for a module that has never allocated.
----@param addonName string  the addon's name from `...`, e.g. "BitForge_Dispatch"
+---@param addonName string  the addon's name from `...`, e.g. "BitForge_AzerothPrime"
 function BitForge:ResetModuleDB(addonName)
     if not db then return end
     local name = ModuleKey(addonName)
@@ -757,7 +829,7 @@ end
 --- cannot use "the new key is absent" as its signal, because that key was
 --- already filled in with its default before the step ever ran; it must test
 --- the OLD key's presence instead.
----@param addonName string  The addon's name from `...`, e.g. "BitForge_Dispatch"
+---@param addonName string  The addon's name from `...`, e.g. "BitForge_AzerothPrime"
 ---@param spec      { version: number, title: string|nil, adopts: string[]|nil, hasData: (fun(): boolean)|nil, steps: table }
 ---@param onReady   fun()|nil
 function BitForge:UpgradeModuleDB(addonName, spec, onReady)
@@ -918,7 +990,7 @@ end
 --
 -- ABSENCE MEANS THE CAPTURE DID NOT SEE IT, which is not the same as nothing
 -- wanting the item, and nothing here can tell the two apart. What a consumer
--- does with a nil is therefore its own policy: Dispatch's sell rules read the
+-- does with a nil is therefore its own policy: AzerothPrime's sell rules read the
 -- table as complete and sell on one (#330). model.IsReagentDataStale is what says
 -- whether that reading is still safe, and it is reported in debug only.
 
@@ -981,7 +1053,7 @@ end
 
 -- GetProfessions() only ever answers for the character who is logged in, so the
 -- account-wide picture has to be accumulated one login at a time. It lives in
--- core because two features ask the same question of it -- Dispatch's sell
+-- core because two features ask the same question of it -- AzerothPrime's sell
 -- rules to decide whether a reagent is worth keeping, its bank feature to
 -- decide whether it is worth depositing -- and a second copy refreshed by a
 -- second code path would eventually disagree with the first.
@@ -991,7 +1063,7 @@ end
 -- profession AND has not learned a given recipe. The mask is derived from it.
 
 -- Rebuilt on demand and dropped whenever the registry changes, rather than
--- recomputed per item: Dispatch's sell rules ask this once per bag slot at a
+-- recomputed per item: AzerothPrime's sell rules ask this once per bag slot at a
 -- merchant.
 local accountProfessionMask
 

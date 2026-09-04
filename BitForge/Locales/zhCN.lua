@@ -25,3 +25,11 @@ L["report:encoded"] = "这份报告太长，无法直接阅读，因此已被压
 L["whatsNew:windowTitle"] = "BitForge 更新内容"
 L["whatsNew:version"] = "%s — %s"
 L["whatsNew:close"] = "关闭"
+
+L["upgrade:windowTitle"] = "BitForge 现在是六个独立下载"
+L["upgrade:lead"] = "从现在起，BitForge 及其各个模块是彼此独立的下载 —— 每个都是自己的项目，各自更新。更新 BitForge 没有删除任何东西，你原有的一切仍然装着，也仍然能用。"
+L["upgrade:separate"] = "以下这些不再包含在 BitForge 的下载里。在你把它们各自作为独立项目安装之前，不会再有任何东西更新它们："
+L["upgrade:renamed"] = "BitForge Dispatch 已更名为 BitForge AzerothPrime，并以该名称成为独立项目。安装它之后，Dispatch 保存过的一切 —— 规则、逐件物品的清单、存放去向、黑名单、按钮的大小和位置 —— 都会一并带过来。如果旧的 Dispatch 仍然装着，AzerothPrime 会先把它停用，你的设置会在下次登录时到位；因此在插件列表里看到 Dispatch 变灰是正常现象而不是故障，那时就可以删除该文件夹了。有一样带不过来：可开启物品按钮的按键绑定，游戏是按按钮名称保存它的。请在按键设置中重新绑定。"
+L["upgrade:close"] = "知道了"
+
+L["msg:outOfStep"] = "请在 CurseForge 上更新 %s：它是 %s，而 BitForge 是 %s。现在两者是各自独立的下载，插件管理器可能只更新其中一个。"

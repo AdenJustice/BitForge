@@ -96,5 +96,3 @@ L["ui:anchorKeyTaken"] = "已存在名为 '%s' 的锚点框体"
 
 L["apply:deferredCombat"] = "战斗中 — 离开战斗后将应用布局"
 L["apply:deferredDone"] = "战斗结束：已应用 %d 个，未变化 %d 个"
-
-L["report:blurb"] = "这份报告包含某个 EllesmereUI 元素的标签和文件夹、它是否锚定到另一个元素以及锚定的方向、它保存的位置和大小，以及已保存的布局是否管理它。这里不会写出你角色的名字、所在服务器、公会或阵营。"

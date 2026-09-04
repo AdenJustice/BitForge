@@ -108,9 +108,9 @@ local function numberBox(parent, labelText, read, write)
     end
 
     -- HookScript for these two: EditBoxMixin:OnLoad binds them first
-    -- (BitForge/APIs/UI/Templates/EditBox.lua) to clear focus and repaint
-    -- the border, and a hook runs after what is already there rather than
-    -- replacing it.
+    -- (BitForge/Libs/LibBitForgeUI/Templates/EditBox.lua) to clear focus and
+    -- repaint the border, and a hook runs after what is already there rather
+    -- than replacing it.
     box:HookScript("OnEnterPressed", commit)
     box:HookScript("OnEditFocusLost", commit)
 

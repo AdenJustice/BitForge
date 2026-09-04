@@ -141,15 +141,16 @@ local WINDOW_WIDTH = 570
 local WINDOW_HEIGHT = 480
 local ROW_HEIGHT = 20
 
--- The title bar UI.CreateFrame draws is 32px tall (APIs/UI/Templates/Frame.lua),
--- so everything below it starts at -32.
+-- The title bar UI.CreateFrame draws is 32px tall
+-- (Libs/LibBitForgeUI/Templates/Frame.lua), so everything below it starts at
+-- -32.
 local TITLE_BAR_HEIGHT = 32
 local PADDING = 8
 local CONTROL_HEIGHT = 24
 local COLUMN_HEADER_HEIGHT = 20
 local GAP = 6
--- The strip kept clear down the right edge for the scroll bar, as Dispatch's
--- curation window does.
+-- The strip kept clear down the right edge for the scroll bar, as
+-- AzerothPrime's curation window does.
 local SCROLLBAR_GUTTER = 20
 
 -- Fixed columns measured from the right edge inward, so the faction name takes
@@ -167,9 +168,9 @@ local INDENT_STEP = 12
 local ROW_INSET_RIGHT = 24
 
 -- How tall the bar is inside a 20px row. Eight is the shared widget's own
--- default (APIs/UI/Templates/Bar.lua) and leaves six clear above and below it,
--- which is what keeps a scrolled column of bars reading as one per row rather
--- than as a single striped band down the middle of the list.
+-- default (Libs/LibBitForgeUI/Templates/Bar.lua) and leaves six clear above
+-- and below it, which is what keeps a scrolled column of bars reading as one
+-- per row rather than as a single striped band down the middle of the list.
 local BAR_HEIGHT = 8
 
 -- Distance from the frame's top to each control row.
@@ -197,9 +198,9 @@ local PARAGON_BAR_COLOR = CreateColor(0.64, 0.39, 0.90)
 local FRIENDSHIP_COLOR_INDEX = 5
 
 -- The window, or nil before the first open. Everything it is built from hangs
--- off it rather than off a second set of file locals, following Dispatch's
--- curation window: one handle, and no way for the two to disagree about what
--- exists.
+-- off it rather than off a second set of file locals, following
+-- AzerothPrime's curation window: one handle, and no way for the two to
+-- disagree about what exists.
 local frame
 
 --- The three column strings for a row.
@@ -387,7 +388,7 @@ end
 ---
 --- The row's regions are created on first use and reused thereafter: the scroll
 --- box pools its frames, so a row arriving here has usually been filled before.
---- Mirrors BitForge_Dispatch's curationWindow initCurationRow rather than
+--- Mirrors BitForge_AzerothPrime's curationWindow initCurationRow rather than
 --- inventing a second shape.
 ---@param row     table
 ---@param element table

@@ -25,3 +25,11 @@ L["report:encoded"] = "Ce rapport était trop long pour être lu, il a donc ét�
 L["whatsNew:windowTitle"] = "Nouveautés de BitForge"
 L["whatsNew:version"] = "%s — %s"
 L["whatsNew:close"] = "Fermer"
+
+L["upgrade:windowTitle"] = "BitForge, c'est six téléchargements désormais"
+L["upgrade:lead"] = "BitForge et ses modules sont désormais des téléchargements distincts : un projet chacun, mis à jour de son côté. La mise à jour de BitForge n'a rien supprimé, tout ce que vous aviez déjà est donc toujours installé et fonctionne toujours."
+L["upgrade:separate"] = "Ceux-ci ne font plus partie du téléchargement de BitForge, et plus rien ne les mettra à jour tant que vous n'aurez pas installé chacun comme son propre projet :"
+L["upgrade:renamed"] = "BitForge Dispatch s'appelle désormais BitForge AzerothPrime, et constitue un projet à part sous ce nom. Installez-le et tout ce que Dispatch avait enregistré -- règles, listes par objet, destinations de rangement, listes noires, la taille et la position du bouton -- vient avec lui. Si l'ancien Dispatch est encore installé, AzerothPrime le désactive d'abord et vos réglages arrivent à votre prochaine connexion : voir Dispatch grisé dans la liste des addons est donc attendu et non un défaut, et le dossier peut alors être supprimé. Une chose ne suit pas : le raccourci clavier du bouton d'ouverture, que le jeu enregistre sous le nom du bouton. Redéfinissez-le dans les Raccourcis clavier."
+L["upgrade:close"] = "Compris"
+
+L["msg:outOfStep"] = "Mettez %s à jour depuis CurseForge : il est en %s alors que BitForge est en %s. Chacun est désormais son propre téléchargement, un gestionnaire d'addons peut donc mettre l'un à jour et pas l'autre."

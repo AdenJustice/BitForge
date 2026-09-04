@@ -1,0 +1,75 @@
+## Interface: 120100
+## Title: |cFFFFD700Bit|cFFB87333Forge|r – AzerothPrime
+## Notes: Opens, sells and banks what is in your bags
+## Notes-koKR: 가방 속 아이템을 개봉하고 판매하며 보관합니다
+## Notes-deDE: Öffnet, verkauft und verstaut, was in Euren Taschen ist
+## Notes-esES: Abre, vende y deposita lo que hay en tus bolsas
+## Notes-esMX: Abre, vende y guarda lo que hay en tus bolsas
+## Notes-frFR: Ouvre, vend et dépose ce qui se trouve dans vos sacs
+## Notes-itIT: Apre, vende e deposita ciò che hai nelle borse
+## Notes-ptBR: Abre, vende e deposita o que está nas suas bolsas
+## Notes-ruRU: Открывает, продаёт и складывает то, что у вас в сумках
+## Notes-zhCN: 开启、出售并存放你背包中的物品
+## Notes-zhTW: 開啟、出售並存放你背包中的物品
+## Author: AdenJustice
+## Version: @project-version@
+## X-Curse-Project-ID: 1680963
+## Dependencies: BitForge
+## OptionalDeps: EllesmereUI
+## X-Credits: Based on New Openables by PeknaMrcha, continued by srhinos and cont1nuity (MIT)
+
+Init.lua
+Locales\enUS.lua
+Locales\koKR.lua
+Locales\deDE.lua
+Locales\esES.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\itIT.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+OpenableData.lua
+DisenchantData.lua
+model\model.lua
+model\overrides.lua
+model\sparedRecipes.lua
+model\arbiter.lua
+model\facts.lua
+model\openRules.lua
+model\zone.lua
+model\allowAudit.lua
+model\bankRules.lua
+model\rules.lua
+view\view.lua
+view\button.lua
+view\blacklistFrame.lua
+view\bankButton.lua
+view\previewDialog.lua
+view\targetDialog.lua
+view\curationWindow.lua
+view\ruleDescriptors.lua
+view\ruleControls.lua
+view\ruleWindow.lua
+view\merchantPanel.lua
+view\itemTooltip.lua
+view\recipeMenu.lua
+view\settingsPanel.lua
+adapters.lua
+control\detector.lua
+control\openScanner.lua
+control\inventory.lua
+control\recipes.lua
+control\deposit.lua
+control\sellScanner.lua
+control\seller.lua
+control\disenchantProbe.lua
+control\control.lua
+
+#@debug@
+debug\lines.lua
+debug\curationReview.lua
+debug\allowListAudit.lua
+debug\dumps.lua
+#@end-debug@

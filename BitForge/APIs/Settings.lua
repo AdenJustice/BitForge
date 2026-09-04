@@ -184,7 +184,7 @@ end
 --
 -- For custom UI, either wrap it in an initializer and pass that to AddInitializer,
 -- or put the content in a standalone window opened from a settings button. See
--- BitForge_Dispatch's blacklistFrame.lua and curationWindow.lua.
+-- BitForge_AzerothPrime's blacklistFrame.lua and curationWindow.lua.
 
 function Handle:GetCategory()
     return self._cat

@@ -96,5 +96,3 @@ L["ui:anchorKeyTaken"] = "已存在名為 '%s' 的錨點框體"
 
 L["apply:deferredCombat"] = "戰鬥中 — 離開戰鬥後將套用版面"
 L["apply:deferredDone"] = "戰鬥結束：已套用 %d 個，未變更 %d 個"
-
-L["report:blurb"] = "這份報告包含某個 EllesmereUI 元素的標籤和資料夾、它是否錨定到另一個元素以及錨定的方向、它儲存的位置和大小，以及已儲存的版面配置是否管理它。這裡不會寫出你角色的名字、所在伺服器、公會或陣營。"

@@ -327,4 +327,25 @@ function adapters.OnUnlockMode(handler)
     xpcall(EllesmereUI.RegisterUnlockModeListener, CallErrorHandler, EllesmereUI, ADDON_NAME, wrapped)
 end
 
+-- Not one of the numbered facts above -- RegisterSkin is the suite's own
+-- skinning API (SKINNING_API.md), separate from the Unlock Mode registry.
+-- Registered under this module's own folder name rather than core's, so
+-- EllesmereUI's per-addon toggle covers the editor window alone. Built here,
+-- not in view/editor.lua, because this file is the suite's only point of
+-- contact with EllesmereUI -- registering there would put the host addon's
+-- name outside it.
+local skinBridge = BitForge.UI.NewSkinBridge()
+
+if EllesmereUI and EllesmereUI.RegisterSkin then
+    EllesmereUI.RegisterSkin(ADDON_NAME, skinBridge.Deliver)
+end
+
+--- Hands the editor window's facade to `handler`, now or whenever the host
+--- answers -- view/editor.lua's build() calls this instead of reaching
+--- BitForge.UI.Skin directly, keeping the host addon's name inside this file.
+---@param handler fun(facade: table)
+function adapters.OnSkin(handler)
+    skinBridge.OnSkin(handler)
+end
+
 control.adapters = adapters

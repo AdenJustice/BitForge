@@ -25,7 +25,8 @@ local GAP = 6
 local CONTROL_HEIGHT = 24
 
 -- The title bar UI.CreateFrame draws is 32px tall
--- (BitForge/APIs/UI/Templates/Frame.lua), so content below it starts here.
+-- (BitForge/Libs/LibBitForgeUI/Templates/Frame.lua), so content below it
+-- starts here.
 local CONTENT_TOP = 42
 
 -- Per-depth indent, then the tree view's top, bottom, left, right padding and

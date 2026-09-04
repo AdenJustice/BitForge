@@ -25,7 +25,9 @@ A modular World of Warcraft addon suite for WoW 12.0+ (Midnight). Each module is
 
 Shared infrastructure: event bus, account/character database, settings panel integration, minimap button, and the BitForge UI widget library.
 
-It also owns the two windows a player meets that belong to no one module. The first is the report window: when Dispatch judges an item and you disagree, the item's own menu opens a window holding everything it was judged by, already selected, with the address to paste it into and a plain statement of what the report discloses. The second appears once after an update, listing what changed since the version you last played; `/bitforge core whatsnew` opens it again.
+It also owns the two windows a player meets that belong to no one module. The first is the report window: when AzerothPrime judges an item and you disagree, the item's own menu opens a window holding everything it was judged by, already selected, with the address to paste it into and a plain statement of what the report discloses. The second appears once after an update, listing what changed since the version you last played; `/bitforge core whatsnew` opens it again.
+
+Because the six addons are downloaded and updated on their own now, core also checks at login that they are all the version they were released with, and says so once in chat — naming the one to go and fetch — when one has fallen behind.
 
 The suite's slash command lives here: `/bitforge <module>` opens or acts on a module. Not every module takes one — `/bitforge` on its own lists what you have installed and which of them answers, core included. A module name shortens to any unambiguous prefix, so `/bitforge a` and `/bitforge autobalance` are the same command. There is a second command, `/bfdump`, and a released build answers none of it: the diagnostic records it used to open are a developer's, and they are not shipped. Nothing you need in order to report something is one of them — that is the report window above, opened from the item's own menu and unchanged: nothing is written to your saved variables, no reload is involved, it says what it discloses before you send it, and a record too long to be worth reading is compressed to a single line you paste exactly as it is.
 
@@ -35,7 +37,7 @@ It also ships a catalogue of which professions use an item as a crafting reagent
 
 Automatically deposits and withdraws gold between your bags and the Warband Bank when you visit it, keeping each character at a configurable target balance. Supports a designated collector character that pulls all gold from the warband bank.
 
-### BitForge Dispatch
+### BitForge AzerothPrime
 
 Merges Openables, BatchSell and UPS into a single module: a button for the next openable or usable item in your bags, selling at vendors by rule, and depositing to the Warband Bank — each on its own switch in the settings panel, sharing one saved profile in place of three.
 
@@ -57,7 +59,7 @@ WoW remembers a keybinding by the button's name, and this button's name is new.
 Derived from [New Openables](https://www.curseforge.com/wow/addons/new-openables) by
 PeknaMrcha, continued by srhinos and cont1nuity. MIT licensed.
 
-Selling at vendors is automatic once a rule selects an item. Every kind of item has its own rule — consumables, gems, trade goods, recipes, pets and mounts, toys, housing decor — and a kind with no rule is never examined at all, so anything Dispatch does not understand stays in your bags. Gear is the longest of them: is it a kind your class uses, does it beat what you are wearing, could an alt still use it, is it worth disenchanting, and only a piece that answers no to all of them is sold. The comparison runs on two dials — a flat item-level tolerance at your own quality, and what one quality tier is worth — so a lower quality piece has to make the difference up in item level and a higher quality one earns a discount worth that many levels rather than a free pass — or, at the quality margin's topmost setting, is kept outright whatever its item level while nothing of lower quality ever is — and a piece from a finished expansion is weighed by exactly the same two dials, with what you are told changing rather than what is decided — the tooltip says you outlived that bar rather than merely beat it. Reagents are kept by two questions rather than one, whatever kind of item they are: is the reagent's expansion ticked, and failing that, does a recipe you have flagged consume it — a recipe is flagged from its own right-click menu in the profession window, and its Basic ingredients are read from the game rather than listed by hand. A bound reagent is weighed against the professions of the character holding it rather than the whole warband's, since nobody else can ever have it; nothing above epic quality is ever sold; and no rule ever sells on a fact the game had not finished answering — an item whose details have not loaded is kept. Bind type and disenchantability are respected throughout: gear you have never worn is spared by default so a copy can still reach an alt or the auction house — Bind on Equip and Bind on Account pieces alike, each naming the expansions it covers or turned off entirely. Disenchantability corrects itself: each time you raise Disenchant, Dispatch reads the game's own verdict on what is in your bags and remembers it, so its built-in list of exceptions stops being the last word. Settings are shared across your warband. Per-item overrides from the item's own menu, set for this character or for the whole warband and showing which is already set for each; both lists are readable and editable from the merchant window, and the same menu reports an item whose verdict you disagree with. Drag an item in from your bags to sell it on that visit only. Item tooltips say what will happen and why, and a sell manifest shows a live total before confirming. Every rule can be read in plain language, and set, in one window opened from the vendor or from the settings panel — each control saying what it does when you point at it, greying out whenever another setting has already decided the question, and updating the sell list the moment you change it. Nothing about a rule lives anywhere else.
+Selling at vendors is automatic once a rule selects an item. Every kind of item has its own rule — consumables, gems, trade goods, recipes, pets and mounts, toys, housing decor — and a kind with no rule is never examined at all, so anything AzerothPrime does not understand stays in your bags. Gear is the longest of them: is it a kind your class uses, does it beat what you are wearing, could an alt still use it, is it worth disenchanting, and only a piece that answers no to all of them is sold. The comparison runs on two dials — a flat item-level tolerance at your own quality, and what one quality tier is worth — so a lower quality piece has to make the difference up in item level and a higher quality one earns a discount worth that many levels rather than a free pass — or, at the quality margin's topmost setting, is kept outright whatever its item level while nothing of lower quality ever is — and a piece from a finished expansion is weighed by exactly the same two dials, with what you are told changing rather than what is decided — the tooltip says you outlived that bar rather than merely beat it. Reagents are kept by two questions rather than one, whatever kind of item they are: is the reagent's expansion ticked, and failing that, does a recipe you have flagged consume it — a recipe is flagged from its own right-click menu in the profession window, and its Basic ingredients are read from the game rather than listed by hand. A bound reagent is weighed against the professions of the character holding it rather than the whole warband's, since nobody else can ever have it; nothing above epic quality is ever sold; and no rule ever sells on a fact the game had not finished answering — an item whose details have not loaded is kept. Bind type and disenchantability are respected throughout: gear you have never worn is spared by default so a copy can still reach an alt or the auction house — Bind on Equip and Bind on Account pieces alike, each naming the expansions it covers or turned off entirely. Disenchantability corrects itself: each time you raise Disenchant, AzerothPrime reads the game's own verdict on what is in your bags and remembers it, so its built-in list of exceptions stops being the last word. Settings are shared across your warband. Per-item overrides from the item's own menu, set for this character or for the whole warband and showing which is already set for each; both lists are readable and editable from the merchant window, and the same menu reports an item whose verdict you disagree with. Drag an item in from your bags to sell it on that visit only. Item tooltips say what will happen and why, and a sell manifest shows a live total before confirming. Every rule can be read in plain language, and set, in one window opened from the vendor or from the settings panel — each control saying what it does when you point at it, greying out whenever another setting has already decided the question, and updating the sell list the moment you change it. Nothing about a rule lives anywhere else.
 
 Deposits your bags into the Warband Bank when you visit a bank — crafting reagents,
 recipes an alt still needs, and anything you have curated by hand. By default only
@@ -68,10 +70,10 @@ including keeping something in your own bank instead.
 
 Recipes are judged against what your alts already know. Seeing your other characters at all
 takes an inventory addon you have probably already got — **Baganator**, **Altoholic**,
-**Bagnon** or **BagSync**. What Dispatch actually reads is the data library behind each of
+**Bagnon** or **BagSync**. What AzerothPrime actually reads is the data library behind each of
 those (Syndicator, DataStore, BagBrother, and BagSync itself), so anything else built on one
 of them works just as well. There is nothing extra to install and nothing to configure; the
-curation window names the source it used. Without any of them, Dispatch sees only the
+curation window names the source it used. Without any of them, AzerothPrime sees only the
 character you are playing.
 
 ### BitForge EUI
@@ -132,20 +134,29 @@ can set another character's assignments without you logging in as them.
 
 ## Installation
 
-1. Download or clone this repository.
-2. Copy the folders you want into your `World of Warcraft/_retail_/Interface/AddOns/` directory.  
-   **BitForge** must always be included.
+BitForge is **six separate downloads**, one per addon: the core, and one for each module. Install the core plus whichever modules you want — each is its own CurseForge project and is updated on its own from then on.
+
+1. Install **BitForge**. Every module requires it, and each module declares it as a dependency, so an addon manager fetches it for you.
+2. Install the modules you want, by name. Each is described under [Modules](#modules) above and packaged as `BitForge_<Module>`.
 3. Log in and enable the addons from the character select screen.
+
+Installing by hand instead: download each project's zip from its CurseForge page and copy the folders into `World of Warcraft/_retail_/Interface/AddOns/`. To install from a clone of this repository, use `git clone --recurse-submodules` -- BitForge's UI toolkit lives in a separate repository ([LibBitForgeUI](https://github.com/AdenJustice/LibBitForgeUI)) and a plain clone leaves it empty. A release zip already contains everything.
 
 ```
 Interface/AddOns/
   BitForge/
   BitForge_AutoBalance/     ← optional
-  BitForge_Dispatch/        ← optional
+  BitForge_AzerothPrime/    ← optional
   BitForge_EUI/             ← optional, requires EllesmereUI
   BitForge_RepRank/         ← optional
   BitForge_TaskTome/        ← optional
 ```
+
+### Upgrading from an earlier BitForge
+
+Releases before this one shipped all six folders in a single zip. Updating removes nothing, so the folders you already have stay on disk and keep working — but the BitForge download no longer updates the five modules. Install the ones you use as their own projects, and the old folder is safe to delete once its replacement is in place.
+
+`BitForge_Dispatch` is the exception: it is now **BitForge AzerothPrime**. Install AzerothPrime and everything Dispatch had saved — rules, per-item lists, curation destinations, blacklists, the button's size and position — comes with it. If the old Dispatch is still installed, AzerothPrime switches it off first and your settings arrive at your next login, so finding Dispatch greyed out in the addon list is expected rather than a fault. The keybinding for the openables button is the one thing that does not carry over, because the game stores it under the button's name.
 
 ---
 

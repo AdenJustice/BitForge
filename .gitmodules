@@ -1,0 +1,19 @@
+# branch = embed, per LibBitForgeUI's README: `embed` carries the same files as
+# `main` and exists so a fix found while working inside this repository can be
+# committed from the submodule checkout itself rather than retyped in a separate
+# clone. It only affects `git submodule update --remote`; what ships is still
+# whatever commit the gitlink records.
+#
+# The library's own warning, worth repeating where it bites: `--remote` leaves
+# the submodule at a detached HEAD, so switch it onto the branch once before
+# committing or pushing from inside it --
+# `git -C BitForge/Libs/LibBitForgeUI switch embed` -- or `git push origin embed`
+# fails with "src refspec embed does not match any".
+#
+# `embed` runs ahead of `main` only while a fix is in flight, and a commit that
+# has not reached `main` has not been reviewed or released. Before a release,
+# check the pinned commit is one `main` also carries.
+[submodule "BitForge/Libs/LibBitForgeUI"]
+	path = BitForge/Libs/LibBitForgeUI
+	url = https://github.com/AdenJustice/LibBitForgeUI.git
+	branch = embed

@@ -38,3 +38,18 @@ L["report:encoded"] = "This report was too long to read, so it has been compress
 L["whatsNew:windowTitle"] = "What's New in BitForge"
 L["whatsNew:version"] = "%s — %s"
 L["whatsNew:close"] = "Close"
+
+-- The one-time notice raised for a profile that still has folders the BitForge
+-- download used to carry. It says everything at once because it is shown once
+-- and never again. The project names inside it are folder names, derived in
+-- view.upgradeNotice and never translated.
+L["upgrade:windowTitle"] = "BitForge is six downloads now"
+L["upgrade:lead"] = "BitForge and its modules are separate downloads from now on -- one project each, updated on its own. Updating BitForge removed nothing, so everything you already had is still installed and still working."
+L["upgrade:separate"] = "These are no longer part of the BitForge download, and nothing will update them again until you install each one as its own project:"
+L["upgrade:renamed"] = "BitForge Dispatch has been renamed BitForge AzerothPrime, and is its own project under that name. Install it and everything Dispatch had saved -- rules, per-item lists, curation destinations, blacklists, the button's size and position -- comes with it. If the old Dispatch is still installed, AzerothPrime switches it off first and your settings arrive at your next login, so finding Dispatch greyed out in the addon list is expected rather than a fault; the folder is safe to delete then. One thing does not come across: the keybinding for the openables button, which the game stores under the button's name. Set it again in the Key Bindings panel."
+L["upgrade:close"] = "Got it"
+
+-- Said in chat, once per pair of versions, when a module and core were not
+-- released beside each other. The project name is derived from the folder name
+-- in control.lua and never translated; the two versions are .toc strings.
+L["msg:outOfStep"] = "Update %s from CurseForge: it is on %s while BitForge is on %s. Each is its own download now, so an addon manager can update one and not the other."

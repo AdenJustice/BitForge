@@ -17,6 +17,20 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # The packager credentials live here rather than on each of the six runs
+      # below, which otherwise differ in one argument and nothing else. A key
+      # dropped from one of six copies of an env: block costs that addon its
+      # upload in silence: upload_curseforge returns 0 when cf_token is empty
+      # (release.sh:2803-2806) and the run still ends green.
+      #
+      # Wago is deliberately not wired up. The packager uploads there only when
+      # WAGO_API_TOKEN is in the environment, so leaving it out is the whole of
+      # it -- do not add the secret back "just in case", because an X-Wago-ID in
+      # a .toc plus a present token is all it takes to start publishing there.
+      # The suite publishes to CurseForge and GitHub only, and the five module
+      # projects were never registered on Wago at all.
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -24,20 +38,72 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Package and Release
+      # One packager run per package. topdir is the repository root for every
+      # one of them -- release.sh refuses a topdir holding no .git of its own
+      # (release.sh:506-516), which a subfolder of a monorepo never does -- so
+      # -m, naming that package's own .pkgmeta, is the whole of what tells one
+      # run from another, and each .pkgmeta reaches its own folder through the
+      # single move-folders entry it carries.
+      #
+      # No -p: each .toc carries its own ## X-Curse-Project-ID and the packager
+      # reads it (release.sh:1319-1321). No -e: only core declares externals,
+      # so the five module runs have nothing to skip -- their .pkgmeta files
+      # name no external, and setup-packager.sh reads the same -m to decide
+      # whether the runner even needs subversion for LibStub -- while skipping
+      # core's would ship it without LibDeflate and LibStub.
+      #
+      # The six zips accumulate rather than replace each other: .release is
+      # created once (release.sh:529) and nothing removes it, and a run clears
+      # only its own .release/<package-as> staging directory
+      # (release.sh:1492-1495) and its own archive. That is what lets the
+      # checks further down see all six packages instead of the last one.
+      #
+      # Core runs last deliberately. Each run creates the GitHub release for
+      # the tag or PATCHes the one already there (release.sh:3264-3292), and
+      # the PATCH rewrites the release body with that package's own generated
+      # changelog -- so the body the tag keeps is whichever ran last, and
+      # core's is the one that should head the release. Nothing else collides:
+      # the archives are named per package, and release.json is merged with the
+      # copy already attached rather than replacing it (release.sh:3277-3287),
+      # which is what leaves one release listing all six addons. The order is
+      # held by test_core_is_the_last_packager_run, because nothing a build can
+      # see goes wrong when it is broken -- every upload still lands, and only
+      # the release page's text changes.
+      - name: Package and release BitForge_AutoBalance
         uses: BigWigsMods/packager@master
-        env:
-          CF_API_KEY: ${{ secrets.CF_API_KEY }}
-          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: -m BitForge_AutoBalance/.pkgmeta
+
+      - name: Package and release BitForge_AzerothPrime
+        uses: BigWigsMods/packager@master
+        with:
+          args: -m BitForge_AzerothPrime/.pkgmeta
+
+      - name: Package and release BitForge_EUI
+        uses: BigWigsMods/packager@master
+        with:
+          args: -m BitForge_EUI/.pkgmeta
+
+      - name: Package and release BitForge_RepRank
+        uses: BigWigsMods/packager@master
+        with:
+          args: -m BitForge_RepRank/.pkgmeta
+
+      - name: Package and release BitForge_TaskTome
+        uses: BigWigsMods/packager@master
+        with:
+          args: -m BitForge_TaskTome/.pkgmeta
+
+      - name: Package and release BitForge
+        uses: BigWigsMods/packager@master
+        with:
+          args: -m .pkgmeta
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: .release/*.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload packaged addon (debug)
         if: failure()
@@ -52,11 +118,12 @@ jobs:
       # nothing above can see it. That is how v12.1.0.8 and v12.1.0.9 reached
       # GitHub and Wago while CurseForge dropped both without a red build.
       #
-      # This runs last, once the zip is on the release where it can be read. It
-      # cannot un-send what the packager already uploaded; what it buys is
+      # This runs last, once the zips are on the release where they can be read.
+      # It cannot un-send what the packager already uploaded; what it buys is
       # finding out now rather than whenever somebody opens the project page.
-      # .pkgmeta's ignore list is what actually keeps these files out of the
-      # package -- this only reports that it stopped working.
+      # Each .pkgmeta's ignore list is what actually keeps these files out of a
+      # package -- this only reports that it stopped working. The glob covers
+      # all six because the runs share one .release directory.
       - name: Check the package for content CurseForge refuses
         run: |
           for zip in .release/*.zip; do

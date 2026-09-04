@@ -13,6 +13,7 @@
 ## Notes-zhTW: 拜訪時自動與戰團銀行平衡金幣
 ## Author: AdenJustice
 ## Version: @project-version@
+## X-Curse-Project-ID: 1680962
 ## Dependencies: BitForge
 
 Init.lua

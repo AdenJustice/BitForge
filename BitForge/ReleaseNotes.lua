@@ -11,16 +11,16 @@
 -- gone, not missing: CHANGELOG.md still has them, this table never will.
 --
 -- `lead` IS OPTIONAL. It is a bullet's bold prefix, where the source bullet
--- had one; 1 of the 94 items below have none, so a consumer
+-- had one; 0 of the 64 items below have none, so a consumer
 -- must not assume every item carries one.
 --
 -- `sep` IS THE SEPARATOR THE CHANGELOG WROTE between a lead and the rest of
 -- the bullet -- an em dash or a colon, recorded rather than dropped. ABSENT
--- MEANS THE SOURCE WROTE NEITHER, not that one went missing: 92 of the
--- 93 leads below have no `sep`, and supplying one for those strands a
+-- MEANS THE SOURCE WROTE NEITHER, not that one went missing: 63 of the
+-- 64 leads below have no `sep`, and supplying one for those strands a
 -- predicate with nothing in front of it ("BatchSell -- now asks ...").
 --
--- 5 releases, 94 items, v12.1.0.11 down to v12.1.0.7.
+-- 5 releases, 64 items, v12.1.0.12 down to v12.1.0.8.
 
 ---@class BitForge.Core
 local ns = select(2, ...)
@@ -29,6 +29,37 @@ local ns = select(2, ...)
 local enum = ns.enum
 
 enum.RELEASE_NOTES = {
+    {
+        version = "v12.1.0.12",
+        date = "2026-09-04",
+        sections = {
+            {
+                heading = "Added",
+                items = {
+                    { lead = "BitForge now tells you when one of its addons has fallen out of step with the rest.", text = "Six separate downloads means your addon manager can update one and leave another behind, which nothing used to be able to notice. When it happens, BitForge says so once in chat as you log in, naming the one to go and fetch -- and then stays quiet until the versions change again." },
+                },
+            },
+            {
+                heading = "Changed",
+                items = {
+                    { lead = "BitForge is six separate downloads now, one for each addon.", text = "The core and its five modules used to arrive in a single zip; each is its own CurseForge project from here on, updated on its own. Nothing is removed when you update, so every folder you already have stays where it is and keeps working -- but the BitForge download no longer updates the five modules, and your addon manager has no project to match those folders to. Install the ones you use as their own projects, and the old folder is safe to delete once its replacement is in place." },
+                    { lead = "Dispatch is now AzerothPrime, and everything you had set comes with it.", text = "Install BitForge AzerothPrime where you had BitForge_Dispatch: your rules, per-item lists, curation destinations, blacklists and the button's size and position all move across on their own, and there is nothing to re-enter. If the old Dispatch is still installed, AzerothPrime switches it off first and your settings arrive at your next login -- so finding Dispatch greyed out in the addon list is expected rather than a fault, and the folder is safe to delete then." },
+                    { lead = "Your keybinding for the openables button does not come with it.", text = "The game stores a keybinding under the button's name, and the button's name changed with the addon's, so yours is cleared. Set it again in the standard Key Bindings panel." },
+                    { lead = "Every BitForge window has been retuned, and text is easier to read.", text = "Body text was a mid-grey that sat closer to the background than to white; it is near-white now, and the old grey survives only where something is deliberately dimmed. Window borders were darker than the panel they outlined, which read as a gap rather than an edge -- they are lighter than it now. Buttons are slightly shorter so they line up with the dropdowns and text boxes they share a row with, checkboxes slightly taller so the box has room to breathe, and the report window is a little larger with more space inside it. Windows also now refuse to be dragged smaller than they can usefully be drawn." },
+                    { lead = "The close button is an X inside a square outline.", text = "It was two loose strokes, which read as a smudge at the small size. The button is the same size, sits in the same place and responds the same way; only the mark inside it changed, and it is drawn larger relative to the button so it holds up at every size." },
+                    { lead = "EllesmereUI's skinning switch is now per addon rather than one switch for all of BitForge.", text = "The suite registered itself under a single name, so turning its skinning on or off in EllesmereUI applied to every BitForge window at once. Each addon now registers under its own name, which is what EllesmereUI's per-addon toggle was always keyed to -- so you can keep AzerothPrime skinned and leave RepRank alone, or any other combination. Nothing changes if you do not use EllesmereUI." },
+                    { lead = "The EllesmereUI editor's close button is the suite's own now.", text = "It was the only window in BitForge still using Blizzard's close button, which is why it never quite matched the others. It does now." },
+                    { lead = "A slightly smaller download.", text = "Four pieces of artwork that nothing had drawn for some time were still being packaged into every release, and so were the development files of the UI toolkit BitForge embeds. Both are gone." },
+                },
+            },
+            {
+                heading = "Fixed",
+                items = {
+                    { lead = "Flagging a recipe now keeps every reagent it needs, not just the ones BitForge already had on file.", text = "Flagging reads the recipe's ingredient list from the game, but a second check sat in front of it: a list of \"which professions use this item\", built by hand and shipped with the addon. Anything that list had not heard of -- most obviously anything added since it was last rebuilt -- was sold anyway, so the flag quietly did nothing for those reagents. It no longer has a say when the game has already answered. Nothing changes for a reagent the list does know about: flagging still does not override which of your characters can actually reach and use the item." },
+                },
+            },
+        },
+    },
     {
         version = "v12.1.0.11",
         date = "2026-09-03",
@@ -138,72 +169,6 @@ enum.RELEASE_NOTES = {
                     { lead = "Openables:", text = "baits, lures and other profession tools stay off the button whether or not your character has learned the profession. One gated on a profession you do not have was offered as something to open — the case where it is least useful, since you cannot use it at all." },
                     { lead = "Openables:", text = "a character who has learned no professions is no longer offered every oddment in their bags as something to study." },
                     { lead = "Openables:", text = "the button keeps moving on however long you go. Clicking through your items advanced once through the whole set and then stuck on the first one, and only logging out or reloading started it moving again." },
-                },
-            },
-        },
-    },
-    {
-        version = "v12.1.0.7",
-        date = "2026-08-27",
-        sections = {
-            {
-                heading = "Added",
-                items = {
-                    { lead = "Tell us when BitForge gets an item wrong.", text = "BatchSell's sell list and Openables' button now offer to report the item you are looking at: a window opens with everything BitForge judged it by, already selected, and the address to paste it into. It needs nothing turned on first. The window shows you the whole report rather than hiding it behind a button, and says plainly what it discloses — for BatchSell that is the item's link, which states your character's level and specialization, and whatever you have equipped in the slot it would fill; for Openables it is the item, how it was classified, and which professions the character knows. Neither names your character, realm, guild or faction. Reach it from the menu on a row in the sell list, or with Shift + Alt + right-click on Openables' button." },
-                    { lead = "BitForge tells you what changed after it updates.", text = "The first time you log in on a new version, a window lists everything new since the version you last saw, and does not come back until the next update. /bitforge core whatsnew opens it again." },
-                    { lead = "RepRank:", text = "factions are grouped by expansion, under the same headings the game's own reputation pane uses, indented beneath the Warband and Characters sections. Sorting by rank now orders factions within their expansion rather than across the whole list. A faction recorded before this update sits under \"Other\" until the character holding it next logs in." },
-                    { lead = "Openables:", text = "an item that starts a quest is now marked with a bold gold exclamation mark in the button's top-left corner, so you can tell a quest you can pick up from an ordinary item at a glance." },
-                    { lead = "EUI", text = ", a new module: precise, numeric control over EllesmereUI's frame positions. Installing it changes nothing — it records where your frames already are and moves none of them until you edit something. It also offers attachments EllesmereUI cannot express, resolving those itself. EllesmereUI is required." },
-                    { lead = "The suite's slash commands are now owned by BitForge itself.", text = "/bitforge <module> opens or acts on a module, in place of the separate command each module used to install for itself. /bitforge on its own prints the modules you have installed, so the list cannot go stale the way a written-down one does. A module name shortens to any unambiguous prefix, making /bitforge b and /bitforge batchsell the same command, and asking a module for something it does not offer says so instead of doing nothing." },
-                    { lead = "A close button that matches the window it sits on.", text = "Openables, RepRank, UPS and both of TaskTome's windows now draw their X in BitForge's own colours instead of wearing Blizzard's red one, and it lights up under the pointer. EUI's editor deliberately keeps EllesmereUI's, since that window is a guest in EllesmereUI's layout and should look like the rest of it." },
-                    { lead = "BatchSell can show you why.", text = "A new Rules window lists every criterion it judges an item by, in the order it checks them, with a plain-English explanation of each — from the Rules button at the vendor, or from BatchSell's settings. Every criterion that has anything to set is now set from the window itself, each control explaining what it does when you point at it: whether poor quality items sell, how gear is compared with what you are wearing, and the rules for crafting reagents, uncollected appearances, gems, enhancements, recipes, mounts and pets, and housing. Which of your professions spares a trade good is set here too, from a list you tick. Consumables get a row each, with their options behind it. A setting that only matters while another is on greys out until it is, and changing anything at a vendor updates the sell list straight away. The pane scrolls when a criterion has more to say than fits. The manifest also tells you what to do when something you expected to sell is not listed: hover it in your bags and the tooltip names the rule that kept it." },
-                },
-            },
-            {
-                heading = "Changed",
-                items = {
-                    { lead = "BatchSell:", text = "the menu on an item in the sell list now shows what that item is already set to. It has a Character section and a Warband section, each offering Blacklisted, Whitelisted and None, so a warband entry being overridden on this character is finally visible — the old menu offered four ways to set a status and no way to see which was set. Clearing one scope leaves the other standing: Clear Character Override is now Character → None, and Remove From List is None in both." },
-                    { lead = "BatchSell judges recipes straight away now.", text = "A recipe used to be left alone until you had opened that profession's window at least once; it is judged from the item itself from now on, so \"keep what I can still learn\" and \"keep what is still tradeable\" apply on your first visit to a vendor. A recipe that belongs to no one profession — a generic pattern or manual — is still left alone, since there is nothing to judge it against." },
-                    { lead = "The crafting-reagent catalogue is now read from the game itself rather than from a website.", text = "It covers 2,833 reagents across the ten professions that have recipes, up from 2,200, and for the first time it carries the optional reagents a recipe accepts and every quality tier of a reagent instead of only the first. Fewer materials will be offered for sale because BitForge had never heard of them. It also asks nothing of you: opening each of your profession windows used to be how the list filled itself in, and there is no longer anything to fill in — what ships is the whole of it, and reagents a later patch adds wait for the next update rather than for you." },
-                    { lead = "BatchSell", text = "now decides by the kind of item. Every kind has its own rule — consumables, gems, trade goods, recipes, companion pets and mounts, housing decor, gear — instead of everything being sorted into equipment, materials or other and the last two sharing one keep-or-sell setting. A kind with no rule of its own is never examined, so quest items, keys, glyphs and anything else BatchSell does not understand stay in your bags no matter how the rest is set. Crafting materials and consumables are affected most: they used to answer to a single expansion-age setting, and now each kind answers for itself." },
-                    { lead = "BatchSell", text = "never sells on something it could not read. If the game has not finished loading an item's details, or has not told BatchSell what you have equipped, or what your character's class is, the item is kept rather than judged on a blank. This mattered most right after logging in or reloading at a vendor. The same goes for the reagent list: a trade good, consumable or gem that BatchSell's list has no entry for is kept rather than sold, since not knowing whether a profession wants it is not the same as knowing none does. Expect fewer trade goods to sell than before, especially just after a patch adds new ones." },
-                    { lead = "BatchSell", text = "settings are now shared across your warband instead of being set per character, and your existing settings are reset once when you first log in after this update. They could not be carried over: there was no way to tell which character's settings should become everyone's. The batch limit stays on, so a first sell after the update is still capped." },
-                    { lead = "BatchSell:", text = "two defaults changed. Selling poor quality items is now off, since another addon usually handles it — turn it back on if nothing else does. Keeping gear worth disenchanting is now on." },
-                    { lead = "BatchSell spares unbound Bind on Equip gear by default.", text = "A new Spare Bind on Equip Gear dropdown sits beside the Bind on Account one and ships on Current Expansion, so a current-expansion piece you have never worn is kept for an alt or the auction house even when it loses the comparison. Expect some gear you used to see vendored to stay in your bags. Set it to All to keep older Bind on Equip gear too, or None to have it judged like anything else." },
-                    { lead = "BatchSell:", text = "every per-kind rule is now yours to set, in the Rules window. Consumables are the finest-grained of them: potions, elixirs, flasks and phials, food and drink, bandages, vantus runes and the rest each get their own answer, and the four that can be levelled through offer to keep last expansion's as well. The defaults are unchanged, so nothing starts selling that was not selling before." },
-                    { lead = "BatchSell's settings panel no longer holds any rule.", text = "Sell Junk, Keep Reagents Your Professions Use and the seven gear settings have moved into the Rules window, where the other forty-five already were. What is left in the Blizzard settings panel is the batch limit, the four list resets, and the button that opens the window. If you knew where those nine were, they are one button away now — and there is no longer a second place a rule can be set from." },
-                    { lead = "BatchSell", text = "ships those new rules on defaults you can change: a housing dye you could still trade or sell is kept and one bound to you is sold; housing decor and battle pets are kept; and a mount is kept unless it is bound to you and you have already collected it." },
-                    { lead = "BatchSell", text = "explains a sold relic properly. The verdict read \"Relics are sold\", which said nothing about why and used the same word as the artifact relics it keeps. It now says nothing can equip a relic any more — idols, librams, totems and sigils belong to a slot the game removed. All eleven languages; nothing behaves differently." },
-                },
-            },
-            {
-                heading = "Removed",
-                items = {
-                    { text = "/bfodump, /bfsdump and /bfsde are gone." },
-                    { lead = "BatchSell:", text = "the Sell Equipment checkbox is gone, and so are the Crafting Materials and Consumables & Other sections along with their keep-or-sell dropdowns — every kind of item now answers for itself instead. If you used Sell Equipment to keep all your gear, turn off both Compare Quality and Compare Item Level: nothing your class can equip is vendored then. Gear your class cannot use is still judged, and what keeps it is the Spare Bind on Account, Spare Bind on Equip and Keep Disenchantable Gear settings underneath." },
-                },
-            },
-            {
-                heading = "Fixed",
-                items = {
-                    { lead = "BatchSell", text = "no longer sells a cosmetic whose appearance you have not collected. Selling one does not collect it — the appearance is simply gone — and the check that was meant to prevent this only ever looked at armor filed under the Cosmetic subclass. Cosmetic weapons are filed as ordinary weapons, so a cosmetic bow or polearm was judged on its item level like any other and vendored. The question is now asked of every item whatever its class, and an item whose appearance state cannot be read is kept rather than risked." },
-                    { lead = "BatchSell", text = "compares bows, guns, crossbows and wands against the weapon you are actually holding. They were being weighed against the ranged slot, which the game removed years ago and which is empty on every character — so they never lost the comparison and were never sold, however far behind they had fallen. Expect outgrown ranged weapons to start selling." },
-                    { lead = "BatchSell", text = "no longer keeps a soulbound crafting reagent because an alt has the profession that wants it. A bound copy can never reach that alt, so the account-wide answer was the wrong one to ask; it now asks about the character actually holding it. Expect some bound reagents to start selling — they were being kept for a character who could never receive them." },
-                    { lead = "Openables", text = "moves to the next item even when using one fails. The button only advanced when the item was actually consumed, so a use the game refused — out of range, wrong zone, on cooldown — left you clicking the same item. It now moves on regardless, and the item is not dropped: it goes to the back and comes round again." },
-                    { lead = "Openables", text = "no longer offers profession tools you use out in the world, like the Elusive Creature Lure or a skinning bait on a twelve hour cooldown. They arrive looking exactly like something to open — a plain \"Use:\" line and nothing else — and the only thing separating them is a profession requirement you meet. They used to sit above every genuine learnable in the button's order; now they are not offered at all." },
-                    { lead = "BatchSell", text = "no longer keeps gear nobody can ever disenchant. With Keep Disenchantable Gear on, a piece was spared whenever the game would accept it for a disenchant — but a piece you have worn is bound to you, and if you are not an enchanter there is no one it can reach. Those pieces stayed in your bags for good, and on a levelling character that is most of what you outgrow. BatchSell now asks who could actually receive the item: you, if you have the profession; an alt, if it is Warbound; or a buyer, if you have not bound it yet. Expect levelling gear you outgrew to start selling again — it was never doing anything for you." },
-                    { lead = "BatchSell", text = "now recognises Warbound gear. It was reading the wrong bind type — the one the game uses for quest items — so gear bound to your warband was never seen as account-bound and could be sold whatever you had set. What spares it is the Spare Bind on Account Gear dropdown, which offers All, Current Expansion and None and ships on Current Expansion: at that setting this expansion's Warbound gear is kept and a past expansion's is not, and All keeps every piece. Enchanters lost the same gear from Keep Disenchantable Gear for the same reason." },
-                    { lead = "BatchSell", text = "no longer sells gear that beats what you are wearing, when what you are wearing is last expansion's. Quality counted for a fixed number of item levels whatever its age, so a levelling character in last expansion's epic had this expansion's upgrades vendored for being a tier below it. A piece from a finished expansion now sets its bar on item level alone — no margin, no quality discount. Gear scaled by Timewalking is exempt, since its item level is already current." },
-                    { lead = "BatchSell", text = "never sells anything above epic quality. Legendary, artifact and heirloom items were judged like any other gear, so an outgrown legendary was vendored for being behind on item level — and the game reports a sale price for these and then refuses the sale, so one that reached the list quietly used up a slot in the batch and sold nothing. The game will not complete the sale whatever BatchSell does, so there is no setting and no list that makes one happen." },
-                    { lead = "BatchSell", text = "no longer sells cloaks, shirts or tabards as gear your class cannot equip. Every class wears all three, but the game files them under cloth, so on anything but a cloth wearer they were being judged as off-class gear and vendored." },
-                    { lead = "BatchSell", text = "no longer treats one-handed weapons as gear a hunter wants. No hunter specialization uses one — Beast Mastery and Marksmanship are ranged, Survival is two-handed — so a one-hander picked up while levelling is no longer weighed against what you have equipped. It is not vendored on the spot either: it still faces the bind and disenchant questions, and is kept if it is Warbound, Bind on Equip or worth disenchanting." },
-                    { lead = "Openables:", text = "the button updates as soon as you pick something up. It could previously sit on the wrong item, or show nothing at all, until an unrelated bag change happened to refresh it — the item's tooltip had not finished loading when the button first looked at it, and nothing told it when it had." },
-                    { lead = "Openables", text = "no longer offers profession knowledge items you cannot study yet. A requirement like \"Requires Dragon Isles Mining (25)\" was treated as met by knowing the profession at all, so an item that needs rank 25 showed up at rank 1." },
-                    { lead = "Openables", text = "stops hiding profession knowledge items you can study. The button sizes an item up along one of two paths, and only one of them was reading the item's profession requirement — so on the other path a knowledge item you were entitled to use looked like an ordinary firecracker and was dropped from the button entirely, while a profession-gated lure lost the requirement that would have turned it away and was offered in its place. Both paths now read the same evidence." },
-                    { lead = "Openables", text = "now counts housing decor, dyes and room customizations as learnables, so they are offered ahead of items you merely use rather than last." },
-                    { lead = "Openables", text = "holds back Focused Life Essence until you carry the five it needs to combine, and no longer offers Superior Loyal Spirit, which does nothing away from its Queen's Conservatory node." },
-                    { lead = "RepRank:", text = "the Show factions with no progress toggle now shows its state after you click it. It changed the list correctly but kept the appearance it was built with, so it read as unchanged." },
-                    { lead = "Openables:", text = "blacklisted items show their names again. A row in the blacklist window read Unknown item (194829) and stayed that way for the rest of the session — the window asked the game for the name, but nothing was listening for the answer when it came back. Rows only ever looked right for items still sitting in your bags, which is rarely what is on a blacklist." },
                 },
             },
         },

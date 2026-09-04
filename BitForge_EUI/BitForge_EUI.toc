@@ -13,6 +13,7 @@
 ## Notes-zhTW: 精確的數值控制 EllesmereUI 框體位置
 ## Author: AdenJustice
 ## Version: @project-version@
+## X-Curse-Project-ID: 1680967
 ## Dependencies: BitForge, EllesmereUI
 
 Init.lua

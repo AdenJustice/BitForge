@@ -25,3 +25,11 @@ L["report:encoded"] = "이 보고서는 너무 길어서 압축되었습니다. 
 L["whatsNew:windowTitle"] = "BitForge의 새로운 소식"
 L["whatsNew:version"] = "%s — %s"
 L["whatsNew:close"] = "닫기"
+
+L["upgrade:windowTitle"] = "이제 BitForge는 여섯 개의 개별 다운로드입니다"
+L["upgrade:lead"] = "이제부터 BitForge와 각 모듈은 별도의 다운로드입니다 -- 각각 하나의 프로젝트이며, 저마다 따로 업데이트됩니다. BitForge를 업데이트해도 삭제된 것은 없으므로, 이미 설치해 두신 것은 모두 그대로 남아 정상 작동합니다."
+L["upgrade:separate"] = "다음 항목은 더 이상 BitForge 다운로드에 포함되지 않으며, 각각을 개별 프로젝트로 설치하시기 전까지는 아무것도 이들을 업데이트하지 않습니다:"
+L["upgrade:renamed"] = "BitForge Dispatch는 BitForge AzerothPrime으로 이름이 바뀌었으며, 그 이름의 독립된 프로젝트입니다. 설치하시면 Dispatch에 저장되어 있던 모든 것 -- 규칙, 아이템별 목록, 보관 대상, 차단 목록, 버튼의 크기와 위치 -- 이 함께 넘어옵니다. 이전 Dispatch가 아직 설치되어 있다면 AzerothPrime이 먼저 이를 비활성화하며, 설정은 다음 접속 때 넘어옵니다. 따라서 애드온 목록에서 Dispatch가 회색으로 보이는 것은 오류가 아니라 정상이며, 그때 해당 폴더를 삭제하셔도 됩니다. 한 가지는 넘어오지 않습니다: 개봉 버튼의 단축키입니다. 게임이 단축키를 버튼 이름으로 저장하기 때문이며, 단축키 설정에서 다시 지정해 주십시오."
+L["upgrade:close"] = "확인"
+
+L["msg:outOfStep"] = "%s을(를) CurseForge에서 업데이트하세요: 이 애드온은 %s, BitForge는 %s입니다. 이제 각각 별개의 다운로드이므로 애드온 관리자가 한쪽만 업데이트하고 다른 쪽은 그대로 두는 일이 생깁니다."

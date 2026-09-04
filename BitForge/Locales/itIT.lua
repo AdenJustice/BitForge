@@ -25,3 +25,11 @@ L["report:encoded"] = "Questo rapporto era troppo lungo da leggere, quindi è st
 L["whatsNew:windowTitle"] = "Novità di BitForge"
 L["whatsNew:version"] = "%s — %s"
 L["whatsNew:close"] = "Chiudi"
+
+L["upgrade:windowTitle"] = "BitForge ora è sei download"
+L["upgrade:lead"] = "Da adesso BitForge e i suoi moduli sono download separati: un progetto ciascuno, aggiornato per conto proprio. L'aggiornamento di BitForge non ha rimosso nulla, quindi tutto quello che avevi già è ancora installato e funziona ancora."
+L["upgrade:separate"] = "Questi non fanno più parte del download di BitForge, e nulla li aggiornerà più finché non installi ciascuno come progetto a sé:"
+L["upgrade:renamed"] = "BitForge Dispatch è stato rinominato BitForge AzerothPrime, ed è un progetto a sé con quel nome. Installalo e tutto ciò che Dispatch aveva salvato -- regole, liste per oggetto, destinazioni di deposito, liste nere, dimensione e posizione del pulsante -- viene con lui. Se il vecchio Dispatch è ancora installato, AzerothPrime lo disattiva per primo e le tue impostazioni arrivano al tuo prossimo accesso: vedere Dispatch in grigio nell'elenco degli addon è quindi previsto e non un guasto, e a quel punto la cartella si può eliminare. Una cosa non si sposta: l'assegnazione tasti del pulsante degli oggetti apribili, che il gioco salva sotto il nome del pulsante. Riassegnala in Assegnazione Tasti."
+L["upgrade:close"] = "Ho capito"
+
+L["msg:outOfStep"] = "Aggiorna %s da CurseForge: è alla %s mentre BitForge è alla %s. Ora ciascuno è un download a sé, quindi un gestore di addon può aggiornarne uno e non l'altro."

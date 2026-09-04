@@ -96,5 +96,3 @@ L["ui:anchorKeyTaken"] = "Ein Ankerrahmen namens '%s' existiert bereits"
 
 L["apply:deferredCombat"] = "Im Kampf -- das Layout wird angewendet, sobald Ihr ihn verlasst"
 L["apply:deferredDone"] = "Kampf beendet: %d angewendet, %d unverändert"
-
-L["report:blurb"] = "Dieser Bericht enthält Bezeichnung und Ordner eines EllesmereUI-Elements, ob es an ein anderes Element und an welcher Seite verankert ist, seine gespeicherte Position und Größe, sowie ob das gespeicherte Layout es verwaltet. Nichts hier nennt Euren Charakter, Euren Realm, Eure Gilde oder Eure Fraktion."

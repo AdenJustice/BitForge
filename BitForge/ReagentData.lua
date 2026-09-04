@@ -15,7 +15,7 @@
 -- ABSENCE MEANS THE CAPTURE DID NOT SEE IT. These are one client at one build:
 -- a recipe a later patch adds is missing until the captures are retaken, and so
 -- is every reagent only that recipe consumes. What to do about that gap is the
--- consumer's policy rather than this file's -- Dispatch's sell rules read the
+-- consumer's policy rather than this file's -- AzerothPrime's sell rules read the
 -- table as complete and sell on an absence (#330), so retaking the captures
 -- after a patch is what keeps that reading honest.
 --

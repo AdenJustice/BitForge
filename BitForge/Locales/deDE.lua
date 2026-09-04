@@ -25,3 +25,11 @@ L["report:encoded"] = "Dieser Bericht war zu lang zum Lesen und wurde deshalb ko
 L["whatsNew:windowTitle"] = "Neuerungen in BitForge"
 L["whatsNew:version"] = "%s — %s"
 L["whatsNew:close"] = "Schließen"
+
+L["upgrade:windowTitle"] = "BitForge sind jetzt sechs Downloads"
+L["upgrade:lead"] = "BitForge und seine Module sind ab sofort getrennte Downloads -- je ein eigenes Projekt, das für sich aktualisiert wird. Beim Aktualisieren von BitForge wurde nichts entfernt, alles bereits Installierte ist also weiterhin vorhanden und funktioniert."
+L["upgrade:separate"] = "Diese gehören nicht mehr zum BitForge-Download, und nichts wird sie wieder aktualisieren, bis Ihr jedes davon als eigenes Projekt installiert:"
+L["upgrade:renamed"] = "BitForge Dispatch heißt jetzt BitForge AzerothPrime und ist unter diesem Namen ein eigenes Projekt. Installiert es, und alles, was Dispatch gespeichert hatte -- Regeln, Listen je Gegenstand, Verstauziele, Sperrlisten, Größe und Position der Schaltfläche --, kommt mit. Ist das alte Dispatch noch installiert, schaltet AzerothPrime es zuerst ab und Eure Einstellungen treffen bei Eurer nächsten Anmeldung ein; ein ausgegrautes Dispatch in der Addon-Liste ist also zu erwarten und kein Fehler, und der Ordner kann dann gelöscht werden. Eines kommt nicht mit: die Tastenbelegung für die Öffnen-Schaltfläche, die das Spiel unter dem Namen der Schaltfläche speichert. Legt sie in der Tastenbelegung erneut fest."
+L["upgrade:close"] = "Verstanden"
+
+L["msg:outOfStep"] = "Aktualisiert %s über CurseForge: es ist auf %s, BitForge dagegen auf %s. Jedes ist jetzt ein eigener Download, ein Addon-Manager kann also das eine aktualisieren und das andere nicht."

@@ -1,19 +1,15 @@
 package-as: BitForge
 
-# BitForge_Dev is a development-only tool that never reaches a release. It is
-# absent from move-folders below AND listed under ignore, and only the second of
-# those actually excludes it: move-folders relocates a folder out of the package
-# root, so an unlisted one stays inside BitForge/ rather than being dropped.
-# Neither is the real guarantee -- Scripts/public_tree.sh keeps it off main, and
-# the packager only ever runs against the public repo -- but a second line of
-# defence should be one that works. Do not "fix" either omission.
+# topdir stays the repository root for all six packages here -- a subfolder of a
+# monorepo holds no .git of its own and release.sh rejects a topdir without one
+# (release.sh:506-516) -- so each package is selected by its own .pkgmeta and
+# reaches its own folder through the one move-folders entry below. Every ignore:
+# and externals: path here is therefore repository-root-relative, not
+# BitForge/-relative. The move-folders key is not: release.sh resolves it
+# against $releasedir (release.sh:2686) while the tree is copied into
+# $releasedir/<package-as>, so it reads <package-as>/<repository-root path>.
 move-folders:
   BitForge/BitForge: BitForge
-  BitForge/BitForge_AutoBalance: BitForge_AutoBalance
-  BitForge/BitForge_TaskTome: BitForge_TaskTome
-  BitForge/BitForge_RepRank: BitForge_RepRank
-  BitForge/BitForge_EUI: BitForge_EUI
-  BitForge/BitForge_Dispatch: BitForge_Dispatch
 
 # LibDeflate has no CurseForge/wowace SVN mirror -- WeakAuras2, which also
 # depends on it, externals the same GitHub URL. Pinned to the tag vendored
@@ -60,14 +56,27 @@ externals:
 enable-nolib-creation: no
 
 ignore:
+  # The five sibling modules and BitForge_Dev. Each module is packaged by its
+  # own .pkgmeta now, and BitForge_Dev is a development-only tool that never
+  # reaches a release; all six are absent from move-folders above AND listed
+  # here, and only the second of those actually excludes them: move-folders
+  # relocates the one folder it names rather than dropping the rest, so an
+  # unlisted one stays inside the package root rather than being dropped. For BitForge_Dev neither is the real
+  # guarantee -- Scripts/public_tree.sh keeps it off main, and the packager only
+  # ever runs against the public repo -- but a second line of defence should be
+  # one that works. Do not "fix" either omission.
+  - BitForge_AutoBalance
+  - BitForge_AzerothPrime
   - BitForge_Dev
-  # Each module's diagnostics. Both halves of the exclusion are needed and each
+  - BitForge_EUI
+  - BitForge_RepRank
+  - BitForge_TaskTome
+  # Core's own diagnostics. Both halves of the exclusion are needed and each
   # fails silently alone -- tests/python/test_debug_directories.py holds them
-  # together. The .toc lines are wrapped in #@debug@ so the released .toc does
-  # not name a file this list has dropped.
+  # together. The .toc line is wrapped in #@debug@ so the released .toc does
+  # not name a file this list has dropped. Each module now excludes its own
+  # debug/ from its own .pkgmeta instead of from here.
   - BitForge/debug
-  - BitForge_EUI/debug
-  - BitForge_Dispatch/debug
   - .claude
   - .github
   - .wow-api-audit
@@ -102,3 +111,30 @@ ignore:
   - BitForge/Libs/LibStub/examples
   - BitForge/Libs/LibStub/tests
   - BitForge/Libs/LibStub/*.md
+
+  # LibBitForgeUI is a git submodule, not an external -- its checkout is on
+  # disk already, not fetched at package time -- but it carries its own test
+  # suite and README the same way, and the packager has no externals-only
+  # exemption from this list. docs and examples are empty today, but listed
+  # ahead of need to match the LibDeflate/LibStub pattern above rather than
+  # waiting for the day the library grows either.
+  - BitForge/Libs/LibBitForgeUI/docs
+  - BitForge/Libs/LibBitForgeUI/examples
+  - BitForge/Libs/LibBitForgeUI/tests
+  - BitForge/Libs/LibBitForgeUI/*.md
+
+  # The library has since grown the same development apparatus this repository
+  # keeps out of its own zip -- workflow skills, a packaging pipeline of its
+  # own, a language server config. The root ignores above are anchored at the
+  # package root and reach none of it, so each one is named again here.
+  #
+  # The library's own .pkgmeta is the one worth pausing over: it belongs to the
+  # library's standalone release and has no authority over this package, so it
+  # is ignored like any other development file rather than deferred to. A
+  # nested .pkgmeta this list did not drop would ship as dead metadata inside
+  # BitForge's zip.
+  - BitForge/Libs/LibBitForgeUI/.claude
+  - BitForge/Libs/LibBitForgeUI/.github
+  - BitForge/Libs/LibBitForgeUI/.gitignore
+  - BitForge/Libs/LibBitForgeUI/.pkgmeta
+  - BitForge/Libs/LibBitForgeUI/.wowluarc.json

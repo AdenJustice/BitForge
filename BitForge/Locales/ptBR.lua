@@ -25,3 +25,11 @@ L["report:encoded"] = "Este relatório era muito longo para ler, por isso foi co
 L["whatsNew:windowTitle"] = "Novidades do BitForge"
 L["whatsNew:version"] = "%s — %s"
 L["whatsNew:close"] = "Fechar"
+
+L["upgrade:windowTitle"] = "O BitForge agora são seis downloads"
+L["upgrade:lead"] = "De agora em diante, o BitForge e seus módulos são downloads separados: um projeto cada, atualizado por conta própria. Atualizar o BitForge não removeu nada, então tudo o que você já tinha continua instalado e continua funcionando."
+L["upgrade:separate"] = "Estes não fazem mais parte do download do BitForge, e nada vai atualizá-los de novo até você instalar cada um como seu próprio projeto:"
+L["upgrade:renamed"] = "O BitForge Dispatch foi renomeado para BitForge AzerothPrime, e é um projeto próprio com esse nome. Instale-o e tudo o que o Dispatch tinha salvo -- regras, listas por item, destinos de depósito, listas de bloqueio, o tamanho e a posição do botão -- vem junto. Se o Dispatch antigo ainda estiver instalado, o AzerothPrime o desativa primeiro e suas configurações chegam no seu próximo login, então ver o Dispatch acinzentado na lista de addons é o esperado e não uma falha; a pasta pode ser apagada nesse momento. Uma coisa não vem junto: o atalho de teclado do botão de itens abríveis, que o jogo guarda sob o nome do botão. Defina-o novamente em Atalhos."
+L["upgrade:close"] = "Entendi"
+
+L["msg:outOfStep"] = "Atualize o %s pelo CurseForge: ele está na %s enquanto o BitForge está na %s. Agora cada um é um download próprio, então um gerenciador de addons pode atualizar um e não o outro."

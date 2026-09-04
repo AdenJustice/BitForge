@@ -16,6 +16,7 @@ local events = BitForge.Events
 local C_AddOns = C_AddOns
 local C_TradeSkillUI = C_TradeSkillUI
 local EventRegistry = EventRegistry
+local format = string.format
 local ipairs = ipairs
 local select = select
 local sub = string.sub
@@ -136,6 +137,30 @@ EventRegistry:RegisterFrameEventAndCallback("PLAYER_LOGIN", function()
     control.TriggerEvent(events.PLAYER_READY)
 end)
 
+--- The project name a player types into an addon manager, from the folder name
+--- on disk. The same derivation as view.upgradeNotice's projectName, for the
+--- reason stated there.
+---@param addonName string
+---@return string
+local function ProjectName(addonName)
+    return (addonName:gsub("_", " "))
+end
+
+--- Names the loaded modules this core was not released beside, one line each.
+---
+--- Chat rather than a window: this is a line to act on, not one to read. Ahead
+--- of both windows and outside the one-window rule they share -- a chat line
+--- stacks on nothing, and the login the upgrade notice claims for itself is
+--- exactly the login a freshly split install is most likely to be out of step
+--- on.
+local function ReportVersionSkew()
+    for _, skew in ipairs(model.VersionSkew()) do
+        BitForge:Print(format(locale["msg:outOfStep"],
+            ProjectName(skew.name), skew.version, skew.coreVersion))
+        model.RecordVersionSkewTold(skew.name, skew.version, skew.coreVersion)
+    end
+end
+
 -- The debug dumps are per-play-session scratch tables, and the What's New
 -- popup is per-login rather than per-reload. PLAYER_ENTERING_WORLD is the only
 -- event that tells the two apart, and the distinction matters for both: a
@@ -150,6 +175,14 @@ EventRegistry:RegisterFrameEventAndCallback("PLAYER_ENTERING_WORLD",
     function(_, isInitialLogin)
         if not isInitialLogin then return end
         model.WipeDebugDumps()
+        ReportVersionSkew()
+        -- One window per login. Both anchor at CENTER, so raising them together
+        -- would leave one hidden behind the other, and the upgrade notice wins
+        -- because it is shown once ever and asks the player to go and fetch
+        -- downloads. Nothing is lost by deferring the notes: ShowIfNew leaves
+        -- lastSeenVersion alone on a login it does not run, so it raises the
+        -- same span at the next one.
+        if view.upgradeNotice.ShowIfUnseen() then return end
         view.releaseNotes.ShowIfNew()
     end)
 

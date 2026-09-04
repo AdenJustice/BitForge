@@ -1,0 +1,46 @@
+package-as: BitForge_TaskTome
+
+# topdir stays the repository root for all six packages here -- a subfolder of a
+# monorepo holds no .git of its own and release.sh rejects a topdir without one
+# (release.sh:506-516) -- so this package is selected by passing its own
+# .pkgmeta as -m, and reaches its own folder through the move-folders entry
+# below. Every ignore: path here is therefore repository-root-relative. The
+# move-folders key is not: release.sh resolves it against $releasedir
+# (release.sh:2686) while the tree is copied into $releasedir/<package-as>, so
+# it reads <package-as>/<repository-root path>.
+move-folders:
+  BitForge_TaskTome/BitForge_TaskTome: BitForge_TaskTome
+
+required-dependencies:
+  - bitforge
+
+# move-folders relocates a folder rather than dropping one, so everything else
+# the repository root holds -- every sibling addon, docs/, tests/, CLAUDE.md --
+# ships inside this zip unless it is named here. The list is the repository's
+# own top level minus this folder, and tests/python/test_pkgmeta_externals.py
+# derives it from disk rather than trusting anyone to keep six copies in step.
+# The dot entries are inert -- release.sh prunes every dot path before it reads
+# this list (release.sh:1820) -- and are here because the list is derived rather
+# than hand-picked, which is also why core's does not carry them.
+# LICENSE is the one deliberate omission: it licenses the code in this zip and
+# ships beside it, the same way it does in core's.
+ignore:
+  - .claude
+  - .github
+  - .gitignore
+  - .gitmodules
+  - .pkgmeta
+  - .wow-api-audit
+  - .wowluarc.json
+  - BitForge
+  - BitForge_AutoBalance
+  - BitForge_AzerothPrime
+  - BitForge_Dev
+  - BitForge_EUI
+  - BitForge_RepRank
+  - CHANGELOG.md
+  - CLAUDE.md
+  - README.md
+  - Scripts
+  - docs
+  - tests

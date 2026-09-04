@@ -13,6 +13,7 @@
 ## Notes-zhTW: 戰團日常任務追蹤器
 ## Author: AdenJustice
 ## Version: @project-version@
+## X-Curse-Project-ID: 1680975
 ## Dependencies: BitForge
 
 Init.lua

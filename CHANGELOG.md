@@ -1,5 +1,33 @@
 # Changelog
 
+## [v12.1.0.12] — 2026-09-04
+
+### Added
+
+- **BitForge now tells you when one of its addons has fallen out of step with the rest.** Six separate downloads means your addon manager can update one and leave another behind, which nothing used to be able to notice. When it happens, BitForge says so once in chat as you log in, naming the one to go and fetch -- and then stays quiet until the versions change again.
+
+### Changed
+
+- **BitForge is six separate downloads now, one for each addon.** The core and its five modules used to arrive in a single zip; each is its own CurseForge project from here on, updated on its own. Nothing is removed when you update, so every folder you already have stays where it is and keeps working -- but the BitForge download no longer updates the five modules, and your addon manager has no project to match those folders to. Install the ones you use as their own projects, and the old folder is safe to delete once its replacement is in place.
+
+- **Dispatch is now AzerothPrime, and everything you had set comes with it.** Install **BitForge AzerothPrime** where you had BitForge_Dispatch: your rules, per-item lists, curation destinations, blacklists and the button's size and position all move across on their own, and there is nothing to re-enter. If the old Dispatch is still installed, AzerothPrime switches it off first and your settings arrive at your next login -- so finding Dispatch greyed out in the addon list is expected rather than a fault, and the folder is safe to delete then.
+
+- **Your keybinding for the openables button does not come with it.** The game stores a keybinding under the button's name, and the button's name changed with the addon's, so yours is cleared. Set it again in the standard Key Bindings panel.
+
+- **Every BitForge window has been retuned, and text is easier to read.** Body text was a mid-grey that sat closer to the background than to white; it is near-white now, and the old grey survives only where something is deliberately dimmed. Window borders were darker than the panel they outlined, which read as a gap rather than an edge -- they are lighter than it now. Buttons are slightly shorter so they line up with the dropdowns and text boxes they share a row with, checkboxes slightly taller so the box has room to breathe, and the report window is a little larger with more space inside it. Windows also now refuse to be dragged smaller than they can usefully be drawn.
+
+- **The close button is an X inside a square outline.** It was two loose strokes, which read as a smudge at the small size. The button is the same size, sits in the same place and responds the same way; only the mark inside it changed, and it is drawn larger relative to the button so it holds up at every size.
+
+- **EllesmereUI's skinning switch is now per addon rather than one switch for all of BitForge.** The suite registered itself under a single name, so turning its skinning on or off in EllesmereUI applied to every BitForge window at once. Each addon now registers under its own name, which is what EllesmereUI's per-addon toggle was always keyed to -- so you can keep AzerothPrime skinned and leave RepRank alone, or any other combination. Nothing changes if you do not use EllesmereUI.
+
+- **The EllesmereUI editor's close button is the suite's own now.** It was the only window in BitForge still using Blizzard's close button, which is why it never quite matched the others. It does now.
+
+- **A slightly smaller download.** Four pieces of artwork that nothing had drawn for some time were still being packaged into every release, and so were the development files of the UI toolkit BitForge embeds. Both are gone.
+
+### Fixed
+
+- **Flagging a recipe now keeps every reagent it needs, not just the ones BitForge already had on file.** Flagging reads the recipe's ingredient list from the game, but a second check sat in front of it: a list of "which professions use this item", built by hand and shipped with the addon. Anything that list had not heard of -- most obviously anything added since it was last rebuilt -- was sold anyway, so the flag quietly did nothing for those reagents. It no longer has a say when the game has already answered. Nothing changes for a reagent the list does know about: flagging still does not override which of your characters can actually reach and use the item.
+
 ## [v12.1.0.11] — 2026-09-03
 
 ### Added
